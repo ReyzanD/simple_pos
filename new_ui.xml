@@ -1,0 +1,31 @@
+<task>Refine the App Theme to a Premium Material 3 Specification</task>
+
+<design_specs>
+  <colors>
+    <background hex="#F8FAFC" name="Slate 50" />
+    <primary hex="#4F46E5" name="Indigo 600" />
+    <surface hex="#FFFFFF" name="White" />
+    <error_container hex="#FEE2E2" name="Soft Red" />
+    <error_text hex="#991B1B" name="Dark Red" />
+  </colors>
+  
+  <styling>
+    <card_radius>24.0</card_radius>
+    <appbar_elevation>0</appbar_elevation>
+    <input_radius>30.0</input_radius>
+  </styling>
+</design_specs>
+
+<instructions>
+  1. Modify 'lib/core/theme.dart' (or your main theme file). 
+  2. Set ScaffoldBackground to #F8FAFC. This is crucial—it makes the white cards stand out.
+  3. Update the 'Stok Habis' (Out of Stock) UI:
+     - Remove the solid red button/badge.
+     - Replace it with a Container: decoration(color: #FEE2E2, borderRadius: 12), child: Text("Stok Habis", style: color: #991B1B).
+  4. Update the BottomNavigationBar:
+     - Set background to Colors.white.
+     - Set unselectedItemColor to Colors.grey[400].
+     - Set selectedItemColor to #4F46E5.
+  5. Refactor the 'Total Price' text in the Cart Summary to be Indigo (#4F46E5) and use a FontWeight.black (900) for maximum visual hierarchy.
+  6. Remove heavy shadows from all Cards; use a thin BorderSide(color: Colors.grey.withOpacity(0.2), width: 0.5) instead.
+</instructions>
