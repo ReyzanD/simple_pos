@@ -4,7 +4,8 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 
 // Core
 import 'core/constants/app_constants.dart';
-import 'core/theme.dart';
+import 'core/theme/app_theme.dart';
+import 'core/controllers/theme_controller.dart';
 
 // Services - Database
 import 'services/database/database_helper.dart';
@@ -92,6 +93,11 @@ class POSApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        // Theme Controller
+        ChangeNotifierProvider<ThemeController>(
+          create: (_) => ThemeController()..init(),
+        ),
+
         // Database
         Provider<DatabaseHelper>(
           lazy: false,
@@ -345,14 +351,16 @@ class POSApp extends StatelessWidget {
           update: (_, repo, _) =>
               GetTransactionsUseCase(transactionRepository: repo),
         ),
-        ProxyProvider2<
+        ProxyProvider3<
           TransactionRepositoryImpl,
           ProductRepositoryImpl,
+          CategoryRepositoryImpl,
           GetSalesReportUseCase
         >(
-          update: (_, transactionRepo, productRepo, _) => GetSalesReportUseCase(
+          update: (_, transactionRepo, productRepo, categoryRepo, _) => GetSalesReportUseCase(
             transactionRepository: transactionRepo,
             productRepository: productRepo,
+            categoryRepository: categoryRepo,
           ),
         ),
         Provider<ExportSalesToCsvUseCase>(
@@ -536,21 +544,27 @@ class POSApp extends StatelessWidget {
           ),
         ),
       ],
-      child: MaterialApp(
-        title: AppConstants.appName,
-        debugShowCheckedModeBanner: false,
-        localizationsDelegates: const [
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-        ],
-        supportedLocales: const [
-          Locale('en', ''), // English
-          Locale('id', ''), // Indonesian
-        ],
-        locale: const Locale('id', ''), // Default to Indonesian
-        theme: AppTheme.lightTheme,
-        home: const MainNavigation(),
+      child: Consumer<ThemeController>(
+        builder: (context, themeController, _) {
+          return MaterialApp(
+            title: AppConstants.appName,
+            debugShowCheckedModeBanner: false,
+            localizationsDelegates: const [
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            supportedLocales: const [
+              Locale('en', ''), // English
+              Locale('id', ''), // Indonesian
+            ],
+            locale: const Locale('id', ''), // Default to Indonesian
+            theme: AppTheme.lightTheme,
+            darkTheme: AppTheme.darkTheme,
+            themeMode: themeController.themeMode,
+            home: const MainNavigation(),
+          );
+        },
       ),
     );
   }

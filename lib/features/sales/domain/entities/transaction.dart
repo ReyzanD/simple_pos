@@ -71,6 +71,9 @@ class Transaction {
   /// Calculates total items in transaction
   int get totalItems => items.fold(0, (sum, item) => sum + item.quantity);
 
+  /// Calculates total profit from all items (revenue - cost of goods sold)
+  double get profit => items.fold(0, (sum, item) => sum + item.profit);
+
   /// Checks if transaction is completed
   bool get isCompleted => paymentStatus == PaymentStatus.completed;
 

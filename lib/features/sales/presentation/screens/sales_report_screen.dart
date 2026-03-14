@@ -3,13 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../../domain/entities/sales_report.dart';
 import '../../domain/entities/payment_method.dart';
 import '../controllers/sales_report_controller.dart';
 import '../../../../core/utils/currency_formatter.dart';
-import '../../../../core/theme.dart';
-import '../widgets/summary_stat_card.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../../../shared/presentation/main_navigation.dart';
+import '../widgets/summary_stat_card.dart';
 
 /// Screen displaying sales reports with charts
 class SalesReportScreen extends StatelessWidget {
@@ -17,6 +18,7 @@ class SalesReportScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Consumer<SalesReportController>(
       builder: (context, controller, _) {
         return Scaffold(
@@ -39,39 +41,82 @@ class SalesReportScreen extends StatelessWidget {
                 onPressed: controller.refresh,
               ),
             ],
+            flexibleSpace: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: isDark
+                      ? [
+                          AppTheme.darkSurface,
+                          AppTheme.darkSurface.withValues(alpha: 0.95),
+                        ]
+                      : [
+                          AppTheme.primaryColor,
+                          AppTheme.primaryLight,
+                        ],
+                ),
+              ),
+            ),
           ),
           body: controller.isLoading
               ? const Center(child: CircularProgressIndicator())
               : controller.report == null
                   ? _buildEmptyState()
-                  : SingleChildScrollView(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Date Range
-                          _buildDateRangeSelector(context, controller),
-                          const SizedBox(height: 24),
+                  : RefreshIndicator(
+                      onRefresh: controller.refresh,
+                      color: AppTheme.primaryColor,
+                      displacement: 80,
+                      strokeWidth: 3,
+                      child: SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(), // Enable pull-to-refresh even when content is small
+                        padding: const EdgeInsets.only(
+                          left: 16,
+                          right: 16,
+                          top: 16,
+                          bottom: 140, // Space for floating nav
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Date Range
+                            _buildDateRangeSelector(context, controller),
+                            const SizedBox(height: 24),
 
-                          // Summary Cards
-                          _buildSummarySection(context, controller.report!),
-                          const SizedBox(height: 24),
+                            // Summary Cards
+                            _buildSummarySection(context, controller.report!),
+                            const SizedBox(height: 24),
 
-                          // Daily Sales Chart
-                          _buildDailySalesChart(context, controller.report!),
-                          const SizedBox(height: 24),
+                            // Daily Sales Chart
+                            _buildDailySalesChart(context, controller.report!),
+                            const SizedBox(height: 24),
 
-                          // Payment Methods Chart
-                          _buildPaymentMethodsChart(context, controller.report!),
-                          const SizedBox(height: 24),
+                            // Payment Methods Chart
+                            _buildPaymentMethodsChart(context, controller.report!),
+                            const SizedBox(height: 24),
 
-                          // Top Products Table
-                          _buildTopProductsTable(context, controller.report!),
-                          const SizedBox(height: 24),
+                            // Top Products Table
+                            _buildTopProductsTable(context, controller.report!),
+                            const SizedBox(height: 24),
 
-                          // Export Button
-                          SizedBox(
-                            width: double.infinity,
+                            // Category Performance
+                            if (controller.report!.categoryBreakdown.isNotEmpty)
+                              _buildCategoryPerformanceSection(context, controller.report!),
+                            if (controller.report!.categoryBreakdown.isNotEmpty)
+                              const SizedBox(height: 24),
+
+                            // Period Comparison (MoM / YoY)
+                            _buildPeriodComparisonSection(context, controller.report!),
+                            const SizedBox(height: 24),
+
+                            // Peak Hours Analysis
+                            _buildPeakHoursSection(context, controller.report!),
+                            if (controller.report!.peakHours.isNotEmpty)
+                              const SizedBox(height: 24),
+
+                            // Export Button
+                            SizedBox(
+                              width: double.infinity,
                             child: ElevatedButton.icon(
                               onPressed: controller.isExporting
                                   ? null
@@ -101,6 +146,7 @@ class SalesReportScreen extends StatelessWidget {
                         ],
                       ),
                     ),
+                  ),
         );
       },
     );
@@ -189,23 +235,27 @@ class SalesReportScreen extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Ringkasan',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: Text(
+            'Ringkasan',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.getTextPrimaryColor(context),
+                ),
+          ),
         ),
         const SizedBox(height: 16),
-        // 2x2 grid of summary cards
+        // 2x3 grid of summary cards with staggered animation
         Row(
           children: [
             Expanded(
               child: SummaryStatCard(
                 title: 'Total Transaksi',
                 value: '${report.totalTransactions}',
-                icon: Icons.receipt_long_outlined,
+                icon: Icons.receipt_long_rounded,
                 color: AppTheme.infoColor,
-              ),
+              ).animate().fadeIn(duration: 300.ms).slideY(begin: 0.1, end: 0, duration: 300.ms),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -214,7 +264,7 @@ class SalesReportScreen extends StatelessWidget {
                 value: CurrencyFormatter.format(report.totalRevenue),
                 icon: Icons.payments_outlined,
                 color: AppTheme.successColor,
-              ),
+              ).animate(delay: 100.ms).fadeIn(duration: 300.ms).slideY(begin: 0.1, end: 0, duration: 300.ms),
             ),
           ],
         ),
@@ -225,9 +275,9 @@ class SalesReportScreen extends StatelessWidget {
               child: SummaryStatCard(
                 title: 'Total Laba',
                 value: CurrencyFormatter.format(report.totalProfit),
-                icon: Icons.trending_up,
+                icon: Icons.trending_up_rounded,
                 color: AppTheme.warningColor,
-              ),
+              ).animate(delay: 200.ms).fadeIn(duration: 300.ms).slideY(begin: 0.1, end: 0, duration: 300.ms),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -236,7 +286,31 @@ class SalesReportScreen extends StatelessWidget {
                 value: '${report.profitMargin.toStringAsFixed(1)}%',
                 icon: Icons.show_chart,
                 color: AppTheme.primaryColor,
-              ),
+              ).animate(delay: 300.ms).fadeIn(duration: 300.ms).slideY(begin: 0.1, end: 0, duration: 300.ms),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: SummaryStatCard(
+                title: 'Rata-rata Transaksi',
+                value: CurrencyFormatter.format(report.averageTransactionValue),
+                icon: Icons.point_of_sale,
+                subtitle: 'ATV',
+                color: AppTheme.secondaryColor,
+              ).animate(delay: 400.ms).fadeIn(duration: 300.ms).slideY(begin: 0.1, end: 0, duration: 300.ms),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: SummaryStatCard(
+                title: 'Item per Transaksi',
+                value: report.itemsPerTransaction.toStringAsFixed(1),
+                icon: Icons.shopping_basket_outlined,
+                subtitle: 'Basket Size',
+                color: AppTheme.infoColor.withValues(alpha: 0.85),
+              ).animate(delay: 500.ms).fadeIn(duration: 300.ms).slideY(begin: 0.1, end: 0, duration: 300.ms),
             ),
           ],
         ),
@@ -279,9 +353,13 @@ class SalesReportScreen extends StatelessWidget {
               height: 250,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppTheme.cardColor,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppTheme.borderColor),
+                color: AppTheme.getCardColor(context),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: AppTheme.getBorderColor(context).withValues(alpha: 0.5),
+                  width: 0.5,
+                ),
+                boxShadow: AppShadows.shadowSm,
               ),
               child: _buildChart(context, controller, dailyData),
             ),
@@ -456,7 +534,7 @@ class SalesReportScreen extends StatelessWidget {
                   radius: 4,
                   color: AppTheme.primaryColor,
                   strokeWidth: 2,
-                  strokeColor: AppTheme.cardColor,
+                  strokeColor: AppTheme.getCardColor(context),
                 );
               },
             ),
@@ -492,63 +570,42 @@ class SalesReportScreen extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         Container(
-          height: 250,
+          height: 220,
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.shade300),
+            color: AppTheme.getCardColor(context),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: AppTheme.getBorderColor(context).withValues(alpha: 0.5),
+              width: 0.5,
+            ),
+            boxShadow: AppShadows.shadowSm,
           ),
           child: Row(
             children: [
               // Pie Chart
               Expanded(
-                flex: 2,
+                flex: 5,
                 child: PieChart(
                   PieChartData(
-                    sectionsSpace: 2,
-                    centerSpaceRadius: 40,
+                    sectionsSpace: 3,
+                    centerSpaceRadius: 45,
                     sections: _generatePieSections(paymentData),
                   ),
                 ),
               ),
 
-              // Legend
-              const SizedBox(width: 16),
+              // Legend with spacing
+              const SizedBox(width: 24),
               Expanded(
-                flex: 3,
+                flex: 4,
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: paymentData.map((data) {
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 8),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 12,
-                            height: 12,
-                            decoration: BoxDecoration(
-                              color: _getPaymentColor(data.paymentMethod),
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              data.paymentMethod.displayNameId,
-                              style: const TextStyle(fontSize: 12),
-                            ),
-                          ),
-                          Text(
-                            '${data.percentage.toStringAsFixed(1)}%',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
+                      child: _buildPaymentLegendItem(context, data),
                     );
                   }).toList(),
                 ),
@@ -557,6 +614,56 @@ class SalesReportScreen extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildPaymentLegendItem(
+    BuildContext context,
+    PaymentMethodBreakdown data,
+  ) {
+    final color = _getPaymentColor(data.paymentMethod);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: color.withValues(alpha: 0.2),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              data.paymentMethod.displayNameId,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+                color: AppTheme.getTextPrimaryColor(context),
+              ),
+            ),
+          ),
+          Text(
+            '${data.percentage.toStringAsFixed(1)}%',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -575,23 +682,27 @@ class SalesReportScreen extends StatelessWidget {
         const SizedBox(height: 16),
         Container(
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.shade300),
+            color: AppTheme.getCardColor(context),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: AppTheme.getBorderColor(context).withValues(alpha: 0.5),
+              width: 0.5,
+            ),
+            boxShadow: AppShadows.shadowSm,
           ),
           child: Column(
             children: [
               // Header
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
+                  color: AppTheme.getSurfaceColor(context),
                   borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(12),
-                    topRight: Radius.circular(12),
+                    topLeft: Radius.circular(20),
+                    topRight: Radius.circular(20),
                   ),
                 ),
-                child: const Row(
+                child: Row(
                   children: [
                     Expanded(flex: 3, child: Text('Produk', style: TextStyle(fontWeight: FontWeight.bold))),
                     Expanded(
@@ -610,12 +721,19 @@ class SalesReportScreen extends StatelessWidget {
               ...topProducts.asMap().entries.map((entry) {
                 final index = entry.key;
                 final product = entry.value;
+                final isDark = Theme.of(context).brightness == Brightness.dark;
                 return Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: index % 2 == 0 ? Colors.transparent : Colors.grey.shade50,
+                    color: index % 2 == 0
+                        ? Colors.transparent
+                        : (isDark
+                            ? AppTheme.darkSurfaceVariant.withValues(alpha: 0.3)
+                            : AppTheme.lightSurfaceVariant),
                     border: Border(
-                      bottom: BorderSide(color: Colors.grey.shade200),
+                      bottom: BorderSide(
+                        color: AppTheme.getBorderColor(context).withValues(alpha: 0.5),
+                      ),
                     ),
                   ),
                   child: Row(
@@ -647,6 +765,533 @@ class SalesReportScreen extends StatelessWidget {
                           ),
                           textAlign: TextAlign.right,
                         ),
+                      ),
+                    ],
+                  ),
+                );
+              }),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCategoryPerformanceSection(BuildContext context, SalesReport report) {
+    final categoryData = report.categoryBreakdown;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Performa Kategori',
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+        ),
+        const SizedBox(height: 16),
+        Container(
+          decoration: BoxDecoration(
+            color: AppTheme.getCardColor(context),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: AppTheme.getBorderColor(context).withValues(alpha: 0.5),
+              width: 0.5,
+            ),
+            boxShadow: AppShadows.shadowSm,
+          ),
+          child: Column(
+            children: [
+              // Header
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppTheme.getSurfaceColor(context),
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(20),
+                    topRight: Radius.circular(20),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(flex: 3, child: Text('Kategori', style: TextStyle(fontWeight: FontWeight.bold))),
+                    Expanded(
+                      flex: 2,
+                      child: Text('Qty', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                    Expanded(
+                      flex: 3,
+                      child: Text('Pendapatan', textAlign: TextAlign.right, style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                    Expanded(
+                      flex: 2,
+                      child: Text('Margin', textAlign: TextAlign.right, style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Rows
+              ...categoryData.asMap().entries.map((entry) {
+                final index = entry.key;
+                final category = entry.value;
+                final isDark = Theme.of(context).brightness == Brightness.dark;
+                final marginColor = category.profitMargin >= 20
+                    ? AppTheme.successColor
+                    : category.profitMargin >= 10
+                        ? AppTheme.warningColor
+                        : AppTheme.errorColor;
+
+                return Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: index % 2 == 0
+                        ? Colors.transparent
+                        : (isDark
+                            ? AppTheme.darkSurfaceVariant.withValues(alpha: 0.3)
+                            : AppTheme.lightSurfaceVariant),
+                    border: Border(
+                      bottom: BorderSide(
+                        color: AppTheme.getBorderColor(context).withValues(alpha: 0.5),
+                      ),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        flex: 3,
+                        child: Text(
+                          category.categoryName,
+                          style: const TextStyle(fontSize: 12),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      Expanded(
+                        flex: 2,
+                        child: Text(
+                          '${category.quantitySold}',
+                          style: const TextStyle(fontSize: 12),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                      Expanded(
+                        flex: 3,
+                        child: Text(
+                          CurrencyFormatter.format(category.revenue),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.right,
+                        ),
+                      ),
+                      Expanded(
+                        flex: 2,
+                        child: Text(
+                          '${category.profitMargin.toStringAsFixed(1)}%',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: marginColor,
+                          ),
+                          textAlign: TextAlign.right,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPeriodComparisonSection(BuildContext context, SalesReport report) {
+    final hasMonthOverMonth = report.monthOverMonth != null;
+    final hasYearOverYear = report.yearOverYear != null;
+
+    if (!hasMonthOverMonth && !hasYearOverYear) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Perbandingan Periode',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: AppTheme.getCardColor(context),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: AppTheme.getBorderColor(context).withValues(alpha: 0.5),
+              ),
+            ),
+            child: Center(
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.calendar_today_outlined,
+                    size: 48,
+                    color: AppTheme.textTertiary,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Tidak ada data periode sebelumnya',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: AppTheme.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Pilih periode yang memiliki data bulan/tahun lalu',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppTheme.textTertiary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Perbandingan Periode',
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            if (hasMonthOverMonth) ...[
+              Expanded(
+                child: _buildPeriodComparisonCard(
+                  context,
+                  'Bulan Lalu',
+                  report.monthOverMonth!,
+                ),
+              ),
+              if (hasYearOverYear) const SizedBox(width: 16),
+            ],
+            if (hasYearOverYear)
+              Expanded(
+                child: _buildPeriodComparisonCard(
+                  context,
+                  'Tahun Lalu',
+                  report.yearOverYear!,
+                ),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPeriodComparisonCard(
+    BuildContext context,
+    String title,
+    PeriodComparison comparison,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.getCardColor(context),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppTheme.getBorderColor(context).withValues(alpha: 0.5),
+          width: 0.5,
+        ),
+        boxShadow: AppShadows.shadowSm,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.getTextSecondaryColor(context),
+            ),
+          ),
+          const SizedBox(height: 12),
+          _buildComparisonMetric(
+            'Pendapatan',
+            comparison.revenueChange,
+            comparison.isRevenueGrowth,
+            comparison.previousRevenue,
+          ),
+          const SizedBox(height: 8),
+          _buildComparisonMetric(
+            'Transaksi',
+            comparison.transactionChange,
+            comparison.isTransactionGrowth,
+            comparison.previousTransactions?.toInt(),
+          ),
+          const SizedBox(height: 8),
+          _buildComparisonMetric(
+            'Laba',
+            comparison.profitChange,
+            comparison.isProfitGrowth,
+            comparison.previousProfit,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildComparisonMetric(
+    String label,
+    double change,
+    bool isPositive,
+    num? previousValue,
+  ) {
+    final color = isPositive ? AppTheme.successColor : AppTheme.errorColor;
+    final icon = isPositive ? Icons.arrow_upward : Icons.arrow_downward;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: AppTheme.textSecondary,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            if (previousValue != null)
+              Text(
+                label == 'Transaksi'
+                    ? '$previousValue'
+                    : CurrencyFormatter.format(previousValue.toDouble()),
+                style: TextStyle(
+                  fontSize: 13,
+                  color: AppTheme.textTertiary,
+                  decoration: TextDecoration.lineThrough,
+                  decorationColor: AppTheme.textTertiary,
+                ),
+              ),
+            if (previousValue == null)
+              const Spacer(),
+            Row(
+              children: [
+                Icon(
+                  icon,
+                  size: 14,
+                  color: color,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  '${change.abs().toStringAsFixed(1)}%',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: color,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPeakHoursSection(BuildContext context, SalesReport report) {
+    final peakHours = report.peakHours.take(8).toList();
+
+    if (peakHours.isEmpty) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Jam Sibuk',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: AppTheme.getCardColor(context),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: AppTheme.getBorderColor(context).withValues(alpha: 0.5),
+              ),
+            ),
+            child: Center(
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.access_time_outlined,
+                    size: 48,
+                    color: AppTheme.textTertiary,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Belum ada data transaksi',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: AppTheme.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Data jam sibuk akan muncul setelah ada transaksi',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppTheme.textTertiary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Jam Sibuk',
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+        ),
+        const SizedBox(height: 16),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppTheme.getCardColor(context),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: AppTheme.getBorderColor(context).withValues(alpha: 0.5),
+              width: 0.5,
+            ),
+            boxShadow: AppShadows.shadowSm,
+          ),
+          child: Column(
+            children: [
+              ...peakHours.asMap().entries.map((entry) {
+                final index = entry.key;
+                final hour = entry.value;
+                final maxTransactions = peakHours.first.transactionCount;
+                final barWidth = hour.transactionCount / maxTransactions;
+
+                return Padding(
+                  padding: EdgeInsets.only(bottom: index < peakHours.length - 1 ? 12 : 0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            hour.formattedHour,
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: AppTheme.getTextPrimaryColor(context),
+                            ),
+                          ),
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  '${hour.transactionCount} trans',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppTheme.primaryColor,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Avg: ${CurrencyFormatter.format(hour.averageTransactionValue)}',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppTheme.secondaryColor,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Stack(
+                        children: [
+                          Container(
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: AppTheme.getBorderColor(context).withValues(alpha: 0.3),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                          FractionallySizedBox(
+                            widthFactor: barWidth,
+                            child: Container(
+                              height: 8,
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    AppTheme.primaryColor,
+                                    AppTheme.secondaryColor,
+                                  ],
+                                ),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            hour.periodOfDay,
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: AppTheme.textTertiary,
+                            ),
+                          ),
+                          Text(
+                            CurrencyFormatter.format(hour.revenue),
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.getTextPrimaryColor(context),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -770,12 +1415,6 @@ class SalesReportScreen extends StatelessWidget {
       // If sharing fails, just show the file path
       debugPrint('Failed to share file: $e');
     }
-  }
-
-  void _openSettings(BuildContext context) {
-    // Navigate to settings tab (index 4)
-    final mainNavigationState = context.findAncestorStateOfType<MainNavigationState>();
-    mainNavigationState?.navigateToSettings();
   }
 
   String _getChartTypeLabel(ChartType type) {

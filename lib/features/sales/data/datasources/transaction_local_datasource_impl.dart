@@ -19,10 +19,12 @@ class TransactionLocalDataSourceImpl {
       final db = await databaseHelper.database;
       AppLogger.database('Creating transaction', details: 'Items: ${transaction.items.length}');
 
+      int transactionId = 0;
+
       // Begin transaction
       await db.transaction((txn) async {
         // Insert transaction
-        final transactionId = await txn.insert(
+        transactionId = await txn.insert(
           'transactions',
           transaction.toMap(),
           conflictAlgorithm: sqflite.ConflictAlgorithm.replace,
@@ -59,9 +61,9 @@ class TransactionLocalDataSourceImpl {
         }
       });
 
-      // Return transaction with ID
+      // Return transaction with actual ID from database
       return transaction.copyWith(
-        id: 1, // In real implementation, would get actual ID
+        id: transactionId,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );

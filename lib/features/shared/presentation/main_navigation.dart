@@ -1,19 +1,24 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../inventory/presentation/controllers/inventory_controller.dart';
 import '../../inventory/presentation/screens/inventory_screen.dart';
-import '../../inventory/presentation/screens/low_stock_dashboard_screen.dart';
 import '../../pos/presentation/screens/pos_screen.dart';
 import '../../../core/presentation/widgets/barcode_scanner_screen.dart';
 import '../../sales/presentation/screens/sales_history_screen.dart';
 import '../../sales/presentation/screens/sales_report_screen.dart';
-import '../../sales/presentation/screens/discount_management_screen.dart';
-import '../../sales/presentation/controllers/discount_controller.dart';
+import '../../sales/presentation/controllers/sales_history_controller.dart';
+import '../../sales/presentation/controllers/sales_report_controller.dart';
 import '../../settings/presentation/screens/settings_screen.dart';
-import '../../../../core/theme.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/animations/animation_constants.dart';
+import '../../../../core/utils/haptic_helper.dart';
+import 'drawer_header.dart';
+import 'drawer_sections.dart';
 
-/// Main navigation widget with bottom tab bar and universal QR scanner FAB
+/// Main navigation widget with floating glassmorphic bottom tab bar
 class MainNavigation extends StatefulWidget {
   const MainNavigation({super.key});
 
@@ -21,13 +26,62 @@ class MainNavigation extends StatefulWidget {
   State<MainNavigation> createState() => MainNavigationState();
 }
 
-class MainNavigationState extends State<MainNavigation> {
+class MainNavigationState extends State<MainNavigation>
+    with TickerProviderStateMixin {
   int _currentIndex = 0;
+  late AnimationController _scannerPulseController;
+  late Animation<double> _scannerPulseAnimation;
+  late AnimationController _navSlideController;
+  late Animation<Offset> _navSlideAnimation;
   final GlobalKey<POSScreenState> _posScreenKey = GlobalKey();
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey();
 
+  @override
+  void initState() {
+    super.initState();
+    // Scanner button pulse animation
+    _scannerPulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat(reverse: true);
+
+    _scannerPulseAnimation = Tween<double>(
+      begin: 1.0,
+      end: 1.08,
+    ).animate(CurvedAnimation(
+      parent: _scannerPulseController,
+      curve: Curves.easeInOut,
+    ));
+
+    // Nav slide animation
+    _navSlideController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+
+    _navSlideAnimation = Tween<Offset>(
+      begin: const Offset(0, 1),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _navSlideController,
+      curve: AnimationCurves.easeOut,
+    ));
+
+    _navSlideController.forward();
+  }
+
+  @override
+  void dispose() {
+    _scannerPulseController.dispose();
+    _navSlideController.dispose();
+    super.dispose();
+  }
+
   late final List<Widget> _screens = [
-    POSScreen(key: _posScreenKey),
+    POSScreen(
+      key: _posScreenKey,
+      onCheckoutSuccess: _refreshAllScreens,
+    ),
     const InventoryScreen(),
     const SalesHistoryScreen(),
     const SalesReportScreen(),
@@ -43,6 +97,80 @@ class MainNavigationState extends State<MainNavigation> {
   /// Open the drawer - can be called from child screens
   void openDrawer() {
     _scaffoldKey.currentState?.openDrawer();
+  }
+
+  /// Refresh all screens after checkout - updates inventory, sales history, and reports
+  Future<void> _refreshAllScreens({bool delay = true}) async {
+    if (!mounted) return;
+
+    // Get controllers before any async operations to avoid BuildContext across async gaps
+    final inventoryController = context.read<InventoryController>();
+    SalesHistoryController? salesHistoryController;
+    SalesReportController? salesReportController;
+
+    try {
+      salesHistoryController = context.read<SalesHistoryController>();
+    } catch (_) {
+      // Controller may not be initialized yet
+    }
+
+    try {
+      salesReportController = context.read<SalesReportController>();
+    } catch (_) {
+      // Controller may not be initialized yet
+    }
+
+    // Add small delay to ensure database transaction is fully committed
+    if (delay) {
+      await Future.delayed(const Duration(milliseconds: 300));
+    }
+
+    // Refresh Inventory controller (stock levels changed)
+    await inventoryController.loadProducts();
+
+    // Refresh POS controller (product list needs updating)
+    if (_posScreenKey.currentState != null) {
+      _posScreenKey.currentState!.refreshProducts();
+    }
+
+    // Refresh Sales History (new transaction added)
+    await salesHistoryController?.refresh();
+
+    // Refresh Sales Report (new data)
+    await salesReportController?.refresh();
+  }
+
+  /// Refresh data for the currently visible tab
+  Future<void> _refreshCurrentTab() async {
+    if (!mounted) return;
+
+    switch (_currentIndex) {
+      case 0: // POS - Already handled by tab switch
+        if (_posScreenKey.currentState != null) {
+          _posScreenKey.currentState!.refreshProducts();
+        }
+        break;
+      case 1: // Inventory
+        final inventoryController = context.read<InventoryController>();
+        await inventoryController.loadProducts();
+        break;
+      case 2: // Sales History
+        try {
+          final salesHistoryController = context.read<SalesHistoryController>();
+          await salesHistoryController.refresh();
+        } catch (_) {
+          // Controller may not be initialized yet
+        }
+        break;
+      case 3: // Sales Report
+        try {
+          final salesReportController = context.read<SalesReportController>();
+          await salesReportController.refresh();
+        } catch (_) {
+          // Controller may not be initialized yet
+        }
+        break;
+    }
   }
 
   Future<void> _handleQRScan() async {
@@ -100,7 +228,6 @@ class MainNavigationState extends State<MainNavigation> {
         );
 
         if (result != null && result is String && mounted) {
-          // Show snackbar with barcode - user can tap "Add Product" to use it
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -108,8 +235,16 @@ class MainNavigationState extends State<MainNavigation> {
                 action: SnackBarAction(
                   label: 'Copy',
                   textColor: AppTheme.primaryColor,
-                  onPressed: () {
-                    // TODO: Copy to clipboard
+                  onPressed: () async {
+                    await Clipboard.setData(ClipboardData(text: result));
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Copied to clipboard'),
+                          duration: Duration(seconds: 1),
+                        ),
+                      );
+                    }
                   },
                 ),
               ),
@@ -142,8 +277,16 @@ class MainNavigationState extends State<MainNavigation> {
               action: SnackBarAction(
                 label: 'Copy',
                 textColor: AppTheme.primaryColor,
-                onPressed: () {
-                  // TODO: Copy to clipboard
+                onPressed: () async {
+                  await Clipboard.setData(ClipboardData(text: result));
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Copied to clipboard'),
+                        duration: Duration(seconds: 1),
+                      ),
+                    );
+                  }
                 },
               ),
             ),
@@ -157,59 +300,169 @@ class MainNavigationState extends State<MainNavigation> {
     return Scaffold(
       key: _scaffoldKey,
       body: IndexedStack(index: _currentIndex, children: _screens),
-      bottomNavigationBar: _buildBottomNavigationBar(),
+      extendBody: true,
+      bottomNavigationBar: _buildFloatingBottomNav(),
       drawer: _buildDrawer(context),
     );
   }
 
-  PreferredSizeWidget _buildAppBar(BuildContext context) {
-    return AppBar(
-      elevation: 0,
-      backgroundColor: AppTheme.primaryColor,
-      leading: Builder(
-        builder: (context) => IconButton(
-          icon: const Icon(Icons.menu, color: Colors.white),
-          onPressed: () => Scaffold.of(context).openDrawer(),
+  Widget _buildFloatingBottomNav() {
+    return SlideTransition(
+      position: _navSlideAnimation,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+        child: _GlassBottomNav(
+          currentIndex: _currentIndex,
+          onTap: (index) {
+            if (_currentIndex != index) {
+              setState(() => _currentIndex = index);
+              // Refresh data when switching to any tab
+              _refreshCurrentTab();
+            }
+          },
+          onScannerPressed: _handleQRScan,
+          scannerAnimation: _scannerPulseAnimation,
         ),
       ),
-      title: Text(_getScreenTitle()),
-      centerTitle: true,
     );
   }
 
-  String _getScreenTitle() {
-    switch (_currentIndex) {
-      case 0:
-        return 'Point of Sale';
-      case 1:
-        return 'Inventory';
-      case 2:
-        return 'Sales History';
-      case 3:
-        return 'Sales Reports';
-      case 4:
-        return 'Settings';
-      default:
-        return '';
-    }
-  }
+  Widget _buildDrawer(BuildContext context) {
+    return NavigationDrawer(
+      selectedIndex: _currentIndex,
+      onDestinationSelected: (index) {
+        HapticHelper.lightImpact();
+        setState(() => _currentIndex = index);
+        Navigator.pop(context);
+      },
+      children: [
+        // User Header
+        UserDrawerHeader(
+          userName: 'Admin',
+          userRole: 'Store Manager',
+          storeName: AppConstants.appName,
+          onSettingsTap: () {
+            Navigator.pop(context);
+            setState(() => _currentIndex = 4); // Go to settings
+          },
+        ),
 
-  Widget _buildBottomNavigationBar() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 8,
-            offset: const Offset(0, -2),
+        const Divider(height: 1),
+
+        // Main Navigation Destinations
+        NavigationDrawerDestination(
+          icon: const Icon(Icons.point_of_sale_outlined),
+          selectedIcon: const Icon(Icons.point_of_sale),
+          label: const Text('POS'),
+        ),
+        NavigationDrawerDestination(
+          icon: const Icon(Icons.inventory_2_outlined),
+          selectedIcon: const Icon(Icons.inventory_2),
+          label: const Text('Inventory'),
+        ),
+        NavigationDrawerDestination(
+          icon: const Icon(Icons.history_outlined),
+          selectedIcon: const Icon(Icons.history),
+          label: const Text('Sales History'),
+        ),
+        NavigationDrawerDestination(
+          icon: const Icon(Icons.bar_chart_outlined),
+          selectedIcon: const Icon(Icons.bar_chart),
+          label: const Text('Reports'),
+        ),
+        NavigationDrawerDestination(
+          icon: const Icon(Icons.settings_outlined),
+          selectedIcon: const Icon(Icons.settings),
+          label: const Text('Settings'),
+        ),
+
+        const Divider(height: 1),
+
+        // Quick Categories Section
+        const DrawerCategoryChips(),
+
+        // Store Stats Card
+        const DrawerStoreStats(),
+
+        const Padding(
+          padding: EdgeInsets.fromLTRB(16, 8, 16, 4),
+          child: Text(
+            'QUICK ACTIONS',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 1.0,
+            ),
           ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
+        ),
+
+        // Low Stock Dashboard
+        const DrawerLowStockItem(),
+
+        // Discount Management
+        const DrawerDiscountItem(),
+
+        // Theme Toggle
+        const DrawerThemeToggle(),
+
+        // Recent Products Section
+        const DrawerRecentProducts(),
+
+        const SizedBox(height: 8),
+
+        // App Info Section
+        const DrawerAppInfo(),
+      ],
+    );
+  }
+}
+
+/// Glassmorphic bottom navigation bar
+class _GlassBottomNav extends StatelessWidget {
+  final int currentIndex;
+  final Function(int) onTap;
+  final VoidCallback onScannerPressed;
+  final Animation<double> scannerAnimation;
+
+  const _GlassBottomNav({
+    required this.currentIndex,
+    required this.onTap,
+    required this.onScannerPressed,
+    required this.scannerAnimation,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(28),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        child: Container(
+          height: 72 + MediaQuery.of(context).padding.bottom,
+          decoration: BoxDecoration(
+            color: isDark
+                ? AppTheme.darkSurface.withValues(alpha: 0.85)
+                : Colors.white.withValues(alpha: 0.85),
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(
+              color: isDark
+                  ? AppTheme.darkBorderColor.withValues(alpha: 0.3)
+                  : Colors.white.withValues(alpha: 0.8),
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: isDark
+                    ? Colors.black.withValues(alpha: 0.4)
+                    : Colors.black.withValues(alpha: 0.08),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: Row(
             children: [
               // Left side nav items
               Expanded(
@@ -218,12 +471,14 @@ class MainNavigationState extends State<MainNavigation> {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     _buildNavItem(
-                      icon: Icons.point_of_sale,
+                      context: context,
+                      icon: Icons.point_of_sale_rounded,
                       label: 'POS',
                       index: 0,
                     ),
                     _buildNavItem(
-                      icon: Icons.inventory,
+                      context: context,
+                      icon: Icons.inventory_2_outlined,
                       label: 'Inventory',
                       index: 1,
                     ),
@@ -231,7 +486,7 @@ class MainNavigationState extends State<MainNavigation> {
                 ),
               ),
 
-              // Center scanner button (larger, inline)
+              // Center scanner button
               _buildScannerButton(),
 
               // Right side nav items
@@ -241,12 +496,14 @@ class MainNavigationState extends State<MainNavigation> {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     _buildNavItem(
-                      icon: Icons.history,
+                      context: context,
+                      icon: Icons.history_rounded,
                       label: 'History',
                       index: 2,
                     ),
                     _buildNavItem(
-                      icon: Icons.bar_chart,
+                      context: context,
+                      icon: Icons.bar_chart_rounded,
                       label: 'Reports',
                       index: 3,
                     ),
@@ -255,70 +512,90 @@ class MainNavigationState extends State<MainNavigation> {
               ),
             ],
           ),
-          // Add bottom padding for safe area
-          SizedBox(height: MediaQuery.of(context).padding.bottom),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildScannerButton() {
-    return Container(
-      width: 56,
-      height: 56,
-      decoration: BoxDecoration(
-        color: AppTheme.infoColor,
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: AppTheme.infoColor.withValues(alpha: 0.4),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: _handleQRScan,
-          customBorder: const CircleBorder(),
-          child: const Icon(
-            Icons.qr_code_scanner,
-            color: Colors.white,
-            size: 28,
-          ),
         ),
       ),
     );
   }
 
   Widget _buildNavItem({
+    required BuildContext context,
     required IconData icon,
     required String label,
     required int index,
   }) {
-    final isSelected = _currentIndex == index;
+    final isSelected = currentIndex == index;
+
     return Expanded(
-      child: InkWell(
-        onTap: () => setState(() => _currentIndex = index),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 10),
+      child: GestureDetector(
+        onTap: () {
+          HapticHelper.selection(); // Haptic feedback on nav change
+          onTap(index);
+        },
+        child: AnimatedContainer(
+          duration: AnimationDurations.fast,
+          curve: AnimationCurves.easeOut,
+          padding: const EdgeInsets.symmetric(vertical: 8),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                icon,
-                color: isSelected ? AppTheme.primaryColor : Colors.grey,
-                size: 24,
+              Stack(
+                alignment: Alignment.center,
+                children: [
+                  // Glow effect for selected item
+                  if (isSelected)
+                    Positioned.fill(
+                      child: Container(
+                        margin: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryColor.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(14),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppTheme.primaryColor.withValues(alpha: 0.4),
+                              blurRadius: 8,
+                              spreadRadius: 2,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  // Icon
+                  AnimatedScale(
+                    scale: isSelected ? 1.15 : 1.0,
+                    duration: AnimationDurations.fast,
+                    curve: AnimationCurves.easeOut,
+                    child: AnimatedContainer(
+                      duration: AnimationDurations.fast,
+                      padding: EdgeInsets.all(isSelected ? 10 : 8),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? AppTheme.primaryColor.withValues(alpha: 0.15)
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Icon(
+                        icon,
+                        color: isSelected
+                            ? AppTheme.primaryColor
+                            : AppTheme.getTextSecondaryColor(context),
+                        size: 24,
+                      ),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 4),
-              Text(
-                label,
+              AnimatedDefaultTextStyle(
+                duration: AnimationDurations.fast,
+                curve: AnimationCurves.easeOut,
                 style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                  color: isSelected ? AppTheme.primaryColor : Colors.grey,
+                  fontSize: 11,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                  color: isSelected
+                      ? AppTheme.primaryColor
+                      : AppTheme.getTextSecondaryColor(context),
                 ),
+                child: Text(label),
               ),
             ],
           ),
@@ -327,131 +604,38 @@ class MainNavigationState extends State<MainNavigation> {
     );
   }
 
-  Widget _buildDrawer(BuildContext context) {
-    return Drawer(
-      child: Container(
-        color: Colors.white,
-        child: Column(
-          children: [
-            // Header
-            DrawerHeader(
+  Widget _buildScannerButton() {
+    return AnimatedBuilder(
+      animation: scannerAnimation,
+      builder: (context, child) {
+        return Transform.scale(
+          scale: scannerAnimation.value,
+          child: GestureDetector(
+            onTap: onScannerPressed,
+            child: Container(
+              width: 58,
+              height: 58,
+              margin: const EdgeInsets.symmetric(horizontal: 8),
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    AppTheme.primaryColor,
-                    AppTheme.primaryColor.withValues(alpha: 0.8),
-                  ],
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Icon(
-                    Icons.store,
-                    size: 48,
-                    color: Colors.white,
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    AppConstants.appName,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Kelola bisnis Anda',
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.9),
-                      fontSize: 14,
-                    ),
+                gradient: AppGradients.ocean,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppTheme.infoColor.withValues(alpha: 0.4),
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
                   ),
                 ],
               ),
-            ),
-
-            // Menu Items
-            // Low Stock Dashboard
-            ListTile(
-              leading: Icon(Icons.warning_amber, color: AppTheme.warningColor),
-              title: Text('Dashboard Stok Rendah'),
-              subtitle: Text('Lihat produk dengan stok rendah'),
-              trailing: Container(
-                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppTheme.warningColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Consumer<InventoryController>(
-                  builder: (context, controller, _) {
-                    final lowStockCount = controller.allProducts
-                        .where((p) => p.isLowStock || p.isOutOfStock)
-                        .length;
-                    return Text(
-                      '$lowStockCount',
-                      style: TextStyle(
-                        color: AppTheme.warningColor,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                      ),
-                    );
-                  },
-                ),
+              child: const Icon(
+                Icons.qr_code_scanner_rounded,
+                color: Colors.white,
+                size: 28,
               ),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ChangeNotifierProvider.value(
-                      value: context.read<InventoryController>(),
-                      child: const LowStockDashboardScreen(),
-                    ),
-                  ),
-                );
-              },
             ),
-
-            Divider(),
-
-            // Discount Management
-            ListTile(
-              leading: Icon(Icons.discount, color: AppTheme.successColor),
-              title: Text('Diskon'),
-              subtitle: Text('Kelola promosi & diskon'),
-              trailing: Icon(Icons.chevron_right, size: 20),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ChangeNotifierProvider.value(
-                      value: context.read<DiscountController>(),
-                      child: const DiscountManagementScreen(),
-                    ),
-                  ),
-                );
-              },
-            ),
-
-            Divider(),
-
-            ListTile(
-              leading: Icon(Icons.settings, color: AppTheme.textSecondary),
-              title: Text('Settings'),
-              onTap: () {
-                Navigator.pop(context);
-                setState(() => _currentIndex = 4);
-              },
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }

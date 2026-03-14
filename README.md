@@ -11,6 +11,7 @@ A production-ready Point of Sale (POS) and inventory management system built wit
 ## Features
 
 ### Core POS Features
+
 - ✅ **Product Management** - Add, edit, delete, and search products
 - ✅ **Shopping Cart** - Add items, update quantities, remove items
 - ✅ **Checkout Process** - Complete checkout with payment processing
@@ -21,6 +22,7 @@ A production-ready Point of Sale (POS) and inventory management system built wit
 - ✅ **Export to CSV** - Export sales reports for analysis
 
 ### Advanced Inventory Features
+
 - ✅ **Categories** - Organize products by category
 - ✅ **Suppliers** - Track product suppliers
 - ✅ **Low Stock Alerts** - Get notified when stock is running low
@@ -29,6 +31,7 @@ A production-ready Point of Sale (POS) and inventory management system built wit
 - ✅ **Profit Calculations** - Automatic profit margin tracking
 
 ### Technical Features
+
 - ✅ **Clean Architecture** - Scalable and maintainable codebase
 - ✅ **Comprehensive Testing** - 300+ tests with 75%+ coverage
 - ✅ **Database Migrations** - Safe schema upgrades
@@ -40,6 +43,7 @@ A production-ready Point of Sale (POS) and inventory management system built wit
 ## Screenshots
 
 ### Main Features
+
 - **POS Screen** - Intuitive point of sale interface
 - **Inventory Management** - Product catalog with search and filters
 - **Sales History** - Transaction history with advanced filtering
@@ -57,17 +61,20 @@ A production-ready Point of Sale (POS) and inventory management system built wit
 ### Setup
 
 1. **Clone the repository**
+
    ```bash
    git clone <repository-url>
    cd simple_pos
    ```
 
 2. **Install dependencies**
+
    ```bash
    flutter pub get
    ```
 
 3. **Generate mock objects** (for testing)
+
    ```bash
    flutter pub run build_runner build --delete-conflicting-outputs
    ```
@@ -80,16 +87,19 @@ A production-ready Point of Sale (POS) and inventory management system built wit
 ## Running Tests
 
 ### Run All Tests
+
 ```bash
 flutter test
 ```
 
 ### Run with Coverage
+
 ```bash
 flutter test --coverage
 ```
 
 ### Run Specific Test Types
+
 ```bash
 # Unit tests only
 flutter test test/unit
@@ -308,6 +318,7 @@ genhtml coverage/lcov.info -o coverage/html
 ## Roadmap
 
 ### Completed ✅
+
 - [x] Core POS functionality
 - [x] Product management
 - [x] Shopping cart
@@ -321,6 +332,7 @@ genhtml coverage/lcov.info -o coverage/html
 - [x] Comprehensive testing
 
 ### Future Features 🚧
+
 - [ ] Barcode scanning integration
 - [ ] Cloud sync support
 - [ ] Multi-user authentication
@@ -338,7 +350,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Support
 
-For support, email support@example.com or open an issue in the repository.
+For support, email mreynaldigazali@gmail.com or open an issue in the repository.
 
 ## Acknowledgments
 

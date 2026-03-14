@@ -15,6 +15,33 @@ import '../../../sales/domain/entities/payment_method.dart';
 import '../../../../core/exceptions/app_exceptions.dart';
 import '../../../../core/utils/logger.dart';
 
+/// Sort options for product list
+enum SortOption {
+  /// Name A-Z
+  nameAsc,
+
+  /// Name Z-A
+  nameDesc,
+
+  /// Price Low to High
+  priceAsc,
+
+  /// Price High to Low
+  priceDesc,
+
+  /// Stock Level (High to Low)
+  stockLevel,
+}
+
+/// View mode for product display
+enum ViewMode {
+  /// Grid layout
+  grid,
+
+  /// List layout
+  list,
+}
+
 /// Controller for managing POS state and operations
 class POSController extends ChangeNotifier {
   final GetProductsUseCase getProductsUseCase;
@@ -53,11 +80,19 @@ class POSController extends ChangeNotifier {
   bool _isLoading = false;
   bool _isCheckingOut = false;
   bool _isLoadingHeldCarts = false;
+  bool _isModifyingCart = false;
   AppException? _error;
   String _searchQuery = '';
   inventory.Category? _selectedCategory;
   CartItem? _lastRemovedCartItem;
   List<HeldCart> _heldCarts = [];
+
+  // Filter & Sort state
+  bool _inStockOnly = false;
+  SortOption _sortOption = SortOption.nameAsc;
+
+  // View mode state
+  ViewMode _viewMode = ViewMode.grid;
 
   // Getters
   List<Product> get products => _products;
@@ -65,6 +100,7 @@ class POSController extends ChangeNotifier {
   bool get isLoading => _isLoading;
   bool get isCheckingOut => _isCheckingOut;
   bool get isLoadingHeldCarts => _isLoadingHeldCarts;
+  bool get isModifyingCart => _isModifyingCart;
   AppException? get error => _error;
   bool get hasError => _error != null;
   bool get isCartEmpty => _cart.isEmpty;
@@ -74,7 +110,12 @@ class POSController extends ChangeNotifier {
   CartItem? get lastRemovedCartItem => _lastRemovedCartItem;
   List<HeldCart> get heldCarts => _heldCarts;
 
-  /// Get filtered products based on search query and category
+  // Filter & Sort getters
+  bool get inStockOnly => _inStockOnly;
+  SortOption get sortOption => _sortOption;
+  ViewMode get viewMode => _viewMode;
+
+  /// Get filtered products based on search query, category, stock filter, and sort
   List<Product> get filteredProducts {
     var filtered = _products;
 
@@ -90,6 +131,30 @@ class POSController extends ChangeNotifier {
         p.name.toLowerCase().contains(query) ||
         (p.barcode?.toLowerCase().contains(query) ?? false)
       ).toList();
+    }
+
+    // Filter by stock availability
+    if (_inStockOnly) {
+      filtered = filtered.where((p) => p.stock > 0).toList();
+    }
+
+    // Apply sorting
+    switch (_sortOption) {
+      case SortOption.nameAsc:
+        filtered.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+        break;
+      case SortOption.nameDesc:
+        filtered.sort((a, b) => b.name.toLowerCase().compareTo(a.name.toLowerCase()));
+        break;
+      case SortOption.priceAsc:
+        filtered.sort((a, b) => a.price.compareTo(b.price));
+        break;
+      case SortOption.priceDesc:
+        filtered.sort((a, b) => b.price.compareTo(a.price));
+        break;
+      case SortOption.stockLevel:
+        filtered.sort((a, b) => b.stock.compareTo(a.stock));
+        break;
     }
 
     return filtered;
@@ -133,8 +198,15 @@ class POSController extends ChangeNotifier {
 
   /// Add product to cart
   Future<bool> addToCart(Product product) async {
+    // Prevent concurrent cart modifications
+    if (_isModifyingCart) {
+      AppLogger.warning('Cart modification in progress, ignoring add request');
+      return false;
+    }
+
     try {
       AppLogger.ui('Adding to cart', details: 'POSController');
+      _setModifyingCart(true);
 
       _cart = await addToCartUseCase.execute(
         currentCart: _cart,
@@ -165,6 +237,8 @@ class POSController extends ChangeNotifier {
         stackTrace: stackTrace,
       );
       return false;
+    } finally {
+      _setModifyingCart(false);
     }
   }
 
@@ -173,8 +247,16 @@ class POSController extends ChangeNotifier {
     try {
       AppLogger.ui('Removing from cart', details: 'POSController');
 
-      // Store the cart item for undo before removing
-      _lastRemovedCartItem = _cart.firstWhere((item) => item.product.id == product.id);
+      // Store the cart item for undo before removing (safe lookup)
+      _lastRemovedCartItem = _cart.cast<CartItem?>().firstWhere(
+        (item) => item?.product.id == product.id,
+        orElse: () => null,
+      );
+
+      if (_lastRemovedCartItem == null) {
+        AppLogger.warning('Cart item not found for removal: Product ID ${product.id}');
+        return;
+      }
 
       _cart = removeFromCartUseCase.execute(
         currentCart: _cart,
@@ -225,7 +307,10 @@ class POSController extends ChangeNotifier {
 
       // Store the cart item for undo if quantity is being set to 0 (removing)
       if (quantity == 0) {
-        _lastRemovedCartItem = _cart.firstWhere((item) => item.product.id == product.id);
+        _lastRemovedCartItem = _cart.cast<CartItem?>().firstWhere(
+          (item) => item?.product.id == product.id,
+          orElse: () => null,
+        );
       }
 
       _cart = updateCartQuantityUseCase.execute(
@@ -386,7 +471,10 @@ class POSController extends ChangeNotifier {
   /// Get cart item for a product
   CartItem? getCartItem(Product product) {
     try {
-      return _cart.firstWhere((item) => item.product.id == product.id);
+      return _cart.cast<CartItem?>().firstWhere(
+        (item) => item?.product.id == product.id,
+        orElse: () => null,
+      );
     } catch (_) {
       return null;
     }
@@ -419,6 +507,46 @@ class POSController extends ChangeNotifier {
   /// Clear category filter
   void clearCategoryFilter() {
     _selectedCategory = null;
+    if (!_disposed) {
+      notifyListeners();
+    }
+  }
+
+  /// Toggle in-stock only filter
+  void toggleInStockOnly() {
+    _inStockOnly = !_inStockOnly;
+    if (!_disposed) {
+      notifyListeners();
+    }
+  }
+
+  /// Set in-stock only filter
+  void setInStockOnly(bool value) {
+    _inStockOnly = value;
+    if (!_disposed) {
+      notifyListeners();
+    }
+  }
+
+  /// Set sort option
+  void setSortOption(SortOption option) {
+    _sortOption = option;
+    if (!_disposed) {
+      notifyListeners();
+    }
+  }
+
+  /// Toggle between grid and list view
+  void toggleViewMode() {
+    _viewMode = _viewMode == ViewMode.grid ? ViewMode.list : ViewMode.grid;
+    if (!_disposed) {
+      notifyListeners();
+    }
+  }
+
+  /// Set view mode
+  void setViewMode(ViewMode mode) {
+    _viewMode = mode;
     if (!_disposed) {
       notifyListeners();
     }
@@ -611,6 +739,13 @@ class POSController extends ChangeNotifier {
 
   void _setLoadingHeldCarts(bool value) {
     _isLoadingHeldCarts = value;
+    if (!_disposed) {
+      notifyListeners();
+    }
+  }
+
+  void _setModifyingCart(bool value) {
+    _isModifyingCart = value;
     if (!_disposed) {
       notifyListeners();
     }

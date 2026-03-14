@@ -9,6 +9,7 @@ class TransactionItem {
   final int quantity;
   final double unitPrice;
   final double subtotal;
+  final double costPrice;
 
   const TransactionItem({
     this.id,
@@ -18,6 +19,7 @@ class TransactionItem {
     required this.quantity,
     required this.unitPrice,
     required this.subtotal,
+    this.costPrice = 0,
   });
 
   /// Creates a copy of this transaction item with the given fields replaced
@@ -29,6 +31,7 @@ class TransactionItem {
     int? quantity,
     double? unitPrice,
     double? subtotal,
+    double? costPrice,
   }) {
     return TransactionItem(
       id: id ?? this.id,
@@ -38,6 +41,7 @@ class TransactionItem {
       quantity: quantity ?? this.quantity,
       unitPrice: unitPrice ?? this.unitPrice,
       subtotal: subtotal ?? this.subtotal,
+      costPrice: costPrice ?? this.costPrice,
     );
   }
 
@@ -54,8 +58,12 @@ class TransactionItem {
       quantity: quantity,
       unitPrice: product.price,
       subtotal: product.price * quantity,
+      costPrice: product.costPrice,
     );
   }
+
+  /// Calculates profit for this item (revenue - cost)
+  double get profit => subtotal - (costPrice * quantity);
 
   /// Converts transaction item to map for database storage
   Map<String, dynamic> toMap() {
@@ -67,6 +75,7 @@ class TransactionItem {
       'quantity': quantity,
       'unit_price': unitPrice,
       'subtotal': subtotal,
+      'cost_price': costPrice,
     };
   }
 
@@ -80,6 +89,7 @@ class TransactionItem {
       quantity: map['quantity'] as int,
       unitPrice: (map['unit_price'] as num).toDouble(),
       subtotal: (map['subtotal'] as num).toDouble(),
+      costPrice: (map['cost_price'] as num?)?.toDouble() ?? 0,
     );
   }
 

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../../domain/entities/product.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/currency_formatter.dart';
-
 /// Stock status enum
 enum StockStatus {
   outOfStock,
@@ -33,7 +32,7 @@ class LowStockDashboardCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: AppTheme.cardColor,
+        color: AppTheme.getCardColor(context),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: statusColor.withValues(alpha: 0.3),

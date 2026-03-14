@@ -6,8 +6,8 @@ import '../../domain/entities/payment_status.dart';
 import '../controllers/sales_history_controller.dart';
 import '../controllers/refund_controller.dart';
 import '../widgets/refund_confirmation_dialog.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/currency_formatter.dart';
-import '../../../../core/theme.dart';
 import '../../../shared/presentation/main_navigation.dart';
 
 /// Modern Material 3 screen showing sales history with filters
@@ -16,6 +16,7 @@ class SalesHistoryScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Consumer<SalesHistoryController>(
       builder: (context, controller, _) {
         return Scaffold(
@@ -38,13 +39,30 @@ class SalesHistoryScreen extends StatelessWidget {
                 onPressed: controller.refresh,
               ),
             ],
+            flexibleSpace: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: isDark
+                      ? [
+                          AppTheme.darkSurface,
+                          AppTheme.darkSurface.withValues(alpha: 0.95),
+                        ]
+                      : [
+                          AppTheme.primaryColor,
+                          AppTheme.primaryLight,
+                        ],
+                ),
+              ),
+            ),
           ),
           body: controller.isLoading
               ? const Center(child: CircularProgressIndicator())
               : Column(
                   children: [
                     // Summary Cards
-                    _buildSummaryCards(controller),
+                    _buildSummaryCards(context, controller),
                     const Divider(height: 1),
 
                     // Search Bar
@@ -64,36 +82,52 @@ class SalesHistoryScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSummaryCards(SalesHistoryController controller) {
+  Widget _buildSummaryCards(BuildContext context, SalesHistoryController controller) {
     return Container(
       padding: const EdgeInsets.all(16),
-      color: AppTheme.backgroundColor,
-      child: Row(
+      color: AppTheme.getCardColor(context),
+      child: Wrap(
+        spacing: 12,
+        runSpacing: 12,
         children: [
-          Expanded(
-            child: _buildSummaryCard(
-              'Total Transaksi',
-              '${controller.transactionCount}',
-              Icons.receipt_long,
-              AppTheme.infoColor,
+          SizedBox(
+            width: 160,
+            child: _buildCompactSummaryCard(
+              context,
+              title: 'Total Transaksi',
+              value: '${controller.transactionCount}',
+              icon: Icons.receipt_long,
+              color: AppTheme.infoColor,
             ),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: _buildSummaryCard(
-              'Total Pendapatan',
-              CurrencyFormatter.format(controller.totalRevenue),
-              Icons.payments,
-              AppTheme.successColor,
+          SizedBox(
+            width: 160,
+            child: _buildCompactSummaryCard(
+              context,
+              title: 'Total Pendapatan',
+              value: CurrencyFormatter.format(controller.totalRevenue),
+              icon: Icons.payments,
+              color: AppTheme.successColor,
             ),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: _buildSummaryCard(
-              'Rata-rata',
-              CurrencyFormatter.format(controller.averageTransaction),
-              Icons.trending_up,
-              AppTheme.warningColor,
+          SizedBox(
+            width: 160,
+            child: _buildCompactSummaryCard(
+              context,
+              title: 'Total Profit',
+              value: CurrencyFormatter.format(controller.totalProfit),
+              icon: Icons.account_balance_wallet,
+              color: AppTheme.secondaryColor,
+            ),
+          ),
+          SizedBox(
+            width: 160,
+            child: _buildCompactSummaryCard(
+              context,
+              title: 'Total Item Terjual',
+              value: '${controller.totalItemsSold}',
+              icon: Icons.inventory_2_outlined,
+              color: AppTheme.primaryColor,
             ),
           ),
         ],
@@ -101,46 +135,75 @@ class SalesHistoryScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSummaryCard(String title, String value, IconData icon, Color color) {
+  Widget _buildCompactSummaryCard(
+    BuildContext context, {
+    required String title,
+    required String value,
+    required IconData icon,
+    required Color color,
+  }) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16), // Modern Material 3
+        color: AppTheme.getCardColor(context),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: AppTheme.cardBorder,
-          width: 0.5,
+          color: color.withValues(alpha: 0.3),
+          width: 1.5,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Colored icon background circle
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1), // Colored background with 10% opacity
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(icon, color: color, size: 20),
+          // Icon + Title row - more compact
+          Row(
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  icon,
+                  color: color,
+                  size: 18,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    color: AppTheme.textSecondary,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 8),
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 12,
-              color: AppTheme.textSecondary,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 2),
+          // Value - more compact but still prominent
           Text(
             value,
             style: TextStyle(
-              fontSize: 16,
+              fontSize: 18,
               fontWeight: FontWeight.bold,
               color: color,
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -168,11 +231,11 @@ class SalesHistoryScreen extends StatelessWidget {
               : null,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(30), // Rounded search bar
-            borderSide: BorderSide(color: AppTheme.cardBorder, width: 0.5),
+            borderSide: BorderSide(color: AppTheme.getBorderColor(context), width: 0.5),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(30),
-            borderSide: BorderSide(color: AppTheme.cardBorder, width: 0.5),
+            borderSide: BorderSide(color: AppTheme.getBorderColor(context), width: 0.5),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(30),
@@ -224,13 +287,24 @@ class SalesHistoryScreen extends StatelessWidget {
   }
 
   Widget _buildTransactionsList(SalesHistoryController controller) {
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      itemCount: controller.filteredTransactions.length,
-      itemBuilder: (context, index) {
-        final transaction = controller.filteredTransactions[index];
-        return _buildTransactionCard(context, transaction);
-      },
+    return RefreshIndicator(
+      onRefresh: controller.refresh,
+      color: AppTheme.primaryColor,
+      displacement: 80,
+      strokeWidth: 3,
+      child: ListView.builder(
+        padding: const EdgeInsets.only(
+          left: 16,
+          right: 16,
+          top: 8,
+          bottom: 140, // Space for floating nav
+        ),
+        itemCount: controller.filteredTransactions.length,
+        itemBuilder: (context, index) {
+          final transaction = controller.filteredTransactions[index];
+          return _buildTransactionCard(context, transaction);
+        },
+      ),
     );
   }
 
@@ -244,7 +318,7 @@ class SalesHistoryScreen extends StatelessWidget {
         side: BorderSide(
           color: transaction.paymentStatus == PaymentStatus.refunded
               ? AppTheme.textTertiary.withValues(alpha: 0.5)
-              : AppTheme.cardBorder,
+              : AppTheme.getBorderColor(context),
           width: 0.5,
         ),
       ),
@@ -529,7 +603,7 @@ class SalesHistoryScreen extends StatelessWidget {
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(24),
-          side: const BorderSide(color: AppTheme.cardBorder, width: 0.5),
+          side: BorderSide(color: AppTheme.getBorderColor(context), width: 0.5),
         ),
         title: const Text('Filter'),
         content: Column(
@@ -551,7 +625,7 @@ class SalesHistoryScreen extends StatelessWidget {
                   },
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
-                    side: BorderSide(color: AppTheme.cardBorder, width: 0.5),
+                    side: BorderSide(color: AppTheme.getBorderColor(context), width: 0.5),
                   ),
                 ),
                 ...PaymentMethod.values.map((method) {
@@ -564,7 +638,7 @@ class SalesHistoryScreen extends StatelessWidget {
                     },
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
-                      side: BorderSide(color: AppTheme.cardBorder, width: 0.5),
+                      side: BorderSide(color: AppTheme.getBorderColor(context), width: 0.5),
                     ),
                   );
                 }),
@@ -685,12 +759,6 @@ class SalesHistoryScreen extends StatelessWidget {
 
   String _formatDate(DateTime date) {
     return '${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
-  }
-
-  void _openSettings(BuildContext context) {
-    // Navigate to settings tab (index 4)
-    final mainNavigationState = context.findAncestorStateOfType<MainNavigationState>();
-    mainNavigationState?.navigateToSettings();
   }
 
   Future<void> _handleRefund(BuildContext context, Transaction transaction) async {

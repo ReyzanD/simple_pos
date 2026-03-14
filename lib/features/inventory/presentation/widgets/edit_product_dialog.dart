@@ -3,7 +3,8 @@ import 'package:provider/provider.dart';
 import '../../../inventory/domain/entities/product.dart';
 import '../../../inventory/domain/entities/category.dart' as entities;
 import '../../../inventory/domain/entities/supplier.dart';
-import '../../../../core/theme.dart';
+
+import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../core/exceptions/app_exceptions.dart';
 import '../controllers/category_controller.dart';
@@ -121,7 +122,7 @@ class _EditProductDialogState extends State<EditProductDialog> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   filled: true,
-                  fillColor: AppTheme.backgroundColor,
+                  fillColor: AppTheme.getCardColor(context),
                 ),
                 textCapitalization: TextCapitalization.words,
                 validator: (value) {
@@ -140,7 +141,7 @@ class _EditProductDialogState extends State<EditProductDialog> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   filled: true,
-                  fillColor: AppTheme.backgroundColor,
+                  fillColor: AppTheme.getCardColor(context),
                 ),
                 maxLines: 2,
                 textCapitalization: TextCapitalization.sentences,
@@ -245,7 +246,7 @@ class _EditProductDialogState extends State<EditProductDialog> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   filled: true,
-                  fillColor: AppTheme.backgroundColor,
+                  fillColor: AppTheme.getCardColor(context),
                 ),
                 textCapitalization: TextCapitalization.words,
                 validator: (value) {
@@ -267,7 +268,7 @@ class _EditProductDialogState extends State<EditProductDialog> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   filled: true,
-                  fillColor: AppTheme.backgroundColor,
+                  fillColor: AppTheme.getCardColor(context),
                 ),
                 textCapitalization: TextCapitalization.words,
               ),
@@ -280,7 +281,7 @@ class _EditProductDialogState extends State<EditProductDialog> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   filled: true,
-                  fillColor: AppTheme.backgroundColor,
+                  fillColor: AppTheme.getCardColor(context),
                 ),
                 keyboardType: TextInputType.phone,
               ),

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme.dart';
+
+import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/category_icons.dart';
 import '../../../inventory/domain/entities/category.dart' as entities;
 import '../../../inventory/domain/entities/supplier.dart';
-
+import '../controllers/inventory_controller.dart';
 /// Modern Material 3 search bar with filters for inventory screen
 ///
 /// Material 3 Features:
@@ -10,6 +12,8 @@ import '../../../inventory/domain/entities/supplier.dart';
 /// - Light grey filled background (#F1F5F9)
 /// - Subtle border
 /// - Category and supplier filter chips
+/// - In-stock only toggle
+/// - Sort dropdown
 class InventorySearchBar extends StatelessWidget {
   final String searchQuery;
   final ValueChanged<String> onChanged;
@@ -21,6 +25,10 @@ class InventorySearchBar extends StatelessWidget {
   final ValueChanged<int?> onCategoryChanged;
   final ValueChanged<int?> onSupplierChanged;
   final VoidCallback onClearFilters;
+  final bool inStockOnly;
+  final VoidCallback onToggleInStockOnly;
+  final ProductSortOption sortOption;
+  final ValueChanged<ProductSortOption> onSortChanged;
 
   const InventorySearchBar({
     super.key,
@@ -34,60 +42,77 @@ class InventorySearchBar extends StatelessWidget {
     required this.onCategoryChanged,
     required this.onSupplierChanged,
     required this.onClearFilters,
+    this.inStockOnly = false,
+    required this.onToggleInStockOnly,
+    required this.sortOption,
+    required this.onSortChanged,
   });
 
   @override
   Widget build(BuildContext context) {
-    final hasFilters = selectedCategoryId != null || selectedSupplierId != null;
+    final hasFilters = selectedCategoryId != null || selectedSupplierId != null || inStockOnly;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Search bar
-          TextField(
-            decoration: InputDecoration(
-              hintText: 'Cari produk...',
-              hintStyle: TextStyle(
-                color: AppTheme.textSecondary,
-                fontSize: 15,
+          // Search bar with sort button
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  decoration: InputDecoration(
+                    hintText: 'Cari produk...',
+                    hintStyle: TextStyle(
+                      color: AppTheme.textSecondary,
+                      fontSize: 15,
+                    ),
+                    prefixIcon: const Icon(Icons.search, color: AppTheme.textSecondary),
+                    suffixIcon: searchQuery.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear, color: AppTheme.textSecondary),
+                            onPressed: onClear,
+                          )
+                        : null,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(30),
+                      borderSide: BorderSide(color: AppTheme.getBorderColor(context), width: 0.5),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(30),
+                      borderSide: BorderSide(color: AppTheme.getBorderColor(context), width: 0.5),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(30),
+                      borderSide: BorderSide(color: AppTheme.primaryColor, width: 1.5),
+                    ),
+                    filled: true,
+                    fillColor: const Color(0xFFF1F5F9),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                  ),
+                  onChanged: onChanged,
+                ),
               ),
-              prefixIcon: const Icon(Icons.search, color: AppTheme.textSecondary),
-              suffixIcon: searchQuery.isNotEmpty
-                  ? IconButton(
-                      icon: const Icon(Icons.clear, color: AppTheme.textSecondary),
-                      onPressed: onClear,
-                    )
-                  : null,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(30),
-                borderSide: BorderSide(color: AppTheme.cardBorder, width: 0.5),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(30),
-                borderSide: BorderSide(color: AppTheme.cardBorder, width: 0.5),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(30),
-                borderSide: BorderSide(color: AppTheme.primaryColor, width: 1.5),
-              ),
-              filled: true,
-              fillColor: const Color(0xFFF1F5F9),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-            ),
-            onChanged: onChanged,
+              const SizedBox(width: 8),
+              // Sort dropdown
+              _buildSortDropdown(context),
+            ],
           ),
 
           // Filter chips
           if (categories.isNotEmpty || suppliers.isNotEmpty) ...[
             const SizedBox(height: 12),
-            Row(
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
               children: [
+                // In-stock only filter
+                _buildInStockChip(),
                 // Category filter
-                if (categories.isNotEmpty) ...[
+                if (categories.isNotEmpty)
                   _buildFilterChip(
-                    icon: Icons.category,
+                    context: context,
                     label: selectedCategoryId == null
                         ? 'Semua Kategori'
                         : categories.firstWhere(
@@ -97,13 +122,10 @@ class InventorySearchBar extends StatelessWidget {
                     isSelected: selectedCategoryId != null,
                     onTap: () => _showCategoryFilter(context),
                   ),
-                  const SizedBox(width: 8),
-                ],
-
                 // Supplier filter
-                if (suppliers.isNotEmpty) ...[
+                if (suppliers.isNotEmpty)
                   _buildFilterChip(
-                    icon: Icons.local_shipping,
+                    context: context,
                     label: selectedSupplierId == null
                         ? 'Semua Pemasok'
                         : suppliers.firstWhere(
@@ -113,9 +135,6 @@ class InventorySearchBar extends StatelessWidget {
                     isSelected: selectedSupplierId != null,
                     onTap: () => _showSupplierFilter(context),
                   ),
-                  const SizedBox(width: 8),
-                ],
-
                 // Clear filters button
                 if (hasFilters)
                   _buildClearFiltersChip(),
@@ -128,11 +147,16 @@ class InventorySearchBar extends StatelessWidget {
   }
 
   Widget _buildFilterChip({
-    required IconData icon,
+    required BuildContext context,
     required String label,
     required bool isSelected,
     required VoidCallback onTap,
+    IconData? icon,
   }) {
+    final chipColor = icon != null
+        ? AppTheme.primaryColor
+        : (isSelected ? AppTheme.primaryColor : AppTheme.textSecondary);
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -140,7 +164,7 @@ class InventorySearchBar extends StatelessWidget {
         decoration: BoxDecoration(
           color: isSelected
               ? AppTheme.primaryColor.withValues(alpha: 0.1)
-              : AppTheme.backgroundColor,
+              : AppTheme.getCardColor(context),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isSelected
@@ -152,14 +176,14 @@ class InventorySearchBar extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              icon,
-              size: 16,
-              color: isSelected
-                  ? AppTheme.primaryColor
-                  : AppTheme.textSecondary,
-            ),
-            const SizedBox(width: 6),
+            if (icon != null) ...[
+              Icon(
+                icon,
+                size: 16,
+                color: chipColor,
+              ),
+              const SizedBox(width: 6),
+            ],
             Text(
               label,
               style: TextStyle(
@@ -173,6 +197,165 @@ class InventorySearchBar extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildInStockChip() {
+    return GestureDetector(
+      onTap: onToggleInStockOnly,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: inStockOnly
+              ? AppTheme.successColor.withValues(alpha: 0.1)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: inStockOnly
+                ? AppTheme.successColor
+                : AppTheme.borderColor,
+            width: 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              inStockOnly ? Icons.check_circle : Icons.circle_outlined,
+              size: 16,
+              color: inStockOnly
+                  ? AppTheme.successColor
+                  : AppTheme.textSecondary,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              'Ada Stok',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: inStockOnly ? FontWeight.w600 : FontWeight.normal,
+                color: inStockOnly
+                    ? AppTheme.successColor
+                    : AppTheme.textSecondary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSortDropdown(BuildContext context) {
+    IconData sortIcon;
+
+    switch (sortOption) {
+      case ProductSortOption.nameAsc:
+        sortIcon = Icons.sort_by_alpha;
+        break;
+      case ProductSortOption.nameDesc:
+        sortIcon = Icons.sort_by_alpha;
+        break;
+      case ProductSortOption.priceAsc:
+        sortIcon = Icons.arrow_upward;
+        break;
+      case ProductSortOption.priceDesc:
+        sortIcon = Icons.arrow_downward;
+        break;
+      case ProductSortOption.stockLevel:
+        sortIcon = Icons.inventory_2_outlined;
+        break;
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFF1F5F9),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppTheme.getBorderColor(context),
+          width: 0.5,
+        ),
+      ),
+      child: PopupMenuButton<ProductSortOption>(
+        icon: Icon(sortIcon, color: AppTheme.textSecondary, size: 20),
+        tooltip: 'Urutkan',
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        color: AppTheme.getCardColor(context),
+        onSelected: onSortChanged,
+        itemBuilder: (context) => [
+          PopupMenuItem(
+            value: ProductSortOption.nameAsc,
+            child: _buildSortMenuItem(
+              label: 'Nama (A-Z)',
+              icon: Icons.sort_by_alpha,
+              isSelected: sortOption == ProductSortOption.nameAsc,
+            ),
+          ),
+          PopupMenuItem(
+            value: ProductSortOption.nameDesc,
+            child: _buildSortMenuItem(
+              label: 'Nama (Z-A)',
+              icon: Icons.sort_by_alpha,
+              isSelected: sortOption == ProductSortOption.nameDesc,
+            ),
+          ),
+          PopupMenuItem(
+            value: ProductSortOption.priceAsc,
+            child: _buildSortMenuItem(
+              label: 'Harga (Rendah-Tinggi)',
+              icon: Icons.arrow_upward,
+              isSelected: sortOption == ProductSortOption.priceAsc,
+            ),
+          ),
+          PopupMenuItem(
+            value: ProductSortOption.priceDesc,
+            child: _buildSortMenuItem(
+              label: 'Harga (Tinggi-Rendah)',
+              icon: Icons.arrow_downward,
+              isSelected: sortOption == ProductSortOption.priceDesc,
+            ),
+          ),
+          PopupMenuItem(
+            value: ProductSortOption.stockLevel,
+            child: _buildSortMenuItem(
+              label: 'Tingkat Stok',
+              icon: Icons.inventory_2_outlined,
+              isSelected: sortOption == ProductSortOption.stockLevel,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSortMenuItem({
+    required String label,
+    required IconData icon,
+    required bool isSelected,
+  }) {
+    return Row(
+      children: [
+        Icon(
+          icon,
+          size: 18,
+          color: isSelected ? AppTheme.primaryColor : AppTheme.textSecondary,
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+              color: isSelected ? AppTheme.primaryColor : AppTheme.textPrimary,
+            ),
+          ),
+        ),
+        if (isSelected)
+          Icon(
+            Icons.check,
+            size: 18,
+            color: AppTheme.primaryColor,
+          ),
+      ],
     );
   }
 
@@ -218,7 +401,7 @@ class InventorySearchBar extends StatelessWidget {
       backgroundColor: Colors.transparent,
       builder: (sheetContext) => Container(
         decoration: BoxDecoration(
-          color: AppTheme.cardColor,
+          color: AppTheme.getCardColor(context),
           borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: Column(
@@ -287,11 +470,26 @@ class InventorySearchBar extends StatelessWidget {
 
             ...categories.map((category) {
               final isSelected = category.id == selectedCategoryId;
+              final categoryIcon = CategoryIcons.getIcon(category.name);
+              final categoryColor = CategoryColors.getColor(category.name);
               return Column(
                 children: [
                   const Divider(height: 1),
                   ListTile(
-                    leading: Icon(
+                    leading: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: categoryColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        categoryIcon,
+                        color: categoryColor,
+                        size: 20,
+                      ),
+                    ),
+                    trailing: Icon(
                       isSelected
                           ? Icons.check_circle
                           : Icons.circle_outlined,
@@ -322,7 +520,7 @@ class InventorySearchBar extends StatelessWidget {
       backgroundColor: Colors.transparent,
       builder: (sheetContext) => Container(
         decoration: BoxDecoration(
-          color: AppTheme.cardColor,
+          color: AppTheme.getCardColor(context),
           borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: Column(

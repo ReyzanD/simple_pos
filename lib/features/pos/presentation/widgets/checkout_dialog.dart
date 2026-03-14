@@ -8,6 +8,7 @@ import '../../domain/entities/cart_item.dart';
 import '../../../sales/presentation/controllers/discount_controller.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/constants/ui_constants.dart';
+import '../../../settings/presentation/controllers/settings_controller.dart';
 
 /// Dialog for checkout with payment processing
 class CheckoutDialog extends StatefulWidget {
@@ -98,7 +99,15 @@ class _CheckoutDialogState extends State<CheckoutDialog> {
     });
   }
 
-  double get _totalAmount => _subtotal;
+  // Tax calculation (11% tax, only if enabled)
+  double get _tax {
+    final settingsController = context.read<SettingsController>();
+    if (!settingsController.taxEnabled) return 0;
+    return _subtotal * 0.11;
+  }
+
+  // Total amount including tax (only if enabled)
+  double get _totalAmount => _subtotal + _tax;
 
   @override
   Widget build(BuildContext context) {
@@ -106,10 +115,11 @@ class _CheckoutDialogState extends State<CheckoutDialog> {
       title: const Text('Konfirmasi Checkout'),
       content: SizedBox(
         width: 500,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
             // Order Summary
             _buildOrderSummary(),
             const Divider(height: UIConstants.spacingLarge),
@@ -125,6 +135,12 @@ class _CheckoutDialogState extends State<CheckoutDialog> {
                   _cashReceived = cashReceived;
                   _cardLast4Digits = cardLast4Digits;
                   _errorMessage = null;
+                });
+              },
+              // Pass a callback to sync values when confirming
+              onValueChange: (cashReceived) {
+                setState(() {
+                  _cashReceived = cashReceived;
                 });
               },
             ),
@@ -154,6 +170,7 @@ class _CheckoutDialogState extends State<CheckoutDialog> {
               ),
             ],
           ],
+        ),
         ),
       ),
       actions: [
@@ -340,6 +357,8 @@ class _CheckoutDialogState extends State<CheckoutDialog> {
             color: Colors.green,
           ),
         ],
+        const SizedBox(height: UIConstants.spacingSmall),
+        if (_tax > 0) _buildTotalRow('Pajak (11%)', _tax),
         const SizedBox(height: UIConstants.spacingSmall),
         _buildTotalRow(
           'Total',

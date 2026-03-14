@@ -4,8 +4,10 @@ import 'dart:io';
 import '../../../inventory/domain/entities/product.dart';
 import '../../../inventory/domain/entities/category.dart' as entities;
 import '../../../inventory/domain/entities/supplier.dart';
-import '../../../../core/theme.dart';
+
+import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/currency_formatter.dart';
+import '../../../../core/widgets/category_icons.dart';
 
 /// Modern horizontal list item widget for displaying a product in inventory
 ///
@@ -17,6 +19,7 @@ import '../../../../core/utils/currency_formatter.dart';
 /// - Cost price badge
 /// - Barcode display
 /// - Category and supplier tags
+/// - Staggered entrance animation
 class ProductListItem extends StatelessWidget {
   final Product product;
   final VoidCallback onEdit;
@@ -24,6 +27,7 @@ class ProductListItem extends StatelessWidget {
   final VoidCallback? onAddStock;
   final List<entities.Category> categories;
   final List<Supplier> suppliers;
+  final int? index;
 
   const ProductListItem({
     super.key,
@@ -33,6 +37,7 @@ class ProductListItem extends StatelessWidget {
     this.onAddStock,
     this.categories = const [],
     this.suppliers = const [],
+    this.index,
   });
 
   @override
@@ -81,12 +86,12 @@ class ProductListItem extends StatelessWidget {
         decoration: BoxDecoration(
           color: isOutOfStock
               ? Colors.grey.shade100
-              : AppTheme.cardColor,
+              : AppTheme.getCardColor(context),
           borderRadius: BorderRadius.circular(24), // Material 3: 24px radius
           border: Border.all(
             color: isOutOfStock
                 ? Colors.grey.shade300
-                : AppTheme.cardBorder,
+                : AppTheme.getBorderColor(context),
             width: 0.5, // Subtle 0.5px border
           ),
           boxShadow: const [], // No shadow - Material 3 border-focused
@@ -337,11 +342,7 @@ class ProductListItem extends StatelessWidget {
             spacing: 8,
             children: [
               if (_category != null)
-                _buildInfoChip(
-                  icon: Icons.category,
-                  label: _category!.name,
-                  color: AppTheme.primaryColor,
-                ),
+                _buildCategoryChip(_category!.name),
               if (_supplier != null)
                 _buildInfoChip(
                   icon: Icons.local_shipping,
@@ -437,6 +438,44 @@ class ProductListItem extends StatelessWidget {
           const SizedBox(width: 4),
           Text(
             label,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+              color: color,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCategoryChip(String categoryName) {
+    final icon = CategoryIcons.getIcon(categoryName);
+    final color = CategoryColors.getColor(categoryName);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(
+          color: color.withValues(alpha: 0.3),
+          width: 0.5,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            size: 11,
+            color: color,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            categoryName,
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w500,

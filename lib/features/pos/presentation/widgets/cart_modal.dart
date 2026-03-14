@@ -4,8 +4,11 @@ import 'package:provider/provider.dart';
 import '../../../inventory/domain/entities/product.dart';
 import '../../../inventory/presentation/controllers/category_controller.dart';
 import '../../domain/entities/cart_item.dart' as domain;
+import '../controllers/pos_controller.dart';
 import '../../../sales/presentation/controllers/discount_controller.dart';
-import '../../../../core/theme.dart';
+import '../../../settings/presentation/controllers/settings_controller.dart';
+
+import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/utils/discount_calculator.dart';
 
@@ -17,7 +20,6 @@ import '../../../../core/utils/discount_calculator.dart';
 /// - Footer with subtotal, tax, total, hold button, and checkout button
 /// - Animations for modal entry and item removal
 class CartModal extends StatefulWidget {
-  final List<domain.CartItem> cartItems;
   final Function(Product product, int quantity) onUpdateQuantity;
   final Function(Product product) onRemove;
   final VoidCallback onCheckout;
@@ -26,7 +28,6 @@ class CartModal extends StatefulWidget {
 
   const CartModal({
     super.key,
-    required this.cartItems,
     required this.onUpdateQuantity,
     required this.onRemove,
     required this.onCheckout,
@@ -39,37 +40,22 @@ class CartModal extends StatefulWidget {
 }
 
 class CartModalState extends State<CartModal> {
-  final List<GlobalKey<_CartModalItemState>> _itemKeys = [];
-
   @override
   void initState() {
     super.initState();
-    // Initialize keys for all items
-    _itemKeys.addAll(List.generate(
-      widget.cartItems.length,
-      (_) => GlobalKey<_CartModalItemState>(),
-    ));
   }
 
   @override
   void didUpdateWidget(CartModal oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Update keys if cart length changes
-    if (widget.cartItems.length != oldWidget.cartItems.length) {
-      _itemKeys.clear();
-      _itemKeys.addAll(List.generate(
-        widget.cartItems.length,
-        (_) => GlobalKey<_CartModalItemState>(),
-      ));
-    }
   }
 
-  double get _subtotal {
+  double _subtotal(List<domain.CartItem> cartItems) {
     // Calculate subtotal with compound discounts
     final categoryController = context.read<CategoryController>();
     final discountController = context.read<DiscountController>();
 
-    return widget.cartItems.fold(0, (sum, item) {
+    return cartItems.fold(0, (sum, item) {
       // Get category discount
       double? categoryDiscount;
       if (item.product.categoryId != null) {
@@ -94,12 +80,12 @@ class CartModalState extends State<CartModal> {
     });
   }
 
-  double get _totalDiscount {
+  double _totalDiscount(List<domain.CartItem> cartItems) {
     // Calculate total discount with compound discounts
     final categoryController = context.read<CategoryController>();
     final discountController = context.read<DiscountController>();
 
-    return widget.cartItems.fold(0, (sum, item) {
+    return cartItems.fold(0, (sum, item) {
       // Get category discount
       double? categoryDiscount;
       if (item.product.categoryId != null) {
@@ -126,42 +112,53 @@ class CartModalState extends State<CartModal> {
     });
   }
 
-  double get _tax => _subtotal * 0.11; // 11% tax on discounted subtotal
-  double get _total => _subtotal + _tax;
+  double _tax(double subtotal) {
+    final settingsController = context.read<SettingsController>();
+    if (!settingsController.taxEnabled) return 0;
+    return subtotal * 0.11; // 11% tax on discounted subtotal
+  }
+
+  double _total(double subtotal) => subtotal + _tax(subtotal);
 
   @override
   Widget build(BuildContext context) {
     final height = MediaQuery.of(context).size.height * 0.75;
 
-    return Container(
-      height: height,
-      decoration: const BoxDecoration(
-        color: AppTheme.cardColor,
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(24),
-          topRight: Radius.circular(24),
-        ),
-      ),
-      child: Column(
-        children: [
-          // Header
-          _buildHeader(),
+    return Consumer<POSController>(
+      builder: (context, controller, _) {
+        final cartItems = controller.cart;
 
-          // Cart items list
-          Expanded(
-            child: widget.cartItems.isEmpty
-                ? _buildEmptyState()
-                : _buildCartItems(),
+        return Container(
+          height: height,
+          decoration: BoxDecoration(
+            color: AppTheme.getCardColor(context),
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(24),
+              topRight: Radius.circular(24),
+            ),
           ),
+          child: Column(
+            children: [
+              // Header
+              _buildHeader(cartItems),
 
-          // Footer with totals and checkout
-          _buildFooter(),
-        ],
-      ),
-    ).animate().slideY(begin: 1, end: 0, duration: 300.ms, curve: Curves.easeOutCubic);
+              // Cart items list
+              Expanded(
+                child: cartItems.isEmpty
+                    ? _buildEmptyState()
+                    : _buildCartItems(cartItems, controller),
+              ),
+
+              // Footer with totals and checkout
+              _buildFooter(cartItems),
+            ],
+          ),
+        ).animate().slideY(begin: 1, end: 0, duration: 300.ms, curve: Curves.easeOutCubic);
+      },
+    );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(List<domain.CartItem> cartItems) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: const BoxDecoration(
@@ -181,7 +178,7 @@ class CartModalState extends State<CartModal> {
           ),
           const Spacer(),
           // Item count badge
-          if (widget.cartItems.isNotEmpty)
+          if (cartItems.isNotEmpty)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
               decoration: BoxDecoration(
@@ -189,7 +186,7 @@ class CartModalState extends State<CartModal> {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
-                '${widget.cartItems.length} item${widget.cartItems.length > 1 ? 's' : ''}',
+                '${cartItems.length} item${cartItems.length > 1 ? 's' : ''}',
                 style: const TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
@@ -232,30 +229,34 @@ class CartModalState extends State<CartModal> {
     );
   }
 
-  Widget _buildCartItems() {
+  Widget _buildCartItems(List<domain.CartItem> cartItems, POSController controller) {
     return ListView.separated(
       padding: const EdgeInsets.all(16),
-      itemCount: widget.cartItems.length,
+      itemCount: cartItems.length,
       separatorBuilder: (context, index) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
-        final item = widget.cartItems[index];
-        final key = index < _itemKeys.length ? _itemKeys[index] : null;
+        final item = cartItems[index];
         return CartModalItem(
-          key: key,
+          key: ValueKey(item.product.id),
           item: item,
+          controller: controller,
           onUpdateQuantity: (quantity) => widget.onUpdateQuantity(item.product, quantity),
           onRemove: () => widget.onRemove(item.product),
-          index: index,
         );
       },
     );
   }
 
-  Widget _buildFooter() {
+  Widget _buildFooter(List<domain.CartItem> cartItems) {
+    final subtotal = _subtotal(cartItems);
+    final totalDiscount = _totalDiscount(cartItems);
+    final tax = _tax(subtotal);
+    final total = _total(subtotal);
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppTheme.cardColor,
+        color: AppTheme.getCardColor(context),
         border: const Border(
           top: BorderSide(color: AppTheme.borderColor, width: 0.5),
         ),
@@ -272,22 +273,22 @@ class CartModalState extends State<CartModal> {
           mainAxisSize: MainAxisSize.min,
           children: [
             // Totals
-            _buildTotalRow('Subtotal', _subtotal),
+            _buildTotalRow('Subtotal', subtotal),
             const SizedBox(height: 8),
             // Discount row (only if there's a discount)
-            if (_totalDiscount > 0) ...[
+            if (totalDiscount > 0) ...[
               _buildTotalRow(
                 'Diskon Item',
-                -_totalDiscount,
+                -totalDiscount,
                 color: AppTheme.successColor,
               ),
               const SizedBox(height: 8),
             ],
-            _buildTotalRow('Pajak (11%)', _tax),
+            if (tax > 0) _buildTotalRow('Pajak (11%)', tax),
             const SizedBox(height: 12),
             _buildTotalRow(
               'Total',
-              _total,
+              total,
               isBold: true,
               fontSize: 20,
               color: AppTheme.primaryColor,
@@ -300,11 +301,11 @@ class CartModalState extends State<CartModal> {
                 // Hold Order button
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: widget.cartItems.isEmpty || widget.isProcessing
+                    onPressed: cartItems.isEmpty || widget.isProcessing
                         ? null
                         : widget.onHoldOrder,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: widget.cartItems.isEmpty
+                      backgroundColor: cartItems.isEmpty
                           ? Colors.grey.shade300
                           : AppTheme.infoColor,
                       foregroundColor: Colors.white,
@@ -335,11 +336,11 @@ class CartModalState extends State<CartModal> {
                 // Checkout button
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: widget.cartItems.isEmpty || widget.isProcessing
+                    onPressed: cartItems.isEmpty || widget.isProcessing
                         ? null
                         : widget.onCheckout,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: widget.cartItems.isEmpty
+                      backgroundColor: cartItems.isEmpty
                           ? Colors.grey.shade300
                           : AppTheme.primaryColor,
                       foregroundColor: Colors.white,
@@ -366,7 +367,7 @@ class CartModalState extends State<CartModal> {
                               const SizedBox(width: 8),
                               Flexible(
                                 child: Text(
-                                  'Bayar ${CurrencyFormatter.format(_total)}',
+                                  'Bayar ${CurrencyFormatter.format(total)}',
                                   style: const TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
@@ -420,16 +421,16 @@ class CartModalState extends State<CartModal> {
 /// Individual cart item widget with quantity controls
 class CartModalItem extends StatefulWidget {
   final domain.CartItem item;
+  final POSController controller;
   final Function(int quantity) onUpdateQuantity;
   final VoidCallback onRemove;
-  final int index;
 
   const CartModalItem({
     super.key,
     required this.item,
+    required this.controller,
     required this.onUpdateQuantity,
     required this.onRemove,
-    required this.index,
   });
 
   @override
@@ -460,8 +461,13 @@ class _CartModalItemState extends State<CartModalItem> {
           .slideX(begin: 0, end: 1, duration: 200.ms);
     }
 
+    // Get the current cart item from controller (not the initial widget.item)
+    final currentItem = widget.controller.getCartItem(widget.item.product);
+    final currentQuantity = currentItem?.quantity ?? widget.item.quantity;
+
     final product = widget.item.product;
-    final canAddMore = widget.item.canAddMore;
+    // Use currentQuantity for stock validation
+    final canAddMore = currentItem?.canAddMore ?? widget.item.canAddMore;
     final isLowStock = product.isLowStock && !canAddMore;
     final isOutOfStock = product.isOutOfStock;
 
@@ -517,12 +523,12 @@ class _CartModalItemState extends State<CartModalItem> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.cardColor,
+        color: AppTheme.getCardColor(context),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isOutOfStock
               ? AppTheme.errorColor.withValues(alpha: 0.3)
-              : AppTheme.cardBorder,
+              : AppTheme.getBorderColor(context),
           width: 0.5,
         ),
         boxShadow: [
@@ -685,10 +691,10 @@ class _CartModalItemState extends State<CartModalItem> {
               // Quantity controls
               Container(
                 decoration: BoxDecoration(
-                  color: AppTheme.backgroundColor,
+                  color: AppTheme.getCardColor(context),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: AppTheme.cardBorder,
+                    color: AppTheme.getBorderColor(context),
                     width: 0.5,
                   ),
                 ),
@@ -696,7 +702,7 @@ class _CartModalItemState extends State<CartModalItem> {
                   children: [
                     // Minus button
                     InkWell(
-                      onTap: () => widget.onUpdateQuantity(widget.item.quantity - 1),
+                      onTap: () => widget.onUpdateQuantity(currentQuantity - 1),
                       borderRadius: const BorderRadius.only(
                         topLeft: Radius.circular(12),
                         bottomLeft: Radius.circular(12),
@@ -718,7 +724,7 @@ class _CartModalItemState extends State<CartModalItem> {
                       width: 40,
                       alignment: Alignment.center,
                       child: Text(
-                        '${widget.item.quantity}',
+                        '$currentQuantity',
                         style: const TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
@@ -730,7 +736,7 @@ class _CartModalItemState extends State<CartModalItem> {
                     // Plus button
                     InkWell(
                       onTap: canAddMore
-                          ? () => widget.onUpdateQuantity(widget.item.quantity + 1)
+                          ? () => widget.onUpdateQuantity(currentQuantity + 1)
                           : null,
                       borderRadius: const BorderRadius.only(
                         topRight: Radius.circular(12),

@@ -6,7 +6,8 @@ import 'dart:io';
 import '../../../inventory/domain/entities/product.dart';
 import '../../../inventory/presentation/controllers/category_controller.dart';
 import '../../../sales/presentation/controllers/discount_controller.dart';
-import '../../../../core/theme.dart';
+
+import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/utils/discount_calculator.dart';
 
@@ -18,11 +19,13 @@ import '../../../../core/utils/discount_calculator.dart';
 /// - Reduced padding for better information density
 /// - Larger, semi-bold product name
 /// - Ghosted button when out of stock
+/// - Staggered entrance animation
 class ProductGridItem extends StatefulWidget {
   final Product product;
   final int quantity;
   final VoidCallback onTap;
   final Function(Offset position)? onAddAnimation;
+  final int? index;
 
   const ProductGridItem({
     super.key,
@@ -30,6 +33,7 @@ class ProductGridItem extends StatefulWidget {
     required this.quantity,
     required this.onTap,
     this.onAddAnimation,
+    this.index,
   });
 
   @override
@@ -103,8 +107,14 @@ class _ProductGridItemState extends State<ProductGridItem> {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               final RenderBox? renderBox = _widgetKey.currentContext?.findRenderObject() as RenderBox?;
               if (renderBox != null) {
-              final position = renderBox.localToGlobal(Offset.zero);
-                widget.onAddAnimation!(position);
+                final position = renderBox.localToGlobal(Offset.zero);
+                final size = renderBox.size;
+                // Calculate center position, accounting for the 40px animation container
+                final centerPosition = Offset(
+                  position.dx + size.width / 2 - 20, // 20 = half of container width (40px)
+                  position.dy + size.height / 2 - 20, // 20 = half of container height (40px)
+                );
+                widget.onAddAnimation!(centerPosition);
               }
             });
           }
@@ -119,13 +129,22 @@ class _ProductGridItemState extends State<ProductGridItem> {
           categoryDiscount,
           promotionDiscount,
           compoundPrice,
-        ).animate()
-            .scale(
-              begin: const Offset(1.0, 1.0),
-              end: _isPressed ? const Offset(0.95, 0.95) : const Offset(1.0, 1.0),
-              duration: 100.ms,
-              curve: Curves.easeInOut,
-            ),
+        ).animate(
+          delay: (widget.index != null ? Duration(milliseconds: widget.index! * 50) : Duration.zero),
+        ).fadeIn(
+          duration: 300.ms,
+          curve: Curves.easeOut,
+        ).slideY(
+          begin: 0.1,
+          end: 0,
+          duration: 300.ms,
+          curve: Curves.easeOut,
+        ).then().scale(
+          begin: const Offset(1.0, 1.0),
+          end: _isPressed ? const Offset(0.95, 0.95) : const Offset(1.0, 1.0),
+          duration: 100.ms,
+          curve: Curves.easeInOut,
+        ),
       ),
     );
   }
@@ -143,12 +162,12 @@ class _ProductGridItemState extends State<ProductGridItem> {
     return Container(
       decoration: BoxDecoration(
         // Light grey background when out of stock
-        color: isOutOfStock ? const Color(0xFFF3F4F6) : AppTheme.cardColor,
+        color: isOutOfStock ? const Color(0xFFF3F4F6) : AppTheme.getCardColor(context),
         // Modern Material 3: 24px border radius
         borderRadius: BorderRadius.circular(24),
         // Subtle 0.5px border (Material 3 style)
         border: Border.all(
-          color: hasQuantity ? AppTheme.primaryColor : AppTheme.cardBorder,
+          color: hasQuantity ? AppTheme.primaryColor : AppTheme.getBorderColor(context),
           width: hasQuantity ? 2 : 0.5,
         ),
         // No shadow - Material 3 emphasizes borders
@@ -414,7 +433,7 @@ class _ProductGridItemState extends State<ProductGridItem> {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
       decoration: BoxDecoration(
-        color: AppTheme.errorContainer, // Soft Red background
+        color: AppTheme.getErrorContainer(context), // Soft Red background
         borderRadius: BorderRadius.circular(8), // Modern Material 3
       ),
       child: Row(
@@ -423,7 +442,7 @@ class _ProductGridItemState extends State<ProductGridItem> {
           Icon(
             Icons.block,
             size: 13,
-            color: AppTheme.errorOnContainer, // Dark Red
+            color: AppTheme.getErrorOnContainer(context), // Dark Red
           ),
           const SizedBox(width: 4),
           Text(
@@ -431,7 +450,7 @@ class _ProductGridItemState extends State<ProductGridItem> {
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: AppTheme.errorOnContainer, // Dark Red
+              color: AppTheme.getErrorOnContainer(context), // Dark Red
               letterSpacing: 0.3,
             ),
           ),

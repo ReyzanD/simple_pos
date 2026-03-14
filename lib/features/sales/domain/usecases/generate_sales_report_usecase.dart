@@ -40,6 +40,9 @@ class GenerateSalesReportUseCase {
       // Get payment method breakdown
       final paymentBreakdown = _calculatePaymentBreakdown(transactions, totalRevenue);
 
+      // Calculate total items sold
+      final totalItemsSold = transactions.fold<int>(0, (sum, t) => sum + t.items.fold(0, (itemSum, item) => itemSum + item.quantity));
+
       final report = SalesReport(
         startDate: startDate,
         endDate: endDate,
@@ -47,6 +50,7 @@ class GenerateSalesReportUseCase {
         totalRevenue: totalRevenue,
         totalProfit: totalProfit,
         averageTransactionValue: averageTransactionValue,
+        totalItemsSold: totalItemsSold,
         dailyBreakdown: dailyBreakdown,
         topProducts: topProducts,
         paymentBreakdown: paymentBreakdown,

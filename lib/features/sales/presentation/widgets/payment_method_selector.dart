@@ -10,12 +10,14 @@ class PaymentMethodSelector extends StatefulWidget {
   final double totalAmount;
   final Function(PaymentMethod, {double? cashReceived, String? cardLast4Digits})
   onPaymentSelected;
+  final Function(double? cashReceived)? onValueChange;
 
   const PaymentMethodSelector({
     super.key,
     required this.initialMethod,
     required this.totalAmount,
     required this.onPaymentSelected,
+    this.onValueChange,
   });
 
   @override
@@ -32,8 +34,23 @@ class _PaymentMethodSelectorState extends State<PaymentMethodSelector> {
   void initState() {
     super.initState();
     _selectedMethod = widget.initialMethod;
-    _cashReceivedController.text = widget.totalAmount.toStringAsFixed(0);
+    // Initialize with total amount (show decimals if amount has cents)
+    final initialValue = widget.totalAmount == widget.totalAmount.truncateToDouble()
+        ? widget.totalAmount.toStringAsFixed(0)
+        : widget.totalAmount.toStringAsFixed(2);
+    _cashReceivedController.text = initialValue;
+    // Initialize the cash received state immediately (not async)
+    _cashReceived = widget.totalAmount;
+    // Also notify parent after first frame AND calculate change for UI
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Calculate change after first build so setState works properly
+      _calculateChange(initialValue);
+      widget.onPaymentSelected(_selectedMethod, cashReceived: _cashReceived);
+      widget.onValueChange?.call(_cashReceived);
+    });
   }
+
+  double? _cashReceived;
 
   @override
   void dispose() {
@@ -54,12 +71,15 @@ class _PaymentMethodSelectorState extends State<PaymentMethodSelector> {
           _changeAmount = null;
         });
       }
+      // Always notify parent of value changes (for sync before confirm)
+      widget.onValueChange?.call(cashReceived);
     }
   }
 
   void _notifyPaymentChanged() {
     if (_selectedMethod == PaymentMethod.cash) {
-      final cashReceived = double.tryParse(_cashReceivedController.text);
+      // Use the local state if available, otherwise parse from controller
+      final cashReceived = _cashReceived ?? double.tryParse(_cashReceivedController.text);
       widget.onPaymentSelected(_selectedMethod, cashReceived: cashReceived);
     } else if (_selectedMethod == PaymentMethod.card) {
       widget.onPaymentSelected(

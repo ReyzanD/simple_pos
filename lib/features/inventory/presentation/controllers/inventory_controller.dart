@@ -8,6 +8,21 @@ import '../../domain/usecases/update_product_usecase.dart';
 import '../../../../core/exceptions/app_exceptions.dart';
 import '../../../../core/utils/logger.dart';
 
+/// Sort options for product listing
+enum ProductSortOption {
+  nameAsc,
+  nameDesc,
+  priceAsc,
+  priceDesc,
+  stockLevel,
+}
+
+/// View mode for product listing
+enum ProductViewMode {
+  list,
+  grid,
+}
+
 /// Controller for managing inventory state and operations
 class InventoryController extends ChangeNotifier {
   final GetProductsUseCase getProductsUseCase;
@@ -41,6 +56,9 @@ class InventoryController extends ChangeNotifier {
   int? _filterCategoryId;
   int? _filterSupplierId;
   Product? _lastDeletedProduct;
+  bool _inStockOnly = false;
+  ProductSortOption _sortOption = ProductSortOption.nameAsc;
+  ProductViewMode _viewMode = ProductViewMode.list;
 
   // Getters
   List<Product> get products => _filteredProducts;
@@ -54,6 +72,9 @@ class InventoryController extends ChangeNotifier {
   bool get isEmpty => _products.isEmpty;
   bool get hasNoResults => _products.isNotEmpty && _filteredProducts.isEmpty;
   Product? get lastDeletedProduct => _lastDeletedProduct;
+  bool get inStockOnly => _inStockOnly;
+  ProductSortOption get sortOption => _sortOption;
+  ProductViewMode get viewMode => _viewMode;
 
   /// Load all products
   Future<void> loadProducts() async {
@@ -413,16 +434,40 @@ class InventoryController extends ChangeNotifier {
     _applySearch();
   }
 
-  /// Clear all filters (search, category, supplier)
+  /// Toggle in-stock only filter
+  void toggleInStockOnly() {
+    AppLogger.ui('Toggling in-stock filter', details: 'InventoryController');
+    _inStockOnly = !_inStockOnly;
+    _applySearch();
+  }
+
+  /// Set sort option
+  void setSortOption(ProductSortOption option) {
+    AppLogger.ui('Setting sort option', details: 'InventoryController: $option');
+    _sortOption = option;
+    _applySearch();
+  }
+
+  /// Toggle view mode between list and grid
+  void toggleViewMode() {
+    AppLogger.ui('Toggling view mode', details: 'InventoryController');
+    _viewMode = _viewMode == ProductViewMode.list
+        ? ProductViewMode.grid
+        : ProductViewMode.list;
+    if (!_disposed) {
+      notifyListeners();
+    }
+  }
+
+  /// Clear all filters (search, category, supplier, in-stock-only, sort)
   void clearFilters() {
     AppLogger.ui('Clearing all filters', details: 'InventoryController');
     _searchQuery = '';
     _filterCategoryId = null;
     _filterSupplierId = null;
-    _filteredProducts = List.from(_products);
-    if (!_disposed) {
-      notifyListeners();
-    }
+    _inStockOnly = false;
+    _sortOption = ProductSortOption.nameAsc;
+    _applySearch();
   }
 
   /// Clear search only (keeps category/supplier filters)
@@ -474,8 +519,30 @@ class InventoryController extends ChangeNotifier {
       bool matchesSupplier = _filterSupplierId == null ||
           product.supplierId == _filterSupplierId;
 
-      return matchesSearch && matchesCategory && matchesSupplier;
+      // In-stock only filter
+      bool matchesStock = !_inStockOnly || product.stock > 0;
+
+      return matchesSearch && matchesCategory && matchesSupplier && matchesStock;
     }).toList();
+
+    // Apply sorting
+    switch (_sortOption) {
+      case ProductSortOption.nameAsc:
+        _filteredProducts.sort((a, b) => a.name.compareTo(b.name));
+        break;
+      case ProductSortOption.nameDesc:
+        _filteredProducts.sort((a, b) => b.name.compareTo(a.name));
+        break;
+      case ProductSortOption.priceAsc:
+        _filteredProducts.sort((a, b) => a.effectivePrice.compareTo(b.effectivePrice));
+        break;
+      case ProductSortOption.priceDesc:
+        _filteredProducts.sort((a, b) => b.effectivePrice.compareTo(a.effectivePrice));
+        break;
+      case ProductSortOption.stockLevel:
+        _filteredProducts.sort((a, b) => b.stock.compareTo(a.stock));
+        break;
+    }
 
     if (!_disposed) {
       notifyListeners();

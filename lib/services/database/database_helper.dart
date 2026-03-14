@@ -94,6 +94,7 @@ class DatabaseHelper {
           cost_price $realNullable DEFAULT 0,
           image_path $textNullable,
           discount_percentage $realNullable DEFAULT 0,
+          has_variants $intType DEFAULT 0,
           FOREIGN KEY (category_id) REFERENCES categories(id),
           FOREIGN KEY (supplier_id) REFERENCES suppliers(id)
         )
@@ -233,6 +234,21 @@ class DatabaseHelper {
       if (oldVersion < 7) {
         // Migration from version 6 to 7
         await _migrateToV7(db);
+      }
+
+      if (oldVersion < 8) {
+        // Migration from version 7 to 8
+        await _migrateToV8(db);
+      }
+
+      if (oldVersion < 9) {
+        // Migration from version 8 to 9 (ensures all tables exist)
+        await _migrateToV9(db);
+      }
+
+      if (oldVersion < 10) {
+        // Migration from version 9 to 10 (add cost_price to transaction_items)
+        await _migrateToV10(db);
       }
 
       AppLogger.database('Database upgrade completed successfully');
@@ -468,6 +484,166 @@ class DatabaseHelper {
     await db.execute('CREATE INDEX IF NOT EXISTS idx_variant_attributes_product_id ON variant_attributes(product_id)');
 
     AppLogger.database('Database migration to v7 completed');
+  }
+
+  /// Migration from version 7 to 8
+  /// Ensures has_variants column and held_carts table exist (catch-up migration)
+  Future _migrateToV8(Database db) async {
+    AppLogger.database('Migrating database to v8');
+
+    // Safely add has_variants column if it doesn't exist
+    try {
+      await db.execute('ALTER TABLE products ADD COLUMN has_variants INTEGER DEFAULT 0');
+      AppLogger.database('Added has_variants column to products table');
+    } catch (e) {
+      // Column might already exist, which is fine
+      AppLogger.database('has_variants column already exists or error: $e');
+    }
+
+    // Ensure held_carts table exists (from v6 migration)
+    try {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS held_carts (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          customer_name TEXT NOT NULL,
+          cart_data TEXT NOT NULL,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL
+        )
+      ''');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_held_carts_created ON held_carts(created_at DESC)');
+      AppLogger.database('Ensured held_carts table exists');
+    } catch (e) {
+      AppLogger.database('held_carts table error: $e');
+    }
+
+    // Ensure variant tables exist (from v7 migration)
+    try {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS variant_attributes (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          product_id INTEGER NOT NULL,
+          attribute_name TEXT NOT NULL,
+          attribute_values TEXT NOT NULL,
+          sort_order INTEGER DEFAULT 0,
+          FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+        )
+      ''');
+
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS product_variants (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          product_id INTEGER NOT NULL,
+          name TEXT NOT NULL,
+          sku TEXT,
+          barcode TEXT,
+          price REAL NOT NULL,
+          cost_price REAL DEFAULT 0,
+          stock INTEGER DEFAULT 0,
+          attributes TEXT,
+          is_active INTEGER DEFAULT 1,
+          created_at TEXT NOT NULL,
+          FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+        )
+      ''');
+
+      // Create indexes if they don't exist
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_product_variants_product_id ON product_variants(product_id)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_product_variants_sku ON product_variants(sku)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_product_variants_barcode ON product_variants(barcode)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_variant_attributes_product_id ON variant_attributes(product_id)');
+
+      AppLogger.database('Ensured variant tables exist');
+    } catch (e) {
+      AppLogger.database('Variant tables error: $e');
+    }
+
+    AppLogger.database('Database migration to v8 completed');
+  }
+
+  /// Migration from version 8 to 9
+  /// Catch-up migration ensuring all tables from v6 and v7 exist
+  Future _migrateToV9(Database db) async {
+    AppLogger.database('Migrating database to v9');
+
+    // Ensure held_carts table exists (from v6 migration)
+    try {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS held_carts (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          customer_name TEXT NOT NULL,
+          cart_data TEXT NOT NULL,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL
+        )
+      ''');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_held_carts_created ON held_carts(created_at DESC)');
+      AppLogger.database('Ensured held_carts table exists');
+    } catch (e) {
+      AppLogger.database('held_carts table error: $e');
+    }
+
+    // Ensure variant tables exist (from v7 migration)
+    try {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS variant_attributes (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          product_id INTEGER NOT NULL,
+          attribute_name TEXT NOT NULL,
+          attribute_values TEXT NOT NULL,
+          sort_order INTEGER DEFAULT 0,
+          FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+        )
+      ''');
+
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS product_variants (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          product_id INTEGER NOT NULL,
+          name TEXT NOT NULL,
+          sku TEXT,
+          barcode TEXT,
+          price REAL NOT NULL,
+          cost_price REAL DEFAULT 0,
+          stock INTEGER DEFAULT 0,
+          attributes TEXT,
+          is_active INTEGER DEFAULT 1,
+          created_at TEXT NOT NULL,
+          FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+        )
+      ''');
+
+      // Create indexes if they don't exist
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_product_variants_product_id ON product_variants(product_id)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_product_variants_sku ON product_variants(sku)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_product_variants_barcode ON product_variants(barcode)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_variant_attributes_product_id ON variant_attributes(product_id)');
+
+      AppLogger.database('Ensured variant tables exist');
+    } catch (e) {
+      AppLogger.database('Variant tables error: $e');
+    }
+
+    AppLogger.database('Database migration to v9 completed');
+  }
+
+  /// Migration from version 9 to 10
+  /// Add cost_price column to transaction_items table for profit calculation
+  Future _migrateToV10(Database db) async {
+    AppLogger.database('Migrating database to v10');
+
+    try {
+      // Add cost_price column to transaction_items table
+      await db.execute('''
+        ALTER TABLE transaction_items ADD COLUMN cost_price REAL DEFAULT 0
+      ''');
+      AppLogger.database('Added cost_price column to transaction_items table');
+    } catch (e) {
+      // Column might already exist, log but don't fail
+      AppLogger.database('cost_price column migration (may already exist): $e');
+    }
+
+    AppLogger.database('Database migration to v10 completed');
   }
 
   /// Inserts a product into the database

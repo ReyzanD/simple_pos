@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme.dart';
+import '../../../../core/theme/app_theme.dart';
 
 /// Summary stat card for displaying key metrics in Sales Reports
-///
 /// Features:
 /// - Matching colored icon and border
 /// - Title, value, and optional subtitle
@@ -29,7 +28,7 @@ class SummaryStatCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.cardColor,
+        color: AppTheme.getCardColor(context),
         borderRadius: BorderRadius.circular(16), // Design System standard
         border: Border.all(
           color: color.withValues(alpha: 0.3),

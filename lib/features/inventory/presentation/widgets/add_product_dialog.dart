@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
-import 'dart:io';
-import '../../../../core/theme.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../core/exceptions/app_exceptions.dart';
+import '../../../../core/widgets/product_image_picker.dart';
 import '../../../inventory/domain/entities/category.dart' as entities;
 import '../../../inventory/domain/entities/supplier.dart';
 import '../controllers/category_controller.dart';
@@ -47,13 +46,12 @@ class _AddProductDialogState extends State<AddProductDialog> {
   final _costPriceController = TextEditingController();
   final _stockController = TextEditingController();
   final _barcodeController = TextEditingController();
-  final ImagePicker _imagePicker = ImagePicker();
 
   bool _isSubmitting = false;
   String? _errorMessage;
   int? _selectedCategoryId;
   int? _selectedSupplierId;
-  File? _imageFile;
+  String? _imagePath;
   bool _hasVariants = false;
 
   // Local copy of categories that can be updated when a new category is added
@@ -81,27 +79,6 @@ class _AddProductDialogState extends State<AddProductDialog> {
     _stockController.dispose();
     _barcodeController.dispose();
     super.dispose();
-  }
-
-  Future<void> _pickImage() async {
-    try {
-      final XFile? image = await _imagePicker.pickImage(
-        source: ImageSource.gallery,
-        imageQuality: 80,
-      );
-
-      if (image != null && mounted) {
-        setState(() {
-          _imageFile = File(image.path);
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _errorMessage = 'Gagal memilih gambar: $e';
-        });
-      }
-    }
   }
 
   Future<void> _showAddCategoryDialog() async {
@@ -145,7 +122,7 @@ class _AddProductDialogState extends State<AddProductDialog> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   filled: true,
-                  fillColor: AppTheme.backgroundColor,
+                  fillColor: AppTheme.getCardColor(context),
                 ),
                 textCapitalization: TextCapitalization.words,
                 validator: (value) {
@@ -164,7 +141,7 @@ class _AddProductDialogState extends State<AddProductDialog> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   filled: true,
-                  fillColor: AppTheme.backgroundColor,
+                  fillColor: AppTheme.getCardColor(context),
                 ),
                 maxLines: 2,
                 textCapitalization: TextCapitalization.sentences,
@@ -269,7 +246,7 @@ class _AddProductDialogState extends State<AddProductDialog> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   filled: true,
-                  fillColor: AppTheme.backgroundColor,
+                  fillColor: AppTheme.getCardColor(context),
                 ),
                 textCapitalization: TextCapitalization.words,
                 validator: (value) {
@@ -291,7 +268,7 @@ class _AddProductDialogState extends State<AddProductDialog> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   filled: true,
-                  fillColor: AppTheme.backgroundColor,
+                  fillColor: AppTheme.getCardColor(context),
                 ),
                 textCapitalization: TextCapitalization.words,
               ),
@@ -304,7 +281,7 @@ class _AddProductDialogState extends State<AddProductDialog> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   filled: true,
-                  fillColor: AppTheme.backgroundColor,
+                  fillColor: AppTheme.getCardColor(context),
                 ),
                 keyboardType: TextInputType.phone,
               ),
@@ -389,7 +366,6 @@ class _AddProductDialogState extends State<AddProductDialog> {
       final barcode = _barcodeController.text.trim().isEmpty
           ? null
           : _barcodeController.text.trim();
-      final imagePath = _imageFile?.path;
 
       final success = await widget.onAdd(
         name: name,
@@ -399,7 +375,7 @@ class _AddProductDialogState extends State<AddProductDialog> {
         categoryId: _selectedCategoryId,
         supplierId: _selectedSupplierId,
         barcode: barcode,
-        imagePath: imagePath,
+        imagePath: _imagePath,
         hasVariants: _hasVariants,
       );
 
@@ -456,48 +432,12 @@ class _AddProductDialogState extends State<AddProductDialog> {
               ],
 
               // Image Picker
-              GestureDetector(
-                onTap: _pickImage,
-                child: Container(
-                  width: double.infinity,
-                  height: 150,
-                  decoration: BoxDecoration(
-                    color: AppTheme.backgroundColor,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: AppTheme.borderColor,
-                      width: 2,
-                    ),
-                  ),
-                  child: _imageFile != null
-                      ? ClipRRect(
-                          borderRadius: BorderRadius.circular(10),
-                          child: Image.file(
-                            _imageFile!,
-                            width: double.infinity,
-                            height: double.infinity,
-                            fit: BoxFit.cover,
-                          ),
-                        )
-                      : Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.add_photo_alternate_outlined,
-                              size: 48,
-                              color: AppTheme.textSecondary,
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Tap to add product image',
-                              style: TextStyle(
-                                color: AppTheme.textSecondary,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ],
-                        ),
-                ),
+              ProductImagePicker(
+                currentImagePath: _imagePath,
+                onImageChanged: (path) {
+                  setState(() => _imagePath = path);
+                },
+                size: 150, // Width for the widget (height will be similar)
               ),
               const SizedBox(height: 16),
 

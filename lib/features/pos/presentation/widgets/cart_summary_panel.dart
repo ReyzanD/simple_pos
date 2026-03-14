@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme.dart';
+
+import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/currency_formatter.dart';
 
 /// Elevated floating panel at bottom of POS screen showing cart summary
@@ -37,11 +38,11 @@ class CartSummaryPanelState extends State<CartSummaryPanel> {
       margin: const EdgeInsets.all(16), // 16px margin - makes it floating
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppTheme.cardColor,
+        color: AppTheme.getCardColor(context),
         borderRadius: BorderRadius.circular(20), // 20px border radius
         // Subtle 0.5px border instead of heavy shadow
         border: Border.all(
-          color: AppTheme.cardBorder,
+          color: AppTheme.getBorderColor(context),
           width: 0.5,
         ),
         // Minimal shadow for elevation

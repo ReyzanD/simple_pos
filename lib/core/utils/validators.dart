@@ -38,9 +38,16 @@ class Validators {
     } else if (value is int) {
       price = value.toDouble();
     } else if (value is String) {
-      price = double.tryParse(value) ?? 0.0;
+      if (value.trim().isEmpty) {
+        throw const ValidationException('Harga tidak boleh kosong', field: 'Harga');
+      }
+      final parsed = double.tryParse(value);
+      if (parsed == null) {
+        throw const ValidationException('Format harga tidak valid', field: 'Harga');
+      }
+      price = parsed;
     } else {
-      price = 0.0;
+      throw const ValidationException('Tipe harga tidak valid', field: 'Harga');
     }
 
     if (price < 0) {
@@ -57,17 +64,25 @@ class Validators {
   /// Validates stock quantity
   /// Throws [ValidationException] if validation fails
   /// Returns the stock if valid
+  /// Note: Stock can be 0 (out of stock), but not negative
   static int validateStock(dynamic value) {
     int stock;
 
     if (value is int) {
       stock = value;
     } else if (value is double) {
-      stock = value.toInt();
+      stock = value.truncate(); // Use truncate for explicit behavior
     } else if (value is String) {
-      stock = int.tryParse(value) ?? 0;
+      if (value.trim().isEmpty) {
+        throw const ValidationException('Stok tidak boleh kosong', field: 'Stok');
+      }
+      final parsed = int.tryParse(value);
+      if (parsed == null) {
+        throw const ValidationException('Format stok tidak valid', field: 'Stok');
+      }
+      stock = parsed;
     } else {
-      stock = 0;
+      throw const ValidationException('Tipe stok tidak valid', field: 'Stok');
     }
 
     if (stock < 0) {
@@ -90,9 +105,16 @@ class Validators {
     if (id is int) {
       productId = id;
     } else if (id is String) {
-      productId = int.tryParse(id) ?? 0;
+      if (id.trim().isEmpty) {
+        throw const ValidationException('ID produk tidak boleh kosong', field: 'ID');
+      }
+      final parsed = int.tryParse(id);
+      if (parsed == null) {
+        throw const ValidationException('Format ID produk tidak valid', field: 'ID');
+      }
+      productId = parsed;
     } else {
-      productId = 0;
+      throw const ValidationException('Tipe ID produk tidak valid', field: 'ID');
     }
 
     if (productId <= 0) {
@@ -116,11 +138,26 @@ class Validators {
   /// Checks if requested quantity is available in stock
   /// Throws [InsufficientStockException] if not enough stock
   static void validateStockAvailability(int requested, int available) {
-    if (requested > available) {
+    if (available <= 0) {
       throw InsufficientStockException(
-        'Stok tidak mencukupi',
+        'Produk sedang habis (stok: 0)',
         requested: requested,
         available: available,
+      );
+    }
+
+    if (requested > available) {
+      throw InsufficientStockException(
+        'Stok tidak mencukupi (tersedia: $available, diminta: $requested)',
+        requested: requested,
+        available: available,
+      );
+    }
+
+    if (requested <= 0) {
+      throw const ValidationException(
+        'Jumlah permintaan harus lebih dari 0',
+        field: 'Quantity',
       );
     }
   }

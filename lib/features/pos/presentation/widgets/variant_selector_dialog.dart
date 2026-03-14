@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/modern_button.dart';
 import '../../../inventory/domain/entities/product.dart';
@@ -42,9 +43,9 @@ class VariantSelectorDialog extends StatelessWidget {
     }
 
     return Container(
-      decoration: const BoxDecoration(
-        color: AppTheme.surfaceColor,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      decoration: BoxDecoration(
+        color: AppTheme.getSurfaceColor(context),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -77,7 +78,7 @@ class VariantSelectorDialog extends StatelessWidget {
                         return Container(
                           width: 60,
                           height: 60,
-                          color: AppTheme.backgroundColor,
+                          color: AppTheme.getCardColor(context),
                           child: const Icon(Icons.image_not_supported, size: 24),
                         );
                       },
@@ -149,9 +150,9 @@ class _EmptyVariantsSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(24),
-      decoration: const BoxDecoration(
-        color: AppTheme.surfaceColor,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      decoration: BoxDecoration(
+        color: AppTheme.getSurfaceColor(context),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -208,7 +209,7 @@ class _VariantTile extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: isOutOfStock
-              ? AppTheme.backgroundColor
+              ? AppTheme.getCardColor(context)
               : AppTheme.primaryColor.withValues(alpha: 0.05),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(

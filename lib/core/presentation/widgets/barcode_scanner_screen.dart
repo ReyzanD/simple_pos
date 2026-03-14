@@ -32,7 +32,7 @@ extension BarcodeFormatExtension on Barcode {
     if (fmt == BarcodeFormat.pdf417) return 'PDF417';
     if (fmt == BarcodeFormat.aztec) return 'Aztec';
     if (fmt == BarcodeFormat.codabar) return 'Codabar';
-    if (fmt == BarcodeFormat.itf) return 'ITF';
+    if (fmt == BarcodeFormat.itf14) return 'ITF-14';
     // For formats that might not exist in all versions, return the enum name
     return format.name.replaceAll('_', ' ');
   }

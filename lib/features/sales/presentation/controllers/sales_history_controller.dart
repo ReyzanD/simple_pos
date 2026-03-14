@@ -25,6 +25,9 @@ class SalesHistoryController extends ChangeNotifier {
   DateTime? _endDate;
   String _searchQuery = '';
 
+  // Cached KPI values
+  int _cachedTodayItemsSold = 0;
+
   // Getters
   List<Transaction> get transactions => _transactions;
   List<Transaction> get filteredTransactions => _filteredTransactions;
@@ -44,6 +47,42 @@ class SalesHistoryController extends ChangeNotifier {
       ? totalRevenue / transactionCount
       : 0.0;
 
+  /// Get total profit from filtered transactions (revenue - cost of goods sold)
+  double get totalProfit => _filteredTransactions.fold<double>(
+        0,
+        (sum, t) => sum + t.profit,
+      );
+
+  /// Get total items sold from filtered transactions
+  int get totalItemsSold => _filteredTransactions.fold<int>(
+        0,
+        (sum, t) => sum + t.totalItems,
+      );
+
+  /// Get today's transactions
+  List<Transaction> get todayTransactions {
+    final now = DateTime.now();
+    final startOfDay = DateTime(now.year, now.month, now.day);
+    final endOfDay = DateTime(now.year, now.month, now.day, 23, 59, 59, 999);
+
+    return _transactions.where((t) {
+      return !t.transactionDate.isBefore(startOfDay) &&
+             !t.transactionDate.isAfter(endOfDay);
+    }).toList();
+  }
+
+  /// Get today's revenue
+  double get todayRevenue => todayTransactions.fold<double>(
+        0,
+        (sum, t) => sum + t.totalAmount,
+      );
+
+  /// Get today's transaction count
+  int get todayTransactionCount => todayTransactions.length;
+
+  /// Get total items sold today (cached value)
+  int get todayItemsSold => _cachedTodayItemsSold;
+
   /// Load all transactions from repository
   Future<void> loadTransactions() async {
     _isLoading = true;
@@ -54,10 +93,22 @@ class SalesHistoryController extends ChangeNotifier {
       AppLogger.info('Loading transactions');
       final result = await _getTransactionsUseCase.execute();
       _transactions = result;
-      _applyFilters();
       _isLoading = false;
-      notifyListeners();
-      AppLogger.info('Loaded ${_transactions.length} transactions');
+
+      // Calculate and cache today's items sold
+      final now = DateTime.now();
+      final startOfDay = DateTime(now.year, now.month, now.day);
+      final todayTx = _transactions.where((t) =>
+        !t.transactionDate.isBefore(startOfDay)
+      ).toList();
+      _cachedTodayItemsSold = todayTx.fold<int>(0, (sum, t) => sum + t.totalItems);
+
+      _applyFilters();
+
+      // Calculate today's stats for debugging
+      AppLogger.info('Loaded ${_transactions.length} total transactions');
+      AppLogger.info('Today\'s transactions: ${todayTx.length}, revenue: $todayRevenue');
+      AppLogger.info('todayTransactionCount: $todayTransactionCount');
     } catch (e, stackTrace) {
       _isLoading = false;
       _errorMessage = e.toString();

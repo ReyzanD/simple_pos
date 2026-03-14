@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../controllers/settings_controller.dart';
-import '../../../../core/theme.dart';
+import '../../../../core/theme/app_theme.dart';
+import '../../../../core/controllers/theme_controller.dart';
 import '../../../shared/presentation/main_navigation.dart';
 
 /// Settings screen with 6 expandable sections using grouped card layout
@@ -10,6 +11,7 @@ class SettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Consumer<SettingsController>(
       builder: (context, controller, _) {
         return Scaffold(
@@ -29,12 +31,57 @@ class SettingsScreen extends StatelessWidget {
                 tooltip: 'Reset ke Default',
               ),
             ],
+            flexibleSpace: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: isDark
+                      ? [
+                          AppTheme.darkSurface,
+                          AppTheme.darkSurface.withValues(alpha: 0.95),
+                        ]
+                      : [
+                          AppTheme.primaryColor,
+                          AppTheme.primaryLight,
+                        ],
+                ),
+              ),
+            ),
           ),
           body: controller.isLoading
               ? const Center(child: CircularProgressIndicator())
               : ListView(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.only(
+                    left: 16,
+                    right: 16,
+                    top: 16,
+                    bottom: 100, // Space for floating nav
+                  ),
                   children: [
+                    // Appearance section with dark mode toggle
+                    _buildExpandableSection(
+                      context,
+                      title: 'Tampilan',
+                      icon: Icons.palette_outlined,
+                      children: [
+                        Consumer<ThemeController>(
+                          builder: (context, themeController, _) {
+                            return SwitchListTile(
+                              title: const Text('Mode Gelap'),
+                              subtitle: Text(themeController.isDarkMode ? 'Aktif' : 'Nonaktif'),
+                              value: themeController.isDarkMode,
+                              onChanged: (value) => themeController.setThemeMode(value),
+                              secondary: Icon(
+                                themeController.isDarkMode ? Icons.dark_mode : Icons.light_mode,
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
                     // 6 Expandable sections
                     _buildExpandableSection(
                       context,
@@ -415,7 +462,7 @@ class SettingsScreen extends StatelessWidget {
           decoration: InputDecoration(
             hintText: hintText,
             filled: true,
-            fillColor: AppTheme.backgroundColor,
+            fillColor: AppTheme.getCardColor(context),
           ),
           keyboardType: keyboardType,
           maxLines: maxLines,
@@ -457,7 +504,7 @@ class SettingsScreen extends StatelessWidget {
           decoration: InputDecoration(
             hintText: hintText,
             filled: true,
-            fillColor: AppTheme.backgroundColor,
+            fillColor: AppTheme.getCardColor(context),
           ),
           keyboardType: TextInputType.number,
           autofocus: true,
@@ -516,7 +563,7 @@ class SettingsScreen extends StatelessWidget {
       builder: (dialogContext) => AlertDialog(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(24),
-          side: BorderSide(color: AppTheme.cardBorder, width: 0.5),
+          side: BorderSide(color: AppTheme.getBorderColor(context), width: 0.5),
         ),
         title: Row(
           children: [
@@ -613,7 +660,7 @@ class SettingsScreen extends StatelessWidget {
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          side: BorderSide(color: AppTheme.cardBorder, width: 0.5),
+          side: BorderSide(color: AppTheme.getBorderColor(context), width: 0.5),
         ),
       ),
     );
