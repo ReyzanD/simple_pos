@@ -10,6 +10,9 @@ import 'core/controllers/theme_controller.dart';
 // Services - Database
 import 'services/database/database_helper.dart';
 
+// Services - Printer
+import 'core/services/printer_service.dart';
+
 // Features - Inventory
 import 'features/inventory/data/datasources/product_local_datasource_impl.dart';
 import 'features/inventory/data/datasources/category_local_datasource_impl.dart';
@@ -38,6 +41,7 @@ import 'features/inventory/presentation/controllers/product_variant_controller.d
 
 // Features - POS
 import 'features/pos/data/repositories/cart_repository_impl.dart';
+import 'features/pos/data/repositories/favorites_repository.dart';
 import 'features/pos/domain/usecases/add_to_cart_usecase.dart';
 import 'features/pos/domain/usecases/checkout_usecase.dart';
 import 'features/pos/domain/usecases/remove_from_cart_usecase.dart';
@@ -47,6 +51,7 @@ import 'features/pos/domain/usecases/get_held_carts_usecase.dart';
 import 'features/pos/domain/usecases/load_cart_usecase.dart';
 import 'features/pos/domain/usecases/delete_held_cart_usecase.dart';
 import 'features/pos/presentation/controllers/pos_controller.dart';
+import 'features/pos/presentation/controllers/favorites_controller.dart';
 
 // Features - Sales
 import 'features/sales/data/datasources/transaction_local_datasource_impl.dart';
@@ -78,6 +83,41 @@ import 'features/sales/presentation/controllers/discount_controller.dart';
 import 'features/settings/data/datasources/settings_local_datasource.dart';
 import 'features/settings/data/repositories/settings_repository_impl.dart';
 import 'features/settings/presentation/controllers/settings_controller.dart';
+
+// Features - Shifts
+import 'features/shifts/data/datasources/shift_local_datasource_impl.dart';
+import 'features/shifts/data/repositories/shift_repository_impl.dart';
+import 'features/shifts/domain/usecases/open_shift_usecase.dart';
+import 'features/shifts/domain/usecases/close_shift_usecase.dart';
+import 'features/shifts/domain/usecases/get_current_shift_usecase.dart';
+import 'features/shifts/domain/usecases/get_shifts_usecase.dart';
+import 'features/shifts/domain/usecases/update_shift_totals_usecase.dart';
+import 'features/shifts/presentation/controllers/shift_controller.dart';
+
+// Features - Users
+import 'features/users/data/datasources/user_local_datasource_impl.dart';
+import 'features/users/data/datasources/user_session_local_datasource_impl.dart';
+import 'features/users/data/repositories/user_repository_impl.dart';
+import 'features/users/data/repositories/user_session_repository_impl.dart';
+import 'features/users/domain/usecases/login_usecase.dart';
+import 'features/users/domain/usecases/get_users_usecase.dart';
+import 'features/users/domain/usecases/create_user_usecase.dart';
+import 'features/users/domain/usecases/update_user_usecase.dart';
+import 'features/users/domain/usecases/delete_user_usecase.dart';
+import 'features/users/domain/usecases/get_current_user_usecase.dart';
+import 'features/users/presentation/controllers/auth_controller.dart';
+
+// Features - Expenses
+import 'features/expenses/data/datasources/expense_local_datasource_impl.dart';
+import 'features/expenses/data/repositories/expense_repository_impl.dart';
+import 'features/expenses/domain/usecases/add_expense_usecase.dart';
+import 'features/expenses/domain/usecases/get_expenses_usecase.dart';
+import 'features/expenses/domain/usecases/update_expense_usecase.dart';
+import 'features/expenses/domain/usecases/delete_expense_usecase.dart';
+import 'features/expenses/domain/usecases/get_expense_summary_usecase.dart';
+import 'features/expenses/domain/usecases/get_expense_count_by_category_usecase.dart';
+import 'features/expenses/domain/usecases/get_profit_report_usecase.dart';
+import 'features/expenses/presentation/controllers/expense_controller.dart';
 
 // Shared
 import 'features/shared/presentation/main_navigation.dart';
@@ -391,6 +431,7 @@ class POSApp extends StatelessWidget {
               SalesReportController(
                 getSalesReportUseCase: context.read(),
                 exportSalesToCsvUseCase: context.read(),
+                getProfitReportUseCase: context.read(),
               ),
         ),
 
@@ -477,6 +518,16 @@ class POSApp extends StatelessWidget {
           ),
         ),
 
+        // POS - Favorites
+        Provider<FavoritesRepository>(
+          create: (_) => FavoritesRepository(),
+        ),
+        ChangeNotifierProvider<FavoritesController>(
+          create: (context) =>
+              FavoritesController(context.read<FavoritesRepository>())
+                ..loadFavorites(),
+        ),
+
         // ========== DISCOUNT MANAGEMENT ==========
         // Discount Management - Data Layer
         ProxyProvider<DatabaseHelper, PromotionLocalDataSourceImpl>(
@@ -542,6 +593,188 @@ class POSApp extends StatelessWidget {
             updateDiscountPresetUseCase: context.read<UpdateDiscountPresetUseCase>(),
             deleteDiscountPresetUseCase: context.read<DeleteDiscountPresetUseCase>(),
           ),
+        ),
+
+        // ========== SHIFT MANAGEMENT ==========
+        // Shift - Data Layer
+        ProxyProvider<DatabaseHelper, ShiftLocalDataSourceImpl>(
+          update: (_, db, _) =>
+              ShiftLocalDataSourceImpl(databaseHelper: db),
+        ),
+
+        ProxyProvider<ShiftLocalDataSourceImpl, ShiftRepositoryImpl>(
+          update: (_, dataSource, _) =>
+              ShiftRepositoryImpl(localDataSource: dataSource),
+        ),
+
+        // Shift - Domain Layer (Use Cases)
+        ProxyProvider<ShiftRepositoryImpl, OpenShiftUseCase>(
+          update: (_, repo, _) => OpenShiftUseCase(shiftRepository: repo),
+        ),
+        ProxyProvider<ShiftRepositoryImpl, CloseShiftUseCase>(
+          update: (_, repo, _) => CloseShiftUseCase(shiftRepository: repo),
+        ),
+        ProxyProvider<ShiftRepositoryImpl, GetCurrentShiftUseCase>(
+          update: (_, repo, _) => GetCurrentShiftUseCase(shiftRepository: repo),
+        ),
+        ProxyProvider<ShiftRepositoryImpl, GetShiftsUseCase>(
+          update: (_, repo, _) => GetShiftsUseCase(shiftRepository: repo),
+        ),
+        ProxyProvider<ShiftRepositoryImpl, UpdateShiftTotalsUseCase>(
+          update: (_, repo, _) => UpdateShiftTotalsUseCase(shiftRepository: repo),
+        ),
+
+        // Shift - Presentation Layer (Controller)
+        ChangeNotifierProvider<ShiftController>(
+          create: (context) => ShiftController(
+            openShiftUseCase: context.read<OpenShiftUseCase>(),
+            closeShiftUseCase: context.read<CloseShiftUseCase>(),
+            getCurrentShiftUseCase: context.read<GetCurrentShiftUseCase>(),
+            getShiftsUseCase: context.read<GetShiftsUseCase>(),
+            updateShiftTotalsUseCase: context.read<UpdateShiftTotalsUseCase>(),
+          ),
+        ),
+
+        // ========== USER MANAGEMENT ==========
+        // User - Data Layer
+        ProxyProvider<DatabaseHelper, UserLocalDataSourceImpl>(
+          update: (_, db, _) => UserLocalDataSourceImpl(databaseHelper: db),
+        ),
+
+        ProxyProvider<UserLocalDataSourceImpl, UserRepositoryImpl>(
+          update: (_, dataSource, _) =>
+              UserRepositoryImpl(localDataSource: dataSource),
+        ),
+
+        ProxyProvider<DatabaseHelper, UserSessionLocalDataSourceImpl>(
+          update: (_, db, _) => UserSessionLocalDataSourceImpl(databaseHelper: db),
+        ),
+
+        ProxyProvider<UserSessionLocalDataSourceImpl, UserSessionRepositoryImpl>(
+          update: (_, dataSource, _) =>
+              UserSessionRepositoryImpl(localDataSource: dataSource),
+        ),
+
+        // User - Domain Layer (Use Cases)
+        ProxyProvider<UserRepositoryImpl, LoginUseCase>(
+          update: (_, repo, _) => LoginUseCase(repo),
+        ),
+        ProxyProvider<UserRepositoryImpl, GetUsersUseCase>(
+          update: (_, repo, _) => GetUsersUseCase(repo),
+        ),
+        ProxyProvider<UserRepositoryImpl, CreateUserUseCase>(
+          update: (_, repo, _) => CreateUserUseCase(repo),
+        ),
+        ProxyProvider<UserRepositoryImpl, UpdateUserUseCase>(
+          update: (_, repo, _) => UpdateUserUseCase(repo),
+        ),
+        ProxyProvider<UserRepositoryImpl, DeleteUserUseCase>(
+          update: (_, repo, _) => DeleteUserUseCase(repo),
+        ),
+        ProxyProvider<UserRepositoryImpl, GetCurrentUserUseCase>(
+          update: (_, repo, _) => GetCurrentUserUseCase(repo),
+        ),
+
+        // User - Presentation Layer (Controller)
+        ChangeNotifierProxyProvider6<
+          LoginUseCase,
+          GetUsersUseCase,
+          CreateUserUseCase,
+          UpdateUserUseCase,
+          DeleteUserUseCase,
+          GetCurrentUserUseCase,
+          AuthController
+        >(
+          create: (context) => AuthController(
+            loginUseCase: context.read(),
+            getUsersUseCase: context.read(),
+            createUserUseCase: context.read(),
+            updateUserUseCase: context.read(),
+            deleteUserUseCase: context.read(),
+            getCurrentUserUseCase: context.read(),
+          ),
+          update: (_, login, getUsers, create, update, delete, getCurrent, _) =>
+              AuthController(
+                loginUseCase: login,
+                getUsersUseCase: getUsers,
+                createUserUseCase: create,
+                updateUserUseCase: update,
+                deleteUserUseCase: delete,
+                getCurrentUserUseCase: getCurrent,
+              ),
+        ),
+
+        // ========== EXPENSE MANAGEMENT ==========
+        // Expenses - Data Layer
+        ProxyProvider<DatabaseHelper, ExpenseLocalDataSourceImpl>(
+          update: (_, db, _) => ExpenseLocalDataSourceImpl(databaseHelper: db),
+        ),
+
+        ProxyProvider<ExpenseLocalDataSourceImpl, ExpenseRepositoryImpl>(
+          update: (_, dataSource, _) =>
+              ExpenseRepositoryImpl(localDataSource: dataSource),
+        ),
+
+        // Expenses - Domain Layer (Use Cases)
+        ProxyProvider<ExpenseRepositoryImpl, AddExpenseUseCase>(
+          update: (_, repo, _) => AddExpenseUseCase(repo),
+        ),
+        ProxyProvider<ExpenseRepositoryImpl, GetExpensesUseCase>(
+          update: (_, repo, _) => GetExpensesUseCase(repo),
+        ),
+        ProxyProvider<ExpenseRepositoryImpl, UpdateExpenseUseCase>(
+          update: (_, repo, _) => UpdateExpenseUseCase(repo),
+        ),
+        ProxyProvider<ExpenseRepositoryImpl, DeleteExpenseUseCase>(
+          update: (_, repo, _) => DeleteExpenseUseCase(repo),
+        ),
+        ProxyProvider<ExpenseRepositoryImpl, GetExpenseSummaryUseCase>(
+          update: (_, repo, _) => GetExpenseSummaryUseCase(repo),
+        ),
+        ProxyProvider<ExpenseRepositoryImpl, GetExpenseCountByCategoryUseCase>(
+          update: (_, repo, _) => GetExpenseCountByCategoryUseCase(repository: repo),
+        ),
+        ProxyProvider2<ExpenseRepositoryImpl, TransactionRepositoryImpl,
+            GetProfitReportUseCase>(
+          update: (_, expenseRepo, transactionRepo, _) =>
+              GetProfitReportUseCase(
+                expenseRepository: expenseRepo,
+                transactionRepository: transactionRepo,
+              ),
+        ),
+
+        // Expenses - Presentation Layer (Controller)
+        ChangeNotifierProxyProvider6<
+          AddExpenseUseCase,
+          GetExpensesUseCase,
+          UpdateExpenseUseCase,
+          DeleteExpenseUseCase,
+          GetExpenseSummaryUseCase,
+          GetExpenseCountByCategoryUseCase,
+          ExpenseController
+        >(
+          create: (context) => ExpenseController(
+            addExpenseUseCase: context.read(),
+            getExpensesUseCase: context.read(),
+            updateExpenseUseCase: context.read(),
+            deleteExpenseUseCase: context.read(),
+            getExpenseSummaryUseCase: context.read(),
+            getExpenseCountByCategoryUseCase: context.read(),
+          ),
+          update: (_, add, get, update, delete, summary, count, __) =>
+              ExpenseController(
+            addExpenseUseCase: add,
+            getExpensesUseCase: get,
+            updateExpenseUseCase: update,
+            deleteExpenseUseCase: delete,
+            getExpenseSummaryUseCase: summary,
+            getExpenseCountByCategoryUseCase: count,
+          ),
+        ),
+
+        // ========== PRINTER SERVICE ==========
+        ChangeNotifierProvider<PrinterService>(
+          create: (_) => PrinterService(),
         ),
       ],
       child: Consumer<ThemeController>(
