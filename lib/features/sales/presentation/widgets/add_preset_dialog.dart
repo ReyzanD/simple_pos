@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../../core/theme.dart';
+import '../../domain/entities/discount_preset.dart';
 
-/// Dialog for adding a new reusable discount preset
+/// Dialog for adding or editing a reusable discount preset
 class AddPresetDialog extends StatefulWidget {
   final Future<bool> Function({
     required String name,
@@ -10,9 +11,14 @@ class AddPresetDialog extends StatefulWidget {
     required double discountPercentage,
   }) onAdd;
 
+  final Future<bool> Function(DiscountPreset)? onUpdate;
+  final DiscountPreset? preset;
+
   const AddPresetDialog({
     super.key,
     required this.onAdd,
+    this.onUpdate,
+    this.preset,
   });
 
   @override
@@ -21,11 +27,23 @@ class AddPresetDialog extends StatefulWidget {
 
 class _AddPresetDialogState extends State<AddPresetDialog> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  final _descriptionController = TextEditingController();
-  final _discountController = TextEditingController();
+  late final TextEditingController _nameController;
+  late final TextEditingController _descriptionController;
+  late final TextEditingController _discountController;
 
   bool _isSaving = false;
+
+  bool get _isEditing => widget.preset != null;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.preset?.name ?? '');
+    _descriptionController = TextEditingController(text: widget.preset?.description ?? '');
+    _discountController = TextEditingController(
+      text: widget.preset?.discountPercentage.toString() ?? '',
+    );
+  }
 
   @override
   void dispose() {
@@ -42,11 +60,24 @@ class _AddPresetDialogState extends State<AddPresetDialog> {
 
     setState(() => _isSaving = true);
 
-    final success = await widget.onAdd(
-      name: _nameController.text.trim(),
-      description: _descriptionController.text.trim(),
-      discountPercentage: double.parse(_discountController.text),
-    );
+    bool success = false;
+
+    if (_isEditing && widget.onUpdate != null) {
+      // Update existing preset
+      final updatedPreset = widget.preset!.copyWith(
+        name: _nameController.text.trim(),
+        description: _descriptionController.text.trim(),
+        discountPercentage: double.parse(_discountController.text),
+      );
+      success = await widget.onUpdate!(updatedPreset);
+    } else {
+      // Add new preset
+      success = await widget.onAdd(
+        name: _nameController.text.trim(),
+        description: _descriptionController.text.trim(),
+        discountPercentage: double.parse(_discountController.text),
+      );
+    }
 
     if (mounted) {
       setState(() => _isSaving = false);
@@ -54,7 +85,7 @@ class _AddPresetDialogState extends State<AddPresetDialog> {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Preset diskon berhasil ditambahkan'),
+            content: Text(_isEditing ? 'Preset diskon berhasil diupdate' : 'Preset diskon berhasil ditambahkan'),
             backgroundColor: AppTheme.successColor,
           ),
         );
@@ -77,14 +108,14 @@ class _AddPresetDialogState extends State<AddPresetDialog> {
               color: AppTheme.infoColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Icon(
-              Icons.bookmark,
+            child: Icon(
+              _isEditing ? Icons.edit : Icons.bookmark,
               color: AppTheme.infoColor,
               size: 20,
             ),
           ),
           const SizedBox(width: 12),
-          const Text('Buat Preset Diskon'),
+          Text(_isEditing ? 'Edit Preset Diskon' : 'Buat Preset Diskon'),
         ],
       ),
       content: Form(
@@ -179,7 +210,7 @@ class _AddPresetDialogState extends State<AddPresetDialog> {
                     color: Colors.white,
                   ),
                 )
-              : const Text('Buat Preset'),
+              : Text(_isEditing ? 'Update' : 'Buat Preset'),
         ),
       ],
     );

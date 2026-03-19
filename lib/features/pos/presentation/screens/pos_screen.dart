@@ -3,12 +3,16 @@ import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../controllers/pos_controller.dart';
 import '../../../inventory/presentation/controllers/category_controller.dart';
+import '../../../inventory/presentation/controllers/product_variant_controller.dart';
 import '../../../inventory/domain/entities/product.dart';
 import '../../../sales/presentation/controllers/sales_history_controller.dart';
+import '../../../shifts/presentation/controllers/shift_controller.dart';
 import '../widgets/product_grid_item.dart';
 import '../widgets/checkout_dialog.dart';
+import '../widgets/print_receipt_dialog.dart';
 import '../widgets/cart_modal.dart';
 import '../widgets/hold_order_dialog.dart';
+import '../widgets/variant_selector_dialog.dart';
 import 'held_orders_screen.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/success_animation.dart';
@@ -20,6 +24,7 @@ import '../../../../core/presentation/widgets/barcode_scanner_screen.dart';
 import '../../../shared/widgets/empty_state_display.dart';
 import '../../../shared/widgets/error_display.dart';
 import '../../../shared/presentation/main_navigation.dart';
+import '../../../shifts/presentation/screens/shift_open_screen.dart';
 
 /// Point of Sale screen with modern design
 class POSScreen extends StatefulWidget {
@@ -31,7 +36,8 @@ class POSScreen extends StatefulWidget {
   State<POSScreen> createState() => POSScreenState();
 }
 
-class POSScreenState extends State<POSScreen> with WidgetsBindingObserver, AutomaticKeepAliveClientMixin {
+class POSScreenState extends State<POSScreen>
+    with WidgetsBindingObserver, AutomaticKeepAliveClientMixin {
   final GlobalKey<_CartFloatingButtonState> _cartIconKey = GlobalKey();
   final List<OverlayEntry> _overlayEntries = [];
   final ScrollController _scrollController = ScrollController();
@@ -49,11 +55,96 @@ class POSScreenState extends State<POSScreen> with WidgetsBindingObserver, Autom
     WidgetsBinding.instance.addObserver(this);
     // Load products when screen initializes
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkActiveShift();
       context.read<POSController>().loadProducts();
       context.read<CategoryController>().loadCategories();
       _hasLoadedInitially = true;
       _lastRefreshTime = DateTime.now();
     });
+  }
+
+  /// Check for active shift and prompt to open if none exists
+  Future<void> _checkActiveShift() async {
+    final shiftController = context.read<ShiftController>();
+    await shiftController.loadCurrentShift();
+
+    if (!shiftController.hasActiveShift) {
+      if (mounted) {
+        _showShiftRequiredDialog();
+      }
+    }
+  }
+
+  /// Show dialog when shift is required
+  void _showShiftRequiredDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => WillPopScope(
+        onWillPop: () async => false,
+        child: AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppTheme.warningColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.storefront,
+                  color: AppTheme.warningColor,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Text('Shift Belum Dibuka'),
+            ],
+          ),
+          content: const Text(
+            'Anda perlu membuka shift kerja sebelum dapat melakukan transaksi.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                Navigator.pop(context); // Go back to home
+              },
+              child: const Text('Kembali'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const ShiftOpenScreen(),
+                  ),
+                ).then((result) {
+                  if (result == true) {
+                    // Shift opened successfully, reload current shift
+                    _checkActiveShift();
+                  } else {
+                    // User cancelled, go back to home
+                    if (mounted) {
+                      Navigator.pop(context);
+                    }
+                  }
+                });
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryColor,
+              ),
+              child: const Text('Buka Shift'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -122,7 +213,8 @@ class POSScreenState extends State<POSScreen> with WidgetsBindingObserver, Autom
           child: IconButton(
             icon: const Icon(Icons.menu),
             onPressed: () {
-              final mainNavState = context.findAncestorStateOfType<MainNavigationState>();
+              final mainNavState = context
+                  .findAncestorStateOfType<MainNavigationState>();
               mainNavState?.openDrawer();
             },
           ),
@@ -152,10 +244,7 @@ class POSScreenState extends State<POSScreen> with WidgetsBindingObserver, Autom
                       AppTheme.darkSurface,
                       AppTheme.darkSurface.withValues(alpha: 0.95),
                     ]
-                  : [
-                      AppTheme.primaryColor,
-                      AppTheme.primaryLight,
-                    ],
+                  : [AppTheme.primaryColor, AppTheme.primaryLight],
             ),
           ),
         ),
@@ -166,14 +255,6 @@ class POSScreenState extends State<POSScreen> with WidgetsBindingObserver, Autom
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            // Barcode scanner FAB
-            FloatingActionButton(
-              heroTag: 'barcode_scanner',
-              onPressed: _openBarcodeScanner,
-              backgroundColor: AppTheme.infoColor,
-              elevation: 4,
-              child: const Icon(Icons.qr_code_scanner, color: Colors.white),
-            ),
             const SizedBox(height: 12),
             // Cart FAB
             Consumer<POSController>(
@@ -235,65 +316,71 @@ class POSScreenState extends State<POSScreen> with WidgetsBindingObserver, Autom
             color: AppTheme.primaryColor,
             displacement: 80,
             strokeWidth: 3,
-            child: CustomScrollView(
-              controller: _scrollController,
-              physics: const AlwaysScrollableScrollPhysics(),
-              slivers: [
-                // Fixed header content
-                SliverToBoxAdapter(
-                  child: Column(
-                    children: [
-                      const SizedBox(height: kToolbarHeight + 20),
-                      // KPI Dashboard
-                      _buildKPIDashboard(posController, salesController),
-                      // Search bar
-                      _buildSearchBar(posController),
-                      // Filter controls row
-                      _buildFilterControls(posController),
-                      // Category chips
-                      _buildCategoryChips(categoryController, posController),
-                      const SizedBox(height: 8),
-                    ],
-                  ),
-                ),
-                // Product grid or empty state for no results
-                if (filteredProducts.isEmpty)
-                  SliverFillRemaining(
-                    child: _buildNoResults(posController),
-                  )
-                else
-                  SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
-                    sliver: SliverGrid(
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: _getCrossAxisCount(context),
-                        childAspectRatio: _getChildAspectRatio(context),
-                        crossAxisSpacing: 16,
-                        mainAxisSpacing: 16,
-                      ),
-                      delegate: SliverChildBuilderDelegate(
-                        (context, index) {
-                          final product = filteredProducts[index];
-                          final cartItem = posController.getCartItem(product);
-
-                          return ProductGridItem(
-                            product: product,
-                            quantity: cartItem?.quantity ?? 0,
-                            onTap: () => _handleAddToCart(context, product),
-                            onAddAnimation: (position) => _showFlyingPlusOne(position),
-                            index: index,
-                          );
-                        },
-                        childCount: filteredProducts.length,
-                        addAutomaticKeepAlives: true,
+            child:
+                CustomScrollView(
+                  controller: _scrollController,
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  slivers: [
+                    // Fixed header content
+                    SliverToBoxAdapter(
+                      child: Column(
+                        children: [
+                          const SizedBox(height: kToolbarHeight + 20),
+                          // KPI Dashboard
+                          _buildKPIDashboard(posController, salesController),
+                          // Search bar
+                          _buildSearchBar(posController),
+                          // Filter controls row
+                          _buildFilterControls(posController),
+                          // Category chips
+                          _buildCategoryChips(
+                            categoryController,
+                            posController,
+                          ),
+                          const SizedBox(height: 8),
+                        ],
                       ),
                     ),
-                  ),
-              ],
-            ).animate().fadeIn(
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeOut,
-            ),
+                    // Product grid or empty state for no results
+                    if (filteredProducts.isEmpty)
+                      SliverFillRemaining(child: _buildNoResults(posController))
+                    else
+                      SliverPadding(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
+                        sliver: SliverGrid(
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: _getCrossAxisCount(context),
+                                childAspectRatio: _getChildAspectRatio(context),
+                                crossAxisSpacing: 16,
+                                mainAxisSpacing: 16,
+                              ),
+                          delegate: SliverChildBuilderDelegate(
+                            (context, index) {
+                              final product = filteredProducts[index];
+                              final cartItem = posController.getCartItem(
+                                product,
+                              );
+
+                              return ProductGridItem(
+                                product: product,
+                                quantity: cartItem?.quantity ?? 0,
+                                onTap: () => _handleAddToCart(context, product),
+                                onAddAnimation: (position) =>
+                                    _showFlyingPlusOne(position),
+                                index: index,
+                              );
+                            },
+                            childCount: filteredProducts.length,
+                            addAutomaticKeepAlives: true,
+                          ),
+                        ),
+                      ),
+                  ],
+                ).animate().fadeIn(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeOut,
+                ),
           );
         },
       ),
@@ -338,9 +425,7 @@ class POSScreenState extends State<POSScreen> with WidgetsBindingObserver, Autom
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         decoration: BoxDecoration(
-          color: isDark
-              ? AppTheme.darkSurfaceVariant
-              : const Color(0xFFF1F5F9),
+          color: isDark ? AppTheme.darkSurfaceVariant : const Color(0xFFF1F5F9),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: controller.searchQuery.isNotEmpty
@@ -374,7 +459,10 @@ class POSScreenState extends State<POSScreen> with WidgetsBindingObserver, Autom
                   )
                 : null,
             border: InputBorder.none,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 20,
+              vertical: 14,
+            ),
           ),
           onChanged: (value) {
             // Search-as-you-type
@@ -411,8 +499,16 @@ class POSScreenState extends State<POSScreen> with WidgetsBindingObserver, Autom
                   : AppTheme.getBorderColor(context),
             ),
             avatar: controller.inStockOnly
-                ? const Icon(Icons.check_circle, size: 16, color: AppTheme.successColor)
-                : Icon(Icons.inventory_2_outlined, size: 16, color: AppTheme.getTextSecondaryColor(context)),
+                ? const Icon(
+                    Icons.check_circle,
+                    size: 16,
+                    color: AppTheme.successColor,
+                  )
+                : Icon(
+                    Icons.inventory_2_outlined,
+                    size: 16,
+                    color: AppTheme.getTextSecondaryColor(context),
+                  ),
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
@@ -433,7 +529,10 @@ class POSScreenState extends State<POSScreen> with WidgetsBindingObserver, Autom
     );
   }
 
-  Widget _buildCategoryChips(CategoryController categoryController, POSController posController) {
+  Widget _buildCategoryChips(
+    CategoryController categoryController,
+    POSController posController,
+  ) {
     final categories = categoryController.categories;
     final selectedCategory = posController.selectedCategory;
 
@@ -484,67 +583,74 @@ class POSScreenState extends State<POSScreen> with WidgetsBindingObserver, Autom
   }) {
     return Padding(
       padding: const EdgeInsets.only(right: 10),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeInOut,
-        decoration: BoxDecoration(
-          gradient: isSelected
-              ? LinearGradient(colors: [color, color.withValues(alpha: 0.8)])
-              : null,
-          color: isSelected
-              ? null
-              : AppTheme.getCardColor(context),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isSelected
-                ? Colors.transparent
-                : color.withValues(alpha: 0.3),
-            width: 1,
-          ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: color.withValues(alpha: 0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-              : AppShadows.shadowSm,
-        ),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: onTap,
-            borderRadius: BorderRadius.circular(16),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    icon,
-                    size: 18,
+      child:
+          AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeInOut,
+                decoration: BoxDecoration(
+                  gradient: isSelected
+                      ? LinearGradient(
+                          colors: [color, color.withValues(alpha: 0.8)],
+                        )
+                      : null,
+                  color: isSelected ? null : AppTheme.getCardColor(context),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
                     color: isSelected
-                        ? Colors.white
-                        : color,
+                        ? Colors.transparent
+                        : color.withValues(alpha: 0.3),
+                    width: 1,
                   ),
-                  const SizedBox(width: 8),
-                  Text(
-                    label,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                      color: isSelected
-                          ? Colors.white
-                          : AppTheme.getTextSecondaryColor(context),
+                  boxShadow: isSelected
+                      ? [
+                          BoxShadow(
+                            color: color.withValues(alpha: 0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
+                          ),
+                        ]
+                      : AppShadows.shadowSm,
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: onTap,
+                    borderRadius: BorderRadius.circular(16),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            icon,
+                            size: 18,
+                            color: isSelected ? Colors.white : color,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            label,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: isSelected
+                                  ? FontWeight.w600
+                                  : FontWeight.w500,
+                              color: isSelected
+                                  ? Colors.white
+                                  : AppTheme.getTextSecondaryColor(context),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ).animate().fadeIn(duration: 200.ms).slideX(begin: 0.1, end: 0, duration: 200.ms),
+                ),
+              )
+              .animate()
+              .fadeIn(duration: 200.ms)
+              .slideX(begin: 0.1, end: 0, duration: 200.ms),
     );
   }
 
@@ -568,7 +674,8 @@ class POSScreenState extends State<POSScreen> with WidgetsBindingObserver, Autom
           ),
           const SizedBox(height: 20),
           Text(
-            controller.searchQuery.isNotEmpty || controller.selectedCategory != null
+            controller.searchQuery.isNotEmpty ||
+                    controller.selectedCategory != null
                 ? 'Tidak ditemukan produk yang cocok'
                 : 'Belum ada produk',
             style: TextStyle(
@@ -577,7 +684,8 @@ class POSScreenState extends State<POSScreen> with WidgetsBindingObserver, Autom
               color: AppTheme.getTextPrimaryColor(context),
             ),
           ),
-          if (controller.searchQuery.isNotEmpty || controller.selectedCategory != null)
+          if (controller.searchQuery.isNotEmpty ||
+              controller.selectedCategory != null)
             Padding(
               padding: const EdgeInsets.only(top: 16),
               child: ModernSecondaryButton(
@@ -597,23 +705,60 @@ class POSScreenState extends State<POSScreen> with WidgetsBindingObserver, Autom
 
   void _handleAddToCart(BuildContext context, Product product) async {
     final controller = context.read<POSController>();
+
+    // Check if product has variants
+    if (product.hasVariants) {
+      // Show variant selector
+      final variantController = context.read<ProductVariantController>();
+      await variantController.loadVariants(product.id!);
+
+      if (variantController.hasVariants) {
+        if (mounted) {
+          final selectedVariant = await VariantSelectorDialog.show(
+            context: context,
+            product: product,
+            variants: variantController.variants,
+          );
+
+          if (selectedVariant != null && mounted) {
+            final success = await controller.addToCartWithVariant(product, selectedVariant);
+
+            if (success) {
+              _cartIconKey.currentState?.bumpAnimation();
+            } else if (controller.hasError) {
+              _showErrorSnackBar(context, controller.error!.userMessage);
+              controller.clearError();
+            }
+          }
+        }
+        return;
+      }
+    }
+
+    // No variants or variant loading failed - add product directly
     final success = await controller.addToCart(product);
 
     if (success) {
       // Trigger cart icon bump animation
       _cartIconKey.currentState?.bumpAnimation();
     } else if (controller.hasError && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(controller.error!.userMessage),
-          backgroundColor: AppTheme.errorColor,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          margin: const EdgeInsets.all(16),
-        ),
-      );
+      _showErrorSnackBar(context, controller.error!.userMessage);
       controller.clearError();
     }
+  }
+
+  void _showErrorSnackBar(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: AppTheme.errorColor,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        margin: const EdgeInsets.all(16),
+      ),
+    );
   }
 
   void _openCartModal(BuildContext context, POSController controller) {
@@ -641,7 +786,9 @@ class POSScreenState extends State<POSScreen> with WidgetsBindingObserver, Autom
                 ),
                 duration: const Duration(seconds: 3),
                 behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 margin: const EdgeInsets.all(16),
               ),
             );
@@ -702,13 +849,14 @@ class POSScreenState extends State<POSScreen> with WidgetsBindingObserver, Autom
     final success = await showCheckoutDialog(
       context: context,
       cart: controller.cart,
-      onConfirm: ({required paymentMethod, cashReceived, cardLast4Digits}) async {
-        return await controller.checkoutWithPayment(
-          paymentMethod: paymentMethod,
-          cashReceived: cashReceived,
-          cardLast4Digits: cardLast4Digits,
-        );
-      },
+      onConfirm:
+          ({required paymentMethod, cashReceived, cardLast4Digits}) async {
+            return await controller.checkoutWithPayment(
+              paymentMethod: paymentMethod,
+              cashReceived: cashReceived,
+              cardLast4Digits: cardLast4Digits,
+            );
+          },
     );
 
     if (success) {
@@ -725,12 +873,23 @@ class POSScreenState extends State<POSScreen> with WidgetsBindingObserver, Autom
       // Show success celebration overlay (handle deactivated context gracefully)
       if (mounted) {
         try {
-          SuccessAnimationOverlay.show(
-            context,
-            message: 'Checkout Berhasil!',
-          );
+          SuccessAnimationOverlay.show(context, message: 'Checkout Berhasil!');
         } catch (_) {
           // Widget was deactivated, ignore error
+        }
+      }
+
+      // Show print receipt dialog
+      if (mounted && controller.lastTransaction != null) {
+        try {
+          await PrintReceiptDialog.show(
+            context: context,
+            transaction: controller.lastTransaction,
+            cashReceived: controller.lastCashReceived,
+            change: controller.lastChange,
+          );
+        } catch (_) {
+          // Dialog was dismissed or context was deactivated
         }
       }
     } else if (controller.hasError && context.mounted) {
@@ -739,7 +898,9 @@ class POSScreenState extends State<POSScreen> with WidgetsBindingObserver, Autom
           content: Text(controller.error!.userMessage),
           backgroundColor: AppTheme.errorColor,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           margin: const EdgeInsets.all(16),
         ),
       );
@@ -758,11 +919,9 @@ class POSScreenState extends State<POSScreen> with WidgetsBindingObserver, Autom
   }
 
   void _openHeldOrders(BuildContext context) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => const HeldOrdersScreen(),
-      ),
-    );
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (context) => const HeldOrdersScreen()));
   }
 
   void _openBarcodeScanner() {
@@ -778,12 +937,7 @@ class POSScreenState extends State<POSScreen> with WidgetsBindingObserver, Autom
               (p) => p.barcode == barcode,
               orElse: () => controller.products.firstWhere(
                 (p) => p.id.toString() == barcode,
-                orElse: () => Product(
-                  id: -1,
-                  name: '',
-                  price: 0,
-                  stock: 0,
-                ),
+                orElse: () => Product(id: -1, name: '', price: 0, stock: 0),
               ),
             );
             if (product.id == -1) return null;
@@ -815,22 +969,21 @@ class POSScreenState extends State<POSScreen> with WidgetsBindingObserver, Autom
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('Produk dengan barcode "$barcode" tidak ditemukan'),
+                content: Text(
+                  'Produk dengan barcode "$barcode" tidak ditemukan',
+                ),
                 backgroundColor: AppTheme.errorColor,
                 duration: const Duration(seconds: 3),
                 behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 margin: const EdgeInsets.all(16),
               ),
             );
           }
           // Return a dummy product that won't be added
-          return Product(
-            id: -1,
-            name: '',
-            price: 0,
-            stock: 0,
-          );
+          return Product(id: -1, name: '', price: 0, stock: 0);
         },
       ),
     );
@@ -849,7 +1002,9 @@ class POSScreenState extends State<POSScreen> with WidgetsBindingObserver, Autom
             onPressed: () {},
           ),
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           margin: const EdgeInsets.all(16),
         ),
       );
@@ -868,7 +1023,8 @@ class _FlyingPlusOneAnimation extends StatefulWidget {
   });
 
   @override
-  State<_FlyingPlusOneAnimation> createState() => _FlyingPlusOneAnimationState();
+  State<_FlyingPlusOneAnimation> createState() =>
+      _FlyingPlusOneAnimationState();
 }
 
 class _FlyingPlusOneAnimationState extends State<_FlyingPlusOneAnimation> {
@@ -890,41 +1046,42 @@ class _FlyingPlusOneAnimationState extends State<_FlyingPlusOneAnimation> {
       top: widget.startPosition.dy,
       child: Material(
         color: Colors.transparent,
-        child: Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            gradient: AppGradients.success,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: AppShadows.successShadow(0.4),
-          ),
-          child: const Center(
-            child: Text(
-              '+1',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        )
-        .animate()
-        .scale(
-          begin: const Offset(0, 0),
-          end: const Offset(1.2, 1.2),
-          duration: 150.ms,
-          curve: Curves.elasticOut,
-        )
-        .then()
-        .scale(
-          begin: const Offset(1.2, 1.2),
-          end: const Offset(1.0, 1.0),
-          duration: 100.ms,
-          curve: Curves.easeOut,
-        )
-        .then()
-        .fadeOut(duration: 200.ms),
+        child:
+            Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    gradient: AppGradients.success,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: AppShadows.successShadow(0.4),
+                  ),
+                  child: const Center(
+                    child: Text(
+                      '+1',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                )
+                .animate()
+                .scale(
+                  begin: const Offset(0, 0),
+                  end: const Offset(1.2, 1.2),
+                  duration: 150.ms,
+                  curve: Curves.elasticOut,
+                )
+                .then()
+                .scale(
+                  begin: const Offset(1.2, 1.2),
+                  end: const Offset(1.0, 1.0),
+                  duration: 100.ms,
+                  curve: Curves.easeOut,
+                )
+                .then()
+                .fadeOut(duration: 200.ms),
       ),
     );
   }
@@ -1021,7 +1178,9 @@ class _CartFloatingButtonState extends State<_CartFloatingButton>
                 child: Icon(
                   Icons.shopping_cart_outlined,
                   size: 28,
-                  color: hasItems ? Colors.white : AppTheme.getTextPrimaryColor(context),
+                  color: hasItems
+                      ? Colors.white
+                      : AppTheme.getTextPrimaryColor(context),
                 ),
               ),
               if (widget.itemCount > 0)
@@ -1113,9 +1272,7 @@ class _SortDropdown extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppTheme.getCardColor(context),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: AppTheme.getBorderColor(context),
-          ),
+          border: Border.all(color: AppTheme.getBorderColor(context)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -1208,11 +1365,7 @@ class _SortDropdown extends StatelessWidget {
           ),
           const Spacer(),
           if (isSelected)
-            Icon(
-              Icons.check,
-              size: 18,
-              color: AppTheme.primaryColor,
-            ),
+            Icon(Icons.check, size: 18, color: AppTheme.primaryColor),
         ],
       ),
     );
@@ -1224,10 +1377,7 @@ class _ViewModeToggle extends StatelessWidget {
   final ViewMode viewMode;
   final VoidCallback onToggle;
 
-  const _ViewModeToggle({
-    required this.viewMode,
-    required this.onToggle,
-  });
+  const _ViewModeToggle({required this.viewMode, required this.onToggle});
 
   @override
   Widget build(BuildContext context) {
@@ -1238,9 +1388,7 @@ class _ViewModeToggle extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppTheme.getCardColor(context),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: AppTheme.getBorderColor(context),
-          ),
+          border: Border.all(color: AppTheme.getBorderColor(context)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -1266,10 +1414,7 @@ class _ViewModeIcon extends StatelessWidget {
   final ViewMode mode;
   final bool isSelected;
 
-  const _ViewModeIcon({
-    required this.mode,
-    required this.isSelected,
-  });
+  const _ViewModeIcon({required this.mode, required this.isSelected});
 
   @override
   Widget build(BuildContext context) {

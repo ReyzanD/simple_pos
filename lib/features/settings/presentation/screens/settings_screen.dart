@@ -4,6 +4,8 @@ import '../controllers/settings_controller.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/controllers/theme_controller.dart';
 import '../../../shared/presentation/main_navigation.dart';
+import 'printer_settings_screen.dart';
+import 'data_management_screen.dart';
 
 /// Settings screen with 6 expandable sections using grouped card layout
 class SettingsScreen extends StatelessWidget {
@@ -163,6 +165,20 @@ class SettingsScreen extends StatelessWidget {
                       icon: Icons.receipt_long,
                       children: [
                         _buildSettingsTile(
+                          title: 'Pengaturan Printer',
+                          subtitle: 'Bluetooth thermal printer',
+                          icon: Icons.print_outlined,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const PrinterSettingsScreen(),
+                              ),
+                            );
+                          },
+                        ),
+                        const Divider(height: 1),
+                        _buildSettingsTile(
                           title: 'Footer Struk',
                           subtitle: controller.receiptFooter,
                           icon: Icons.message_outlined,
@@ -193,6 +209,21 @@ class SettingsScreen extends StatelessWidget {
                       title: 'Manajemen Data',
                       icon: Icons.storage,
                       children: [
+                        _buildSettingsTile(
+                          title: 'Kelola Data',
+                          subtitle: 'Ekspor data dan backup',
+                          icon: Icons.manage_search_outlined,
+                          iconColor: AppTheme.infoColor,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const DataManagementScreen(),
+                              ),
+                            );
+                          },
+                        ),
+                        const Divider(height: 1),
                         _buildSettingsTile(
                           title: 'Ekspor Pengaturan',
                           subtitle: 'Simpan pengaturan ke file',

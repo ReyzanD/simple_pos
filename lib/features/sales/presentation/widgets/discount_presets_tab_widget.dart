@@ -170,9 +170,17 @@ class DiscountPresetsTabWidget extends StatelessWidget {
     DiscountPreset preset,
     DiscountController controller,
   ) {
-    // TODO: Show edit dialog
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Edit preset: ${preset.name}')),
+    showDialog(
+      context: context,
+      builder: (context) => AddPresetDialog(
+        preset: preset,
+        onAdd: ({
+          required name,
+          required description,
+          required discountPercentage,
+        }) async => false, // Not used in edit mode
+        onUpdate: controller.updateDiscountPreset,
+      ),
     );
   }
 

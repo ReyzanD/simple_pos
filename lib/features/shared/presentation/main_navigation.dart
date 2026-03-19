@@ -11,14 +11,20 @@ import '../../sales/presentation/screens/sales_report_screen.dart';
 import '../../sales/presentation/controllers/sales_history_controller.dart';
 import '../../sales/presentation/controllers/sales_report_controller.dart';
 import '../../settings/presentation/screens/settings_screen.dart';
+import '../../users/presentation/controllers/auth_controller.dart';
+import '../../users/presentation/screens/login_screen.dart';
+import '../../users/domain/entities/user_role.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/animations/animation_constants.dart';
 import '../../../../core/utils/haptic_helper.dart';
+import '../../shifts/presentation/screens/shift_management_screen.dart';
+import '../../users/presentation/screens/user_management_screen.dart';
 import 'drawer_header.dart';
 import 'drawer_sections.dart';
 
 /// Main navigation widget with floating glassmorphic bottom tab bar
+/// Shows login screen if not authenticated, otherwise shows main app
 class MainNavigation extends StatefulWidget {
   const MainNavigation({super.key});
 
@@ -297,12 +303,22 @@ class MainNavigationState extends State<MainNavigation>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      key: _scaffoldKey,
-      body: IndexedStack(index: _currentIndex, children: _screens),
-      extendBody: true,
-      bottomNavigationBar: _buildFloatingBottomNav(),
-      drawer: _buildDrawer(context),
+    return Consumer<AuthController>(
+      builder: (context, auth, _) {
+        // Show login screen if not authenticated
+        if (!auth.isAuthenticated) {
+          return const LoginScreen();
+        }
+
+        // Show main app if authenticated
+        return Scaffold(
+          key: _scaffoldKey,
+          body: IndexedStack(index: _currentIndex, children: _screens),
+          extendBody: true,
+          bottomNavigationBar: _buildFloatingBottomNav(),
+          drawer: _buildDrawer(context, auth),
+        );
+      },
     );
   }
 
@@ -327,92 +343,79 @@ class MainNavigationState extends State<MainNavigation>
     );
   }
 
-  Widget _buildDrawer(BuildContext context) {
-    return NavigationDrawer(
-      selectedIndex: _currentIndex,
-      onDestinationSelected: (index) {
-        HapticHelper.lightImpact();
-        setState(() => _currentIndex = index);
-        Navigator.pop(context);
-      },
-      children: [
-        // User Header
-        UserDrawerHeader(
-          userName: 'Admin',
-          userRole: 'Store Manager',
-          storeName: AppConstants.appName,
-          onSettingsTap: () {
-            Navigator.pop(context);
-            setState(() => _currentIndex = 4); // Go to settings
-          },
-        ),
+  Widget _buildDrawer(BuildContext context, AuthController auth) {
+    final currentUser = auth.currentUser;
 
-        const Divider(height: 1),
-
-        // Main Navigation Destinations
-        NavigationDrawerDestination(
-          icon: const Icon(Icons.point_of_sale_outlined),
-          selectedIcon: const Icon(Icons.point_of_sale),
-          label: const Text('POS'),
-        ),
-        NavigationDrawerDestination(
-          icon: const Icon(Icons.inventory_2_outlined),
-          selectedIcon: const Icon(Icons.inventory_2),
-          label: const Text('Inventory'),
-        ),
-        NavigationDrawerDestination(
-          icon: const Icon(Icons.history_outlined),
-          selectedIcon: const Icon(Icons.history),
-          label: const Text('Sales History'),
-        ),
-        NavigationDrawerDestination(
-          icon: const Icon(Icons.bar_chart_outlined),
-          selectedIcon: const Icon(Icons.bar_chart),
-          label: const Text('Reports'),
-        ),
-        NavigationDrawerDestination(
-          icon: const Icon(Icons.settings_outlined),
-          selectedIcon: const Icon(Icons.settings),
-          label: const Text('Settings'),
-        ),
-
-        const Divider(height: 1),
-
-        // Quick Categories Section
-        const DrawerCategoryChips(),
-
-        // Store Stats Card
-        const DrawerStoreStats(),
-
-        const Padding(
-          padding: EdgeInsets.fromLTRB(16, 8, 16, 4),
-          child: Text(
-            'QUICK ACTIONS',
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 1.0,
+    return Drawer(
+      child: SafeArea(
+        child: Column(
+          children: [
+            // User Header
+            UserDrawerHeader(
+              userName: currentUser?.fullName ?? 'Admin',
+              userRole: currentUser != null
+                  ? (currentUser.role == UserRole.admin ? 'Admin' : 'Kasir')
+                  : 'Store Manager',
+              storeName: AppConstants.appName,
+              onSettingsTap: () {
+                Navigator.pop(context);
+                setState(() => _currentIndex = 4); // Go to settings
+              },
             ),
-          ),
+
+            const Divider(height: 1),
+
+            // Scrollable content
+            Expanded(
+              child: ListView(
+                padding: EdgeInsets.zero,
+                children: const [
+                  // Quick Categories Section
+                  DrawerCategoryChips(),
+
+                  // Store Stats Card
+                  DrawerStoreStats(),
+
+                  // Quick Actions
+                  DrawerLowStockItem(),
+                  DrawerDiscountItem(),
+                  DrawerExpensesItem(),
+                  DrawerShiftsItem(),
+                  DrawerUsersItem(),
+                  DrawerThemeToggle(),
+
+                  // Recent Products Section
+                  DrawerRecentProducts(),
+
+                  SizedBox(height: 8),
+                ],
+              ),
+            ),
+
+            // App Info Section (fixed at bottom)
+            const Divider(height: 1),
+            const DrawerAppInfo(),
+
+            // Logout Button
+            ListTile(
+              leading: Icon(
+                Icons.logout_rounded,
+                color: AppTheme.errorColor,
+              ),
+              title: Text(
+                'Keluar',
+                style: TextStyle(
+                  color: AppTheme.errorColor,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              onTap: () {
+                auth.logout();
+              },
+            ),
+          ],
         ),
-
-        // Low Stock Dashboard
-        const DrawerLowStockItem(),
-
-        // Discount Management
-        const DrawerDiscountItem(),
-
-        // Theme Toggle
-        const DrawerThemeToggle(),
-
-        // Recent Products Section
-        const DrawerRecentProducts(),
-
-        const SizedBox(height: 8),
-
-        // App Info Section
-        const DrawerAppInfo(),
-      ],
+      ),
     );
   }
 }

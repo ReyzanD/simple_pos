@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import '../../../inventory/domain/entities/product.dart';
+import '../../../inventory/domain/entities/product_variant.dart';
 import '../../domain/entities/cart_item.dart';
 import '../../domain/usecases/add_to_cart_usecase.dart';
 import '../../domain/usecases/checkout_usecase.dart';
@@ -86,6 +87,9 @@ class POSController extends ChangeNotifier {
   inventory.Category? _selectedCategory;
   CartItem? _lastRemovedCartItem;
   List<HeldCart> _heldCarts = [];
+  dynamic _lastTransaction; // Transaction from last successful checkout
+  double? _lastCashReceived;
+  double? _lastChange;
 
   // Filter & Sort state
   bool _inStockOnly = false;
@@ -109,6 +113,9 @@ class POSController extends ChangeNotifier {
   inventory.Category? get selectedCategory => _selectedCategory;
   CartItem? get lastRemovedCartItem => _lastRemovedCartItem;
   List<HeldCart> get heldCarts => _heldCarts;
+  dynamic get lastTransaction => _lastTransaction;
+  double? get lastCashReceived => _lastCashReceived;
+  double? get lastChange => _lastChange;
 
   // Filter & Sort getters
   bool get inStockOnly => _inStockOnly;
@@ -228,6 +235,76 @@ class POSController extends ChangeNotifier {
       _setError(DatabaseException(
         'Gagal menambahkan ke keranjang',
         operation: 'addToCart',
+        originalError: e,
+        stackTrace: stackTrace,
+      ));
+      AppLogger.error(
+        'Unexpected error adding to cart - POSController',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      return false;
+    } finally {
+      _setModifyingCart(false);
+    }
+  }
+
+  /// Add product to cart with a specific variant
+  Future<bool> addToCartWithVariant(Product product, ProductVariant variant) async {
+    // Prevent concurrent cart modifications
+    if (_isModifyingCart) {
+      AppLogger.warning('Cart modification in progress, ignoring add request');
+      return false;
+    }
+
+    try {
+      AppLogger.ui('Adding to cart with variant', details: 'POSController');
+      _setModifyingCart(true);
+
+      // Create a CartItem with the variant
+      final cartItem = CartItem(
+        product: product,
+        variant: variant,
+        quantity: 1,
+      );
+
+      // Check if item with same product and variant already exists
+      final existingIndex = _cart.indexWhere((item) =>
+          item.product.id == product.id && item.variant?.id == variant.id);
+
+      if (existingIndex != -1) {
+        // Update quantity of existing item
+        final existing = _cart[existingIndex];
+        if (existing.canAddMore) {
+          _cart[existingIndex] = existing.copyWith(
+            quantity: existing.quantity + 1,
+          );
+        } else {
+          throw ValidationException(
+            'Stok tidak mencukupui',
+            field: 'Stok',
+          );
+        }
+      } else {
+        // Add new cart item
+        _cart = [..._cart, cartItem];
+      }
+
+      // Notify listeners to update UI
+      if (!_disposed) {
+        notifyListeners();
+      }
+
+      AppLogger.info('Product variant added to cart - POSController');
+      return true;
+    } on AppException catch (e) {
+      _setError(e);
+      AppLogger.error('Failed to add to cart - POSController', error: e);
+      return false;
+    } catch (e, stackTrace) {
+      _setError(DatabaseException(
+        'Gagal menambahkan ke keranjang',
+        operation: 'addToCartWithVariant',
         originalError: e,
         stackTrace: stackTrace,
       ));
@@ -424,6 +501,16 @@ class POSController extends ChangeNotifier {
           operation: 'checkout',
         ));
         return false;
+      }
+
+      // Store transaction data for receipt printing
+      _lastTransaction = result.transaction;
+      _lastCashReceived = cashReceived;
+      // Calculate change for cash payments
+      if (paymentMethod == PaymentMethod.cash && cashReceived != null) {
+        _lastChange = cashReceived - result.totalAmount;
+      } else {
+        _lastChange = null;
       }
 
       // Clear cart and reload products

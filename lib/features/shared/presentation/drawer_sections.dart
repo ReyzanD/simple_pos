@@ -10,6 +10,9 @@ import '../../sales/presentation/screens/discount_management_screen.dart';
 import '../../sales/presentation/controllers/sales_report_controller.dart';
 import '../../../core/controllers/theme_controller.dart';
 import '../../inventory/domain/entities/product.dart';
+import '../../expenses/presentation/screens/expense_screen.dart';
+import '../../shifts/presentation/screens/shift_management_screen.dart';
+import '../../users/presentation/screens/user_management_screen.dart';
 
 /// Section divider for drawer content
 class DrawerSectionDivider extends StatelessWidget {
@@ -678,6 +681,165 @@ class DrawerDiscountItem extends StatelessWidget {
               ),
             );
           },
+        );
+      },
+    );
+  }
+}
+
+/// Modern Expenses Item
+class DrawerExpensesItem extends StatelessWidget {
+  const DrawerExpensesItem({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: AppTheme.secondaryColor.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Icon(
+          Icons.receipt_long_outlined,
+          color: AppTheme.secondaryColor,
+          size: 20,
+        ),
+      ),
+      title: Text(
+        'Pengeluaran',
+        style: TextStyle(
+          fontSize: 14,
+          color: AppTheme.getTextPrimaryColor(context),
+        ),
+      ),
+      subtitle: Text(
+        'Kelola pengeluaran operasional',
+        style: TextStyle(
+          fontSize: 12,
+          color: AppTheme.getTextSecondaryColor(context),
+        ),
+      ),
+      trailing: Icon(
+        Icons.chevron_right,
+        size: 20,
+        color: AppTheme.getTextSecondaryColor(context),
+      ),
+      onTap: () {
+        HapticHelper.lightImpact();
+        Navigator.pop(context);
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const ExpenseScreen(),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// Modern Shifts Item
+class DrawerShiftsItem extends StatelessWidget {
+  const DrawerShiftsItem({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: AppTheme.infoColor.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Icon(
+          Icons.schedule_outlined,
+          color: AppTheme.infoColor,
+          size: 20,
+        ),
+      ),
+      title: Text(
+        'Shift',
+        style: TextStyle(
+          fontSize: 14,
+          color: AppTheme.getTextPrimaryColor(context),
+        ),
+      ),
+      subtitle: Text(
+        'Kelola shift kasir',
+        style: TextStyle(
+          fontSize: 12,
+          color: AppTheme.getTextSecondaryColor(context),
+        ),
+      ),
+      trailing: Icon(
+        Icons.chevron_right,
+        size: 20,
+        color: AppTheme.getTextSecondaryColor(context),
+      ),
+      onTap: () {
+        HapticHelper.lightImpact();
+        Navigator.pop(context);
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const ShiftManagementScreen(),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// Modern Users Item
+class DrawerUsersItem extends StatelessWidget {
+  const DrawerUsersItem({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: AppTheme.primaryColor.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Icon(
+          Icons.people_outline,
+          color: AppTheme.primaryColor,
+          size: 20,
+        ),
+      ),
+      title: Text(
+        'Pengguna',
+        style: TextStyle(
+          fontSize: 14,
+          color: AppTheme.getTextPrimaryColor(context),
+        ),
+      ),
+      subtitle: Text(
+        'Kelola pengguna aplikasi',
+        style: TextStyle(
+          fontSize: 12,
+          color: AppTheme.getTextSecondaryColor(context),
+        ),
+      ),
+      trailing: Icon(
+        Icons.chevron_right,
+        size: 20,
+        color: AppTheme.getTextSecondaryColor(context),
+      ),
+      onTap: () {
+        HapticHelper.lightImpact();
+        Navigator.pop(context);
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const UserManagementScreen(),
+          ),
         );
       },
     );

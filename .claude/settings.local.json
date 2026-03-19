@@ -3,7 +3,12 @@
     "allow": [
       "Bash(flutter analyze:*)",
       "Bash(tree:*)",
-      "WebSearch"
+      "WebSearch",
+      "Skill(superpowers:brainstorming)",
+      "Skill(superpowers:writing-plans)",
+      "Skill(superpowers:subagent-driven-development)",
+      "Bash(flutter test:*)",
+      "Bash(git rev-parse:*)"
     ]
   }
 }

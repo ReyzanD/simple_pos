@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../domain/entities/settings.dart';
 import '../../../shared/domain/entities/business_info.dart';
@@ -106,13 +107,24 @@ class SettingsLocalDataSource {
     }
   }
 
-  /// Import settings from JSON string (simplified - just uses fromMap)
+  /// Import settings from JSON string
   Future<void> importSettings(String jsonString) async {
     try {
-      // For now, this is a simplified version
-      // In a real implementation, you'd parse JSON properly
       AppLogger.info('Settings import requested');
-      throw UnimplementedError('JSON import not yet implemented');
+
+      // Parse JSON string
+      final Map<String, dynamic> jsonMap = jsonDecode(jsonString);
+
+      // Create Settings from map
+      final settings = Settings.fromMap(jsonMap);
+
+      // Save settings
+      await saveSettings(settings);
+
+      AppLogger.info('Settings imported successfully');
+    } on FormatException catch (e) {
+      AppLogger.error('Invalid JSON format', error: e);
+      throw const FormatException('Format JSON tidak valid. Pastikan file yang diimpor benar.');
     } catch (e, stackTrace) {
       AppLogger.error('Failed to import settings', error: e, stackTrace: stackTrace);
       rethrow;

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../../core/theme.dart';
+import '../../domain/entities/promotion.dart';
 
-/// Dialog for adding a new time-limited promotion campaign
+/// Dialog for adding or editing a time-limited promotion campaign
 class AddPromotionDialog extends StatefulWidget {
   final Future<bool> Function({
     required String name,
@@ -13,9 +14,14 @@ class AddPromotionDialog extends StatefulWidget {
     bool isEnabled,
   }) onAdd;
 
+  final Future<bool> Function(Promotion)? onUpdate;
+  final Promotion? promotion;
+
   const AddPromotionDialog({
     super.key,
     required this.onAdd,
+    this.onUpdate,
+    this.promotion,
   });
 
   @override
@@ -24,14 +30,29 @@ class AddPromotionDialog extends StatefulWidget {
 
 class _AddPromotionDialogState extends State<AddPromotionDialog> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  final _descriptionController = TextEditingController();
-  final _discountController = TextEditingController();
+  late final TextEditingController _nameController;
+  late final TextEditingController _descriptionController;
+  late final TextEditingController _discountController;
 
   DateTime? _startDate;
   DateTime? _endDate;
   bool _isEnabled = true;
   bool _isSaving = false;
+
+  bool get _isEditing => widget.promotion != null;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.promotion?.name ?? '');
+    _descriptionController = TextEditingController(text: widget.promotion?.description ?? '');
+    _discountController = TextEditingController(
+      text: widget.promotion?.discountPercentage.toString() ?? '',
+    );
+    _startDate = widget.promotion?.startDate;
+    _endDate = widget.promotion?.endDate;
+    _isEnabled = widget.promotion?.isEnabled ?? true;
+  }
 
   @override
   void dispose() {
@@ -48,14 +69,30 @@ class _AddPromotionDialogState extends State<AddPromotionDialog> {
 
     setState(() => _isSaving = true);
 
-    final success = await widget.onAdd(
-      name: _nameController.text.trim(),
-      description: _descriptionController.text.trim(),
-      discountPercentage: double.parse(_discountController.text),
-      startDate: _startDate,
-      endDate: _endDate,
-      isEnabled: _isEnabled,
-    );
+    bool success = false;
+
+    if (_isEditing && widget.onUpdate != null) {
+      // Update existing promotion
+      final updatedPromotion = widget.promotion!.copyWith(
+        name: _nameController.text.trim(),
+        description: _descriptionController.text.trim(),
+        discountPercentage: double.parse(_discountController.text),
+        startDate: _startDate,
+        endDate: _endDate,
+        isEnabled: _isEnabled,
+      );
+      success = await widget.onUpdate!(updatedPromotion);
+    } else {
+      // Add new promotion
+      success = await widget.onAdd(
+        name: _nameController.text.trim(),
+        description: _descriptionController.text.trim(),
+        discountPercentage: double.parse(_discountController.text),
+        startDate: _startDate,
+        endDate: _endDate,
+        isEnabled: _isEnabled,
+      );
+    }
 
     if (mounted) {
       setState(() => _isSaving = false);
@@ -63,7 +100,7 @@ class _AddPromotionDialogState extends State<AddPromotionDialog> {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Promosi berhasil ditambahkan'),
+            content: Text(_isEditing ? 'Promosi berhasil diupdate' : 'Promosi berhasil ditambahkan'),
             backgroundColor: AppTheme.successColor,
           ),
         );
@@ -118,14 +155,14 @@ class _AddPromotionDialogState extends State<AddPromotionDialog> {
               color: AppTheme.warningColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Icon(
-              Icons.campaign,
+            child: Icon(
+              _isEditing ? Icons.edit : Icons.campaign,
               color: AppTheme.warningColor,
               size: 20,
             ),
           ),
           const SizedBox(width: 12),
-          const Text('Buat Promosi Baru'),
+          Text(_isEditing ? 'Edit Promosi' : 'Buat Promosi Baru'),
         ],
       ),
       content: Form(
@@ -302,7 +339,7 @@ class _AddPromotionDialogState extends State<AddPromotionDialog> {
                     color: Colors.white,
                   ),
                 )
-              : const Text('Buat Promosi'),
+              : Text(_isEditing ? 'Update' : 'Buat Promosi'),
         ),
       ],
     );

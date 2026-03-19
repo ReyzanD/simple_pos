@@ -1,33 +1,124 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../domain/entities/supplier.dart';
 import '../controllers/supplier_controller.dart';
+import '../controllers/inventory_controller.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../../../../core/constants/ui_constants.dart';
 
-/// Screen for managing suppliers
-class SupplierScreen extends StatelessWidget {
+/// Screen for managing suppliers with search and contact actions
+class SupplierScreen extends StatefulWidget {
   const SupplierScreen({super.key});
 
   @override
+  State<SupplierScreen> createState() => _SupplierScreenState();
+}
+
+class _SupplierScreenState extends State<SupplierScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  List<Supplier> _filterSuppliers(List<Supplier> suppliers) {
+    if (_searchQuery.isEmpty) return suppliers;
+
+    final query = _searchQuery.toLowerCase();
+    return suppliers.where((supplier) {
+      return supplier.name.toLowerCase().contains(query) ||
+          (supplier.contactPerson?.toLowerCase().contains(query) ?? false) ||
+          (supplier.phone?.contains(query) ?? false) ||
+          (supplier.email?.toLowerCase().contains(query) ?? false);
+    }).toList();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Consumer<SupplierController>(
-      builder: (context, controller, _) {
+    return Consumer2<SupplierController, InventoryController>(
+      builder: (context, supplierController, inventoryController, _) {
+        final filteredSuppliers = _filterSuppliers(supplierController.suppliers);
+        final products = inventoryController.allProducts;
+
         return Scaffold(
           appBar: AppBar(
             title: const Text('Pemasok'),
           ),
-          body: controller.isLoading
+          body: supplierController.isLoading
               ? const Center(child: CircularProgressIndicator())
-              : controller.suppliers.isEmpty
+              : supplierController.suppliers.isEmpty
                   ? _buildEmptyState(context)
-                  : _buildSupplierList(controller),
+                  : Column(
+                      children: [
+                        _buildSearchBar(),
+                        Expanded(child: _buildSupplierList(filteredSuppliers, products)),
+                      ],
+                    ),
           floatingActionButton: FloatingActionButton(
-            onPressed: () => _showAddEditDialog(context, controller),
+            onPressed: () => _showAddEditDialog(context, supplierController),
             tooltip: 'Tambah Pemasok',
+            backgroundColor: AppTheme.primaryColor,
             child: const Icon(Icons.add),
           ),
         );
       },
+    );
+  }
+
+  Widget _buildSearchBar() {
+    return Container(
+      margin: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.getCardColor(context),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: _searchQuery.isNotEmpty
+              ? AppTheme.primaryColor.withValues(alpha: 0.5)
+              : AppTheme.getBorderColor(context),
+          width: 2,
+        ),
+      ),
+      child: TextField(
+        controller: _searchController,
+        decoration: InputDecoration(
+          hintText: 'Cari pemasok...',
+          hintStyle: TextStyle(
+            color: AppTheme.getTextSecondaryColor(context),
+          ),
+          prefixIcon: Icon(
+            Icons.search_rounded,
+            color: AppTheme.getTextSecondaryColor(context),
+          ),
+          suffixIcon: _searchQuery.isNotEmpty
+              ? IconButton(
+                  icon: Icon(
+                    Icons.clear_rounded,
+                    color: AppTheme.getTextSecondaryColor(context),
+                  ),
+                  onPressed: () {
+                    _searchController.clear();
+                    setState(() {
+                      _searchQuery = '';
+                    });
+                  },
+                )
+              : null,
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 14,
+          ),
+        ),
+        onChanged: (value) {
+          setState(() {
+            _searchQuery = value;
+          });
+        },
+      ),
     );
   }
 
@@ -39,21 +130,22 @@ class SupplierScreen extends StatelessWidget {
           Icon(
             Icons.local_shipping,
             size: 64,
-            color: Colors.grey.shade400,
+            color: AppTheme.textTertiary,
           ),
           const SizedBox(height: UIConstants.spacingMedium),
           Text(
             'Tidak ada pemasok',
             style: TextStyle(
               fontSize: UIConstants.fontSizeLarge,
-              color: Colors.grey.shade600,
+              color: AppTheme.textPrimary,
+              fontWeight: FontWeight.w600,
             ),
           ),
           const SizedBox(height: UIConstants.spacingSmall),
           Text(
             'Tekan + untuk menambah pemasok',
             style: TextStyle(
-              color: Colors.grey.shade500,
+              color: AppTheme.textSecondary,
             ),
           ),
         ],
@@ -61,58 +153,316 @@ class SupplierScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSupplierList(SupplierController controller) {
+  Widget _buildSupplierList(List<Supplier> suppliers, List products) {
+    if (suppliers.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.search_off_rounded,
+              size: 64,
+              color: AppTheme.textTertiary,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Tidak ditemukan pemasok "$_searchQuery"',
+              style: TextStyle(
+                fontSize: 16,
+                color: AppTheme.textSecondary,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return ListView.builder(
       padding: const EdgeInsets.all(UIConstants.spacingSmall),
-      itemCount: controller.suppliers.length,
+      itemCount: suppliers.length,
       itemBuilder: (context, index) {
-        final supplier = controller.suppliers[index];
-        return _buildSupplierCard(context, supplier, controller);
+        final supplier = suppliers[index];
+        // Count products for this supplier
+        final productCount = products.where((p) => p.supplierId == supplier.id).length;
+        return _buildSupplierCard(context, supplier, productCount);
       },
     );
   }
 
-  Widget _buildSupplierCard(BuildContext context, Supplier supplier, SupplierController controller) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: UIConstants.spacingSmall),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: UIConstants.primaryColor.withValues(alpha: 0.1),
-          child: Icon(
-            Icons.local_shipping,
-            color: UIConstants.primaryColor,
+  Widget _buildSupplierCard(BuildContext context, Supplier supplier, int productCount) {
+    return Consumer<SupplierController>(
+      builder: (context, controller, _) {
+        return Card(
+          margin: const EdgeInsets.only(bottom: UIConstants.spacingSmall),
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: AppTheme.getBorderColor(context)),
           ),
-        ),
-        title: Text(
-          supplier.name,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (supplier.contactPerson != null)
-              Text('Kontak: ${supplier.contactPerson}'),
-            if (supplier.phone != null)
-              Text('Telepon: ${supplier.phone}'),
-            if (supplier.email != null)
-              Text('Email: ${supplier.email}'),
-          ],
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            IconButton(
-              icon: const Icon(Icons.edit, size: 20),
-              onPressed: () => _showAddEditDialog(context, controller, supplier),
+          child: InkWell(
+            onTap: () => _showAddEditDialog(context, controller, supplier),
+            borderRadius: BorderRadius.circular(16),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header with name and contact actions
+                  Row(
+                    children: [
+                      Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          Icons.local_shipping,
+                          color: AppTheme.primaryColor,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              supplier.name,
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                                color: AppTheme.getTextPrimaryColor(context),
+                              ),
+                            ),
+                            if (supplier.contactPerson != null)
+                              Text(
+                                supplier.contactPerson!,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: AppTheme.getTextSecondaryColor(context),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      // Contact action buttons
+                      if (supplier.phone != null)
+                        _buildContactButton(
+                          icon: Icons.phone_rounded,
+                          color: AppTheme.successColor,
+                          onTap: () => _callSupplier(supplier.phone!),
+                        ),
+                      if (supplier.email != null)
+                        _buildContactButton(
+                          icon: Icons.email_rounded,
+                          color: AppTheme.infoColor,
+                          onTap: () => _emailSupplier(supplier.email!),
+                        ),
+                      _buildEditButton(
+                        icon: Icons.edit,
+                        color: AppTheme.textSecondary,
+                        onTap: () => _showAddEditDialog(
+                          context,
+                          controller,
+                          supplier,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  // Contact info
+                  _buildContactInfo(context, supplier),
+                  const SizedBox(height: 8),
+                  // Action row
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.inventory_2_outlined,
+                        size: 16,
+                        color: AppTheme.textTertiary,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Produk: $productCount',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppTheme.textTertiary,
+                        ),
+                      ),
+                      const Spacer(),
+                      _buildDeleteButton(context, supplier, controller),
+                    ],
+                  ),
+                ],
+              ),
             ),
-            IconButton(
-              icon: const Icon(Icons.delete, size: 20, color: Colors.red),
-              onPressed: () => _showDeleteDialog(context, supplier, controller),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildContactButton({
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(left: 8),
+      child: Material(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(10),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(10),
+          child: Container(
+            width: 36,
+            height: 36,
+            alignment: Alignment.center,
+            child: Icon(
+              icon,
+              size: 18,
+              color: color,
             ),
-          ],
+          ),
         ),
       ),
     );
+  }
+
+  Widget _buildEditButton({
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(left: 8),
+      child: Material(
+        color: AppTheme.getCardColor(context as BuildContext).withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(10),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(10),
+          child: Container(
+            width: 36,
+            height: 36,
+            alignment: Alignment.center,
+            child: Icon(
+              icon,
+              size: 18,
+              color: color,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContactInfo(BuildContext context, Supplier supplier) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (supplier.phone != null)
+          _buildInfoRow(
+            context,
+            Icons.phone_outlined,
+            supplier.phone!,
+          ),
+        if (supplier.email != null)
+          _buildInfoRow(
+            context,
+            Icons.email_outlined,
+            supplier.email!,
+          ),
+        if (supplier.address != null)
+          _buildInfoRow(
+            context,
+            Icons.location_on_outlined,
+            supplier.address!,
+          ),
+      ],
+    );
+  }
+
+  Widget _buildInfoRow(BuildContext context, IconData icon, String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        children: [
+          Icon(
+            icon,
+            size: 14,
+            color: AppTheme.textTertiary,
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                fontSize: 13,
+                color: AppTheme.getTextSecondaryColor(context),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDeleteButton(
+    BuildContext context,
+    Supplier supplier,
+    SupplierController controller,
+  ) {
+    return TextButton.icon(
+      onPressed: () => _showDeleteDialog(context, supplier, controller),
+      icon: Icon(
+        Icons.delete_outline,
+        size: 16,
+        color: AppTheme.errorColor,
+      ),
+      label: Text(
+        'Hapus',
+        style: TextStyle(
+          fontSize: 12,
+          color: AppTheme.errorColor,
+        ),
+      ),
+      style: TextButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        minimumSize: Size.zero,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
+    );
+  }
+
+  Future<void> _callSupplier(String phone) async {
+    final Uri launchUri = Uri(scheme: 'tel', path: phone);
+    if (!await launchUrl(launchUri)) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Tidak dapat membuka dialer'),
+            backgroundColor: AppTheme.errorColor,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _emailSupplier(String email) async {
+    final Uri launchUri = Uri(scheme: 'mailto', path: email);
+    if (!await launchUrl(launchUri)) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Tidak dapat membuka aplikasi email'),
+            backgroundColor: AppTheme.errorColor,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _showAddEditDialog(
@@ -132,6 +482,9 @@ class SupplierScreen extends StatelessWidget {
     await showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
         title: Text(isEditing ? 'Edit Pemasok' : 'Tambah Pemasok'),
         content: Form(
           key: formKey,
@@ -141,9 +494,13 @@ class SupplierScreen extends StatelessWidget {
               children: [
                 TextFormField(
                   controller: nameController,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Nama Pemasok',
-                    border: OutlineInputBorder(),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    filled: true,
+                    fillColor: AppTheme.getCardColor(context),
                   ),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
@@ -158,35 +515,51 @@ class SupplierScreen extends StatelessWidget {
                 const SizedBox(height: UIConstants.spacingMedium),
                 TextFormField(
                   controller: contactController,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Nama Kontak (Opsional)',
-                    border: OutlineInputBorder(),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    filled: true,
+                    fillColor: AppTheme.getCardColor(context),
                   ),
                 ),
                 const SizedBox(height: UIConstants.spacingSmall),
                 TextFormField(
                   controller: phoneController,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Telepon (Opsional)',
-                    border: OutlineInputBorder(),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    filled: true,
+                    fillColor: AppTheme.getCardColor(context),
                   ),
                   keyboardType: TextInputType.phone,
                 ),
                 const SizedBox(height: UIConstants.spacingSmall),
                 TextFormField(
                   controller: emailController,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Email (Opsional)',
-                    border: OutlineInputBorder(),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    filled: true,
+                    fillColor: AppTheme.getCardColor(context),
                   ),
                   keyboardType: TextInputType.emailAddress,
                 ),
                 const SizedBox(height: UIConstants.spacingSmall),
                 TextFormField(
                   controller: addressController,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Alamat (Opsional)',
-                    border: OutlineInputBorder(),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    filled: true,
+                    fillColor: AppTheme.getCardColor(context),
                   ),
                   maxLines: 2,
                 ),
@@ -232,12 +605,19 @@ class SupplierScreen extends StatelessWidget {
                       content: Text(success
                           ? 'Pemasok berhasil disimpan'
                           : controller.errorMessage ?? 'Gagal menyimpan pemasok'),
-                      backgroundColor: success ? Colors.green : Colors.red,
+                      backgroundColor: success ? AppTheme.successColor : AppTheme.errorColor,
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                   );
                 }
               }
             },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryColor,
+            ),
             child: Text(isEditing ? 'Simpan' : 'Tambah'),
           ),
         ],
@@ -253,7 +633,28 @@ class SupplierScreen extends StatelessWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Hapus Pemasok'),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: AppTheme.errorColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(
+                Icons.warning_amber_rounded,
+                color: AppTheme.errorColor,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Text('Hapus Pemasok'),
+          ],
+        ),
         content: Text(
           'Apakah Anda yakin ingin menghapus pemasok "${supplier.name}"?',
         ),
@@ -265,7 +666,7 @@ class SupplierScreen extends StatelessWidget {
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
+              backgroundColor: AppTheme.errorColor,
             ),
             child: const Text('Hapus'),
           ),
@@ -281,7 +682,11 @@ class SupplierScreen extends StatelessWidget {
             content: Text(success
                 ? 'Pemasok berhasil dihapus'
                 : controller.errorMessage ?? 'Gagal menghapus pemasok'),
-            backgroundColor: success ? Colors.green : Colors.red,
+            backgroundColor: success ? AppTheme.successColor : AppTheme.errorColor,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
         );
       }

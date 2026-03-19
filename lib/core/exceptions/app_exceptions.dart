@@ -92,6 +92,35 @@ class NotFoundException extends AppException {
       'NotFoundException(type: $resourceType, id: $resourceId, message: $message)';
 }
 
+/// Exception thrown when a resource conflict occurs (e.g., duplicate entry)
+class ConflictException extends AppException {
+  final String? resourceType;
+  final String? resourceId;
+
+  const ConflictException(
+    super.message, {
+    this.resourceType,
+    this.resourceId,
+    super.originalError,
+    super.stackTrace,
+  });
+
+  @override
+  String get userMessage {
+    if (resourceType != null && resourceId != null) {
+      return '$resourceType dengan ID $resourceId sudah ada.';
+    }
+    if (resourceType != null) {
+      return '$resourceType sudah ada.';
+    }
+    return 'Konflik data. Silakan periksa kembali.';
+  }
+
+  @override
+  String toString() =>
+      'ConflictException(type: $resourceType, id: $resourceId, message: $message)';
+}
+
 /// Exception thrown when there's insufficient stock
 class InsufficientStockException extends AppException {
   final int requested;

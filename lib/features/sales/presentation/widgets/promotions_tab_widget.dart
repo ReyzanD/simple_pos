@@ -349,9 +349,20 @@ class PromotionsTabWidget extends StatelessWidget {
     Promotion promotion,
     DiscountController controller,
   ) {
-    // TODO: Show edit dialog
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Edit promosi: ${promotion.name}')),
+    showDialog(
+      context: context,
+      builder: (context) => AddPromotionDialog(
+        promotion: promotion,
+        onAdd: ({
+          required name,
+          required description,
+          required discountPercentage,
+          startDate,
+          endDate,
+          isEnabled = true,
+        }) async => false, // Not used in edit mode
+        onUpdate: controller.updatePromotion,
+      ),
     );
   }
 

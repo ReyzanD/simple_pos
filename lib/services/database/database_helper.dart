@@ -184,6 +184,91 @@ class DatabaseHelper {
       await db.execute('CREATE INDEX idx_promotions_enabled ON promotions(is_enabled)');
       await db.execute('CREATE INDEX idx_promotions_dates ON promotions(start_date, end_date)');
 
+      // Create shifts table for shift management
+      await db.execute('''
+        CREATE TABLE shifts (
+          id $idType,
+          user_name $textType,
+          opening_balance $realType DEFAULT 0,
+          closing_balance $realNullable DEFAULT 0,
+          cash_sales $realType DEFAULT 0,
+          card_sales $realType DEFAULT 0,
+          qr_sales $realType DEFAULT 0,
+          transfer_sales $realType DEFAULT 0,
+          total_transactions $intType DEFAULT 0,
+          opened_at $intType NOT NULL,
+          closed_at $intNullable
+        )
+      ''');
+
+      // Create indexes for shifts
+      await db.execute('CREATE INDEX idx_shifts_opened_at ON shifts(opened_at DESC)');
+      await db.execute('CREATE INDEX idx_shifts_closed_at ON shifts(closed_at)');
+
+      // Create users table for user management and authentication
+      await db.execute('''
+        CREATE TABLE users (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          username TEXT NOT NULL UNIQUE,
+          password_hash TEXT NOT NULL,
+          full_name TEXT NOT NULL,
+          role TEXT NOT NULL DEFAULT 'cashier',
+          is_active INTEGER DEFAULT 1,
+          created_at INTEGER NOT NULL,
+          last_login INTEGER
+        )
+      ''');
+
+      // Create user_sessions table
+      await db.execute('''
+        CREATE TABLE user_sessions (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id INTEGER NOT NULL,
+          login_time INTEGER NOT NULL,
+          logout_time INTEGER,
+          FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+      ''');
+
+      // Create indexes for faster queries
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_users_role ON users(role)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_user_sessions_user ON user_sessions(user_id)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_user_sessions_login_time ON user_sessions(login_time DESC)');
+
+      // Create expenses table for expense tracking
+      await db.execute('''
+        CREATE TABLE expenses (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          category TEXT NOT NULL,
+          amount REAL NOT NULL,
+          description TEXT,
+          payment_method TEXT DEFAULT 'cash',
+          receipt_image TEXT,
+          created_by INTEGER,
+          created_at INTEGER NOT NULL,
+          date INTEGER NOT NULL,
+          FOREIGN KEY (created_by) REFERENCES users(id)
+        )
+      ''');
+
+      // Create indexes for faster queries
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_expenses_date ON expenses(date DESC)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_expenses_category ON expenses(category)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_expenses_created_by ON expenses(created_by)');
+
+      // Create default admin user
+      // Password: admin123 (hashed using simple hash for demo)
+      final adminPasswordHash = _hashPassword('admin123');
+      await db.insert('users', {
+        'username': 'admin',
+        'password_hash': adminPasswordHash,
+        'full_name': 'Administrator',
+        'role': 'admin',
+        'is_active': 1,
+        'created_at': DateTime.now().millisecondsSinceEpoch ~/ 1000,
+      });
+
       AppLogger.database('Database schema created successfully');
     } catch (e, stackTrace) {
       AppLogger.error(
@@ -249,6 +334,21 @@ class DatabaseHelper {
       if (oldVersion < 10) {
         // Migration from version 9 to 10 (add cost_price to transaction_items)
         await _migrateToV10(db);
+      }
+
+      if (oldVersion < 11) {
+        // Migration from version 10 to 11 (add shifts table)
+        await _migrateToV11(db);
+      }
+
+      if (oldVersion < 12) {
+        // Migration from version 11 to 12 (add users and user_sessions tables)
+        await _migrateToV12(db);
+      }
+
+      if (oldVersion < 13) {
+        // Migration from version 12 to 13 (add expenses table)
+        await _migrateToV13(db);
       }
 
       AppLogger.database('Database upgrade completed successfully');
@@ -644,6 +744,129 @@ class DatabaseHelper {
     }
 
     AppLogger.database('Database migration to v10 completed');
+  }
+
+  /// Migration from version 10 to 11
+  /// Add shifts table for shift management
+  Future _migrateToV11(Database db) async {
+    AppLogger.database('Migrating database to v11');
+
+    // Create shifts table
+    await db.execute('''
+      CREATE TABLE shifts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_name TEXT NOT NULL,
+        opening_balance REAL DEFAULT 0,
+        closing_balance REAL DEFAULT 0,
+        cash_sales REAL DEFAULT 0,
+        card_sales REAL DEFAULT 0,
+        qr_sales REAL DEFAULT 0,
+        transfer_sales REAL DEFAULT 0,
+        total_transactions INTEGER DEFAULT 0,
+        opened_at INTEGER NOT NULL,
+        closed_at INTEGER
+      )
+    ''');
+
+    // Create indexes for faster queries
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_shifts_opened_at ON shifts(opened_at DESC)');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_shifts_closed_at ON shifts(closed_at)');
+
+    AppLogger.database('Database migration to v11 completed');
+  }
+
+  /// Migration from version 11 to 12
+  /// Add users and user_sessions tables for user management and authentication
+  Future _migrateToV12(Database db) async {
+    AppLogger.database('Migrating database to v12');
+
+    // Create users table
+    await db.execute('''
+      CREATE TABLE users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT NOT NULL UNIQUE,
+        password_hash TEXT NOT NULL,
+        full_name TEXT NOT NULL,
+        role TEXT NOT NULL DEFAULT 'cashier',
+        is_active INTEGER DEFAULT 1,
+        created_at INTEGER NOT NULL,
+        last_login INTEGER
+      )
+    ''');
+
+    // Create user_sessions table
+    await db.execute('''
+      CREATE TABLE user_sessions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        login_time INTEGER NOT NULL,
+        logout_time INTEGER,
+        opening_cash REAL DEFAULT 0,
+        closing_cash REAL,
+        FOREIGN KEY (user_id) REFERENCES users(id)
+      )
+    ''');
+
+    // Create indexes for faster queries
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_users_role ON users(role)');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_user_sessions_user ON user_sessions(user_id)');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_user_sessions_login_time ON user_sessions(login_time DESC)');
+
+    // Create default admin user
+    // Password: admin123 (hashed using crypt - this is a simple hash for demo)
+    // In production, use proper bcrypt with proper salt
+    final adminPasswordHash = _hashPassword('admin123');
+    await db.insert('users', {
+      'username': 'admin',
+      'password_hash': adminPasswordHash,
+      'full_name': 'Administrator',
+      'role': 'admin',
+      'is_active': 1,
+      'created_at': DateTime.now().millisecondsSinceEpoch ~/ 1000,
+    });
+
+    AppLogger.database('Database migration to v12 completed');
+  }
+
+  /// Migration from version 12 to 13
+  /// Add expenses table for expense tracking
+  Future _migrateToV13(Database db) async {
+    AppLogger.database('Migrating database to v13');
+
+    // Create expenses table
+    await db.execute('''
+      CREATE TABLE expenses (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        category TEXT NOT NULL,
+        amount REAL NOT NULL,
+        description TEXT,
+        payment_method TEXT DEFAULT 'cash',
+        receipt_image TEXT,
+        created_by INTEGER,
+        created_at INTEGER NOT NULL,
+        date INTEGER NOT NULL,
+        FOREIGN KEY (created_by) REFERENCES users(id)
+      )
+    ''');
+
+    // Create indexes for faster queries
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_expenses_date ON expenses(date DESC)');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_expenses_category ON expenses(category)');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_expenses_created_by ON expenses(created_by)');
+
+    AppLogger.database('Database migration to v13 completed');
+  }
+
+  /// Simple password hash for demo purposes
+  /// In production, use proper cryptographic hashing with salt
+  String _hashPassword(String password) {
+    // Simple hash - DO NOT use in production
+    // This is just for demo to get the feature working
+    final bytes = password.codeUnits;
+    final hash = bytes.fold<int>(
+        0, (prev, element) => prev + element);
+    return 'simple_hash_$hash';
   }
 
   /// Inserts a product into the database

@@ -43,3 +43,33 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+/android/build/
+
+# Flutter/Dart generated files
+*.g.dart
+*.mocks.dart
+.flutter-plugins
+.packages
+
+# Generated localization files
+/lib/l10n/gen_*.dart
+/lib/l10n/*.generated.dart
+
+# macOS ephemeral files
+/macos/Flutter/ephemeral/
+/macos/Flutter/GeneratedPluginRegistrant.swift
+
+# Windows ephemeral files
+/windows/flutter/ephemeral/
+/windows/flutter/generated_plugin_registrant.cc
+/windows/flutter/generated_plugins.cmake
+
+# Claude Code local settings
+.claude/settings.local.json
+.claude/settings.*.json
+!.claude/settings.json
+
+# Backup files
+*.backup
+*.bak
+*~

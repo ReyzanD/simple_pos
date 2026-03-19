@@ -95,6 +95,14 @@ class SalesReportScreen extends StatelessWidget {
                             _buildPaymentMethodsChart(context, controller.report!),
                             const SizedBox(height: 24),
 
+                            // Expense Breakdown (if expense data available)
+                            if (controller.report!.profitReport != null &&
+                                controller.report!.totalExpenses > 0)
+                              _buildExpenseBreakdownSection(context, controller.report!),
+                            if (controller.report!.profitReport != null &&
+                                controller.report!.totalExpenses > 0)
+                              const SizedBox(height: 24),
+
                             // Top Products Table
                             _buildTopProductsTable(context, controller.report!),
                             const SizedBox(height: 24),
@@ -232,6 +240,9 @@ class SalesReportScreen extends StatelessWidget {
   }
 
   Widget _buildSummarySection(BuildContext context, SalesReport report) {
+    final hasExpenseData = report.profitReport != null;
+    final showNetProfit = hasExpenseData && report.totalExpenses > 0;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -273,19 +284,21 @@ class SalesReportScreen extends StatelessWidget {
           children: [
             Expanded(
               child: SummaryStatCard(
-                title: 'Total Laba',
+                title: 'Laba Kotor',
                 value: CurrencyFormatter.format(report.totalProfit),
                 icon: Icons.trending_up_rounded,
                 color: AppTheme.warningColor,
+                subtitle: 'Sebelum pengeluaran',
               ).animate(delay: 200.ms).fadeIn(duration: 300.ms).slideY(begin: 0.1, end: 0, duration: 300.ms),
             ),
             const SizedBox(width: 16),
             Expanded(
               child: SummaryStatCard(
-                title: 'Margin Laba',
-                value: '${report.profitMargin.toStringAsFixed(1)}%',
-                icon: Icons.show_chart,
-                color: AppTheme.primaryColor,
+                title: 'Pengeluaran',
+                value: CurrencyFormatter.format(report.totalExpenses),
+                icon: Icons.shopping_cart_outlined,
+                color: AppTheme.errorColor,
+                subtitle: hasExpenseData ? '${report.expenseRatio.toStringAsFixed(1)}% dari pendapatan' : null,
               ).animate(delay: 300.ms).fadeIn(duration: 300.ms).slideY(begin: 0.1, end: 0, duration: 300.ms),
             ),
           ],
@@ -295,21 +308,21 @@ class SalesReportScreen extends StatelessWidget {
           children: [
             Expanded(
               child: SummaryStatCard(
-                title: 'Rata-rata Transaksi',
-                value: CurrencyFormatter.format(report.averageTransactionValue),
-                icon: Icons.point_of_sale,
-                subtitle: 'ATV',
-                color: AppTheme.secondaryColor,
+                title: 'Laba Bersih',
+                value: CurrencyFormatter.format(report.netProfit),
+                icon: Icons.account_balance_wallet_outlined,
+                color: AppTheme.successColor,
+                subtitle: showNetProfit ? 'Setelah pengeluaran' : null,
               ).animate(delay: 400.ms).fadeIn(duration: 300.ms).slideY(begin: 0.1, end: 0, duration: 300.ms),
             ),
             const SizedBox(width: 16),
             Expanded(
               child: SummaryStatCard(
-                title: 'Item per Transaksi',
-                value: report.itemsPerTransaction.toStringAsFixed(1),
-                icon: Icons.shopping_basket_outlined,
-                subtitle: 'Basket Size',
-                color: AppTheme.infoColor.withValues(alpha: 0.85),
+                title: 'Margin Bersih',
+                value: '${report.netProfitMargin.toStringAsFixed(1)}%',
+                icon: Icons.show_chart,
+                color: AppTheme.primaryColor,
+                subtitle: showNetProfit ? 'Margin bersih' : 'Margin kotor',
               ).animate(delay: 500.ms).fadeIn(duration: 300.ms).slideY(begin: 0.1, end: 0, duration: 300.ms),
             ),
           ],
@@ -1746,5 +1759,208 @@ class SalesReportScreen extends StatelessWidget {
     }
 
     return maxValue / 5;
+  }
+
+  Widget _buildExpenseBreakdownSection(BuildContext context, SalesReport report) {
+    final profitReport = report.profitReport!;
+    final netProfitIsPositive = profitReport.netProfit >= 0;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Analisis Pengeluaran',
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: AppTheme.getTextPrimaryColor(context),
+              ),
+        ),
+        const SizedBox(height: 16),
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: AppTheme.getCardColor(context),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: AppTheme.getBorderColor(context).withValues(alpha: 0.5),
+              width: 0.5,
+            ),
+            boxShadow: AppShadows.shadowSm,
+          ),
+          child: Column(
+            children: [
+              // Header with net profit indicator
+              Row(
+                children: [
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: netProfitIsPositive
+                          ? AppTheme.successColor.withValues(alpha: 0.1)
+                          : AppTheme.errorColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      netProfitIsPositive
+                          ? Icons.account_balance_wallet_outlined
+                          : Icons.warning_amber_rounded,
+                      color: netProfitIsPositive
+                          ? AppTheme.successColor
+                          : AppTheme.errorColor,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          netProfitIsPositive ? 'Keuntungan Bersih' : 'Kerugian Bersih',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: AppTheme.getTextSecondaryColor(context),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          CurrencyFormatter.format(profitReport.netProfit),
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: netProfitIsPositive
+                                ? AppTheme.successColor
+                                : AppTheme.errorColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              Container(
+                height: 1,
+                color: AppTheme.getBorderColor(context),
+              ),
+              const SizedBox(height: 20),
+
+              // Breakdown bars
+              _buildProfitBreakdownBar(
+                context,
+                'Pendapatan Kotor',
+                profitReport.grossProfit,
+                report.totalRevenue,
+                AppTheme.successColor,
+              ),
+              const SizedBox(height: 12),
+              _buildProfitBreakdownBar(
+                context,
+                'Pengeluaran',
+                profitReport.totalExpenses,
+                report.totalRevenue,
+                AppTheme.errorColor,
+                isNegative: true,
+              ),
+              const SizedBox(height: 12),
+              _buildProfitBreakdownBar(
+                context,
+                'Laba Bersih',
+                profitReport.netProfit,
+                report.totalRevenue,
+                netProfitIsPositive ? AppTheme.successColor : AppTheme.errorColor,
+                showPercentage: true,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProfitBreakdownBar(
+    BuildContext context,
+    String label,
+    double value,
+    double totalRevenue,
+    Color color, {
+    bool isNegative = false,
+    bool showPercentage = false,
+  }) {
+    final percentage = totalRevenue > 0 ? (value.abs() / totalRevenue * 100) : 0.0;
+    final barWidth = totalRevenue > 0 ? (value.abs() / totalRevenue) : 0.0;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 13,
+                color: AppTheme.getTextSecondaryColor(context),
+              ),
+            ),
+            Row(
+              children: [
+                Text(
+                  CurrencyFormatter.format(value),
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: color,
+                  ),
+                ),
+                if (showPercentage) ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      '${percentage.toStringAsFixed(1)}%',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: color,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(4),
+          child: Stack(
+            children: [
+              Container(
+                height: 8,
+                decoration: BoxDecoration(
+                  color: AppTheme.getBorderColor(context).withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              FractionallySizedBox(
+                widthFactor: barWidth,
+                child: Container(
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: color,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 }

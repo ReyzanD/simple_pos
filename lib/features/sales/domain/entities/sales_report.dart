@@ -1,4 +1,5 @@
 import 'payment_method.dart';
+import '../../../expenses/domain/entities/profit_report.dart';
 
 /// Daily sales breakdown
 class DailySales {
@@ -156,6 +157,7 @@ class SalesReport {
   final PeriodComparison? monthOverMonth;
   final PeriodComparison? yearOverYear;
   final List<PeakHourData> peakHours;
+  final ProfitReport? profitReport;
 
   const SalesReport({
     required this.startDate,
@@ -172,12 +174,35 @@ class SalesReport {
     this.monthOverMonth,
     this.yearOverYear,
     this.peakHours = const [],
+    this.profitReport,
   });
 
-  /// Calculates profit margin percentage
+  /// Calculates profit margin percentage (gross profit margin)
   double get profitMargin {
     if (totalRevenue == 0) return 0;
     return (totalProfit / totalRevenue * 100);
+  }
+
+  /// Returns net profit (gross profit minus expenses)
+  /// Returns gross profit if no expense data available
+  double get netProfit {
+    return profitReport?.netProfit ?? totalProfit;
+  }
+
+  /// Returns total expenses
+  double get totalExpenses {
+    return profitReport?.totalExpenses ?? 0;
+  }
+
+  /// Returns net profit margin (after expenses)
+  double get netProfitMargin {
+    if (totalRevenue == 0) return 0;
+    return (netProfit / totalRevenue * 100);
+  }
+
+  /// Returns expense ratio (expenses as percentage of revenue)
+  double get expenseRatio {
+    return profitReport?.expenseRatio ?? 0;
   }
 
   /// Calculates average items per transaction (basket size)

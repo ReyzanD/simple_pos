@@ -53,6 +53,9 @@ dependencies:
   # Phase 6: Advanced Inventory (barcode scanning)
   mobile_scanner: ^7.2.0
 
+  # Phase 7: Receipt Printing
+  print_bluetooth_thermal: ^1.0.6
+
   # Animations
   flutter_animate: ^4.5.0
 
@@ -68,6 +71,11 @@ dependencies:
 
   # App Info & Utilities
   package_info_plus: ^8.1.2
+
+  # POS Enhancement: User Management, Expenses, Export
+  url_launcher: ^6.3.0
+  excel: ^4.0.0
+  crypto: ^3.0.3
 
 dev_dependencies:
   flutter_test:

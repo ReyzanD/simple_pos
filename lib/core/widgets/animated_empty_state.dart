@@ -23,6 +23,70 @@ class AnimatedEmptyState extends StatefulWidget {
     this.iconSize,
   });
 
+  // Preset factory methods for common empty states
+
+  factory AnimatedEmptyState.noProducts({VoidCallback? onAction}) =>
+      AnimatedEmptyState(
+        icon: Icons.inventory_2_outlined,
+        title: 'Belum Ada Produk',
+        subtitle: 'Mulai tambahkan produk ke inventaris Anda',
+        actionText: 'Tambah Produk',
+        onAction: onAction,
+      );
+
+  factory AnimatedEmptyState.noTransactions({VoidCallback? onAction}) =>
+      AnimatedEmptyState(
+        icon: Icons.receipt_long_outlined,
+        title: 'Belum Ada Transaksi',
+        subtitle: 'Transaksi penjualan Anda akan muncul di sini',
+        actionText: 'Mulai Transaksi',
+        onAction: onAction,
+      );
+
+  factory AnimatedEmptyState.noExpenses({VoidCallback? onAction}) =>
+      AnimatedEmptyState(
+        icon: Icons.receipt_long_outlined,
+        title: 'Belum Ada Pengeluaran',
+        subtitle: 'Catat pengeluaran operasional toko',
+        actionText: 'Tambah Pengeluaran',
+        onAction: onAction,
+      );
+
+  factory AnimatedEmptyState.noSuppliers({VoidCallback? onAction}) =>
+      AnimatedEmptyState(
+        icon: Icons.local_shipping_outlined,
+        title: 'Belum Ada Pemasok',
+        subtitle: 'Tambahkan pemasok untuk inventori Anda',
+        actionText: 'Tambah Pemasok',
+        onAction: onAction,
+      );
+
+  factory AnimatedEmptyState.noCategories({VoidCallback? onAction}) =>
+      AnimatedEmptyState(
+        icon: Icons.category_outlined,
+        title: 'Belum Ada Kategori',
+        subtitle: 'Kategori membantu mengelola produk',
+        actionText: 'Tambah Kategori',
+        onAction: onAction,
+      );
+
+  factory AnimatedEmptyState.searchNoResults({String? query}) =>
+      AnimatedEmptyState(
+        icon: Icons.search_off_rounded,
+        title: 'Tidak Ditemukan',
+        subtitle:
+            query != null ? 'Tidak ada hasil untuk "$query"' : 'Coba kata kunci lain',
+      );
+
+  factory AnimatedEmptyState.noNetwork({VoidCallback? onRetry}) =>
+      AnimatedEmptyState(
+        icon: Icons.cloud_off_rounded,
+        title: 'Tidak Ada Koneksi',
+        subtitle: 'Periksa koneksi internet Anda',
+        actionText: 'Coba Lagi',
+        onAction: onRetry,
+      );
+
   @override
   State<AnimatedEmptyState> createState() => _AnimatedEmptyStateState();
 }

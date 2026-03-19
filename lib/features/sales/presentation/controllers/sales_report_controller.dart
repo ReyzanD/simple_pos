@@ -3,6 +3,8 @@ import 'package:flutter/foundation.dart';
 import '../../domain/entities/sales_report.dart';
 import '../../domain/usecases/get_sales_report_usecase.dart' show GetSalesReportUseCase, ReportPeriod;
 import '../../domain/usecases/export_sales_to_csv_usecase.dart';
+import '../../../expenses/domain/usecases/get_profit_report_usecase.dart';
+import '../../../expenses/domain/entities/profit_report.dart';
 import '../../../../core/utils/logger.dart';
 
 /// Date range for reports
@@ -18,12 +20,15 @@ class ReportDateRange {
 class SalesReportController extends ChangeNotifier {
   final GetSalesReportUseCase _getSalesReportUseCase;
   final ExportSalesToCsvUseCase _exportSalesToCsvUseCase;
+  final GetProfitReportUseCase? _getProfitReportUseCase;
 
   SalesReportController({
     required GetSalesReportUseCase getSalesReportUseCase,
     required ExportSalesToCsvUseCase exportSalesToCsvUseCase,
+    GetProfitReportUseCase? getProfitReportUseCase,
   })  : _getSalesReportUseCase = getSalesReportUseCase,
-        _exportSalesToCsvUseCase = exportSalesToCsvUseCase {
+        _exportSalesToCsvUseCase = exportSalesToCsvUseCase,
+        _getProfitReportUseCase = getProfitReportUseCase {
     loadReport();
   }
 
@@ -73,7 +78,40 @@ class SalesReportController extends ChangeNotifier {
         period: _period,
       );
 
-      _report = result;
+      // Load profit report if use case is available
+      ProfitReport? profitReport;
+      if (_getProfitReportUseCase != null) {
+        try {
+          profitReport = await _getProfitReportUseCase.execute(
+            startDate: _dateRange.start,
+            endDate: _dateRange.end,
+          );
+          AppLogger.info('Profit report loaded successfully');
+        } catch (e) {
+          AppLogger.warning('Failed to load profit report, continuing without it: $e');
+          // Continue without profit data - not a critical failure
+        }
+      }
+
+      // Create updated report with profit data
+      _report = SalesReport(
+        startDate: result.startDate,
+        endDate: result.endDate,
+        totalTransactions: result.totalTransactions,
+        totalRevenue: result.totalRevenue,
+        totalProfit: result.totalProfit,
+        averageTransactionValue: result.averageTransactionValue,
+        totalItemsSold: result.totalItemsSold,
+        dailyBreakdown: result.dailyBreakdown,
+        topProducts: result.topProducts,
+        paymentBreakdown: result.paymentBreakdown,
+        categoryBreakdown: result.categoryBreakdown,
+        monthOverMonth: result.monthOverMonth,
+        yearOverYear: result.yearOverYear,
+        peakHours: result.peakHours,
+        profitReport: profitReport,
+      );
+
       _isLoading = false;
       notifyListeners();
       AppLogger.info('Sales report loaded successfully');
