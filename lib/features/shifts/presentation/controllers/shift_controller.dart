@@ -5,6 +5,8 @@ import '../../domain/usecases/close_shift_usecase.dart';
 import '../../domain/usecases/get_current_shift_usecase.dart';
 import '../../domain/usecases/get_shifts_usecase.dart';
 import '../../domain/usecases/update_shift_totals_usecase.dart';
+import '../../domain/usecases/save_cash_count_usecase.dart';
+import '../../domain/usecases/get_cash_count_by_shift_usecase.dart';
 import '../../../../core/exceptions/app_exceptions.dart';
 import '../../../../core/utils/logger.dart';
 
@@ -15,6 +17,8 @@ class ShiftController extends ChangeNotifier {
   final GetCurrentShiftUseCase getCurrentShiftUseCase;
   final GetShiftsUseCase getShiftsUseCase;
   final UpdateShiftTotalsUseCase updateShiftTotalsUseCase;
+  final SaveCashCountUseCase saveCashCountUseCase;
+  final GetCashCountByShiftUseCase getCashCountByShiftUseCase;
 
   bool _disposed = false;
 
@@ -24,6 +28,8 @@ class ShiftController extends ChangeNotifier {
     required this.getCurrentShiftUseCase,
     required this.getShiftsUseCase,
     required this.updateShiftTotalsUseCase,
+    required this.saveCashCountUseCase,
+    required this.getCashCountByShiftUseCase,
   }) {
     loadCurrentShift();
     loadShiftHistory();

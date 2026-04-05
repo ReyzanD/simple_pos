@@ -1,4 +1,5 @@
 import '../../domain/entities/shift.dart';
+import '../../domain/entities/cash_count.dart';
 import '../../domain/repositories/shift_repository.dart';
 import '../datasources/shift_local_datasource_impl.dart';
 import '../../../../core/exceptions/app_exceptions.dart';
@@ -211,5 +212,12 @@ class ShiftRepositoryImpl implements ShiftRepository {
         stackTrace: stackTrace,
       );
     }
+  }
+
+  @override
+  Future<void> saveCashCount(CashCount cashCount) async {
+    // Cash count is saved via CashCountRepository
+    // This is a no-op here as it's handled separately
+    // The ShiftController coordinates both repositories
   }
 }

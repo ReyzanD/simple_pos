@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../inventory/presentation/controllers/inventory_controller.dart';
 import '../../inventory/presentation/screens/inventory_screen.dart';
 import '../../pos/presentation/screens/pos_screen.dart';
+import '../../pos/presentation/controllers/pos_controller.dart';
 import '../../../core/presentation/widgets/barcode_scanner_screen.dart';
 import '../../sales/presentation/screens/sales_history_screen.dart';
 import '../../sales/presentation/screens/sales_report_screen.dart';
@@ -18,8 +19,6 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/animations/animation_constants.dart';
 import '../../../../core/utils/haptic_helper.dart';
-import '../../shifts/presentation/screens/shift_management_screen.dart';
-import '../../users/presentation/screens/user_management_screen.dart';
 import 'drawer_header.dart';
 import 'drawer_sections.dart';
 
@@ -182,28 +181,9 @@ class MainNavigationState extends State<MainNavigation>
   Future<void> _handleQRScan() async {
     // Smart scanner that adapts based on current screen
     switch (_currentIndex) {
-      case 0: // POS - Instant scan, add to cart
-        if (_posScreenKey.currentState != null) {
-          final result = await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => BarcodeScannerScreen(
-                title: 'Scan Product',
-                instruction: 'Align barcode within frame to add to cart',
-                mode: ScannerMode.instant,
-                enableManualEntry: true,
-                enableHistory: true,
-                onScanned: (barcode) {
-                  Navigator.pop(context, barcode);
-                },
-              ),
-            ),
-          );
-
-          if (result != null && result is String && mounted) {
-            _posScreenKey.currentState?.handleBarcodeScanned(result);
-          }
-        }
+      case 0: // POS - Full-screen scan mode
+        final posController = context.read<POSController>();
+        posController.enterScanMode();
         break;
 
       case 1: // Inventory - Preview with validation

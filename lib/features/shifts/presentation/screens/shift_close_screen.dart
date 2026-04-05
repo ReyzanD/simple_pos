@@ -6,6 +6,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/modern_button.dart';
 import '../../../../core/widgets/modern_card.dart';
 import 'package:intl/intl.dart';
+import 'cash_count_screen.dart';
 
 /// Screen for closing an active cashier shift
 class ShiftCloseScreen extends StatefulWidget {
@@ -26,18 +27,38 @@ class _ShiftCloseScreenState extends State<ShiftCloseScreen> {
   }
 
   Future<void> _handleCloseShift() async {
-    if (!_formKey.currentState!.validate()) {
+    final controller = context.read<ShiftController>();
+    final shift = controller.currentShift;
+
+    if (shift == null) {
       return;
     }
 
-    final controller = context.read<ShiftController>();
-
-    final success = await controller.closeShift(
-      closingBalance: double.parse(_closingBalanceController.text),
+    // Navigate to cash count screen first
+    final result = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CashCountScreen(
+          shiftId: shift.id!,
+          expectedAmount: shift.expectedClosingBalance,
+        ),
+      ),
     );
 
-    if (mounted && success) {
-      Navigator.pop(context, true);
+    // Only close shift if cash count was saved
+    if (result == true && mounted) {
+      // Proceed with shift close
+      final closingBalance = _closingBalanceController.text.isEmpty
+          ? 0.0
+          : double.parse(_closingBalanceController.text);
+
+      final success = await controller.closeShift(
+        closingBalance: closingBalance,
+      );
+
+      if (mounted && success) {
+        Navigator.pop(context, true);
+      }
     }
   }
 

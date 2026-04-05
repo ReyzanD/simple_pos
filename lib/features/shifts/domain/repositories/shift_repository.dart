@@ -1,4 +1,5 @@
 import '../entities/shift.dart';
+import '../entities/cash_count.dart';
 
 /// Repository interface for Shift operations
 /// Abstracts the data source for shift management
@@ -41,4 +42,7 @@ abstract class ShiftRepository {
 
   /// Deletes a shift (typically for testing/correction purposes)
   Future<bool> deleteShift(int shiftId);
+
+  /// Saves cash count for a shift
+  Future<void> saveCashCount(CashCount cashCount);
 }

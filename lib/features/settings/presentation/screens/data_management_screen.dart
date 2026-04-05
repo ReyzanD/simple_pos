@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/services/export_service.dart';
 import '../../../../core/services/backup_service.dart';
-import '../../../users/presentation/controllers/auth_controller.dart';
 import '../../../../services/database/database_helper.dart';
 
 /// Screen for data management (export, backup, restore)

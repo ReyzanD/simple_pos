@@ -14,13 +14,13 @@ import '../widgets/cart_modal.dart';
 import '../widgets/hold_order_dialog.dart';
 import '../widgets/variant_selector_dialog.dart';
 import 'held_orders_screen.dart';
+import 'scan_mode_screen.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/success_animation.dart';
 import '../../../../core/widgets/modern_button.dart';
 import '../../../../core/widgets/shimmer_loading.dart';
 import '../../../../core/widgets/kpi_stats_dashboard.dart';
 import '../../../../core/widgets/category_icons.dart';
-import '../../../../core/presentation/widgets/barcode_scanner_screen.dart';
 import '../../../shared/widgets/empty_state_display.dart';
 import '../../../shared/widgets/error_display.dart';
 import '../../../shared/presentation/main_navigation.dart';
@@ -199,6 +199,13 @@ class POSScreenState extends State<POSScreen>
   @override
   Widget build(BuildContext context) {
     super.build(context); // Required for AutomaticKeepAliveClientMixin
+    final controller = context.watch<POSController>();
+
+    // Show scan mode if active
+    if (controller.isInScanMode) {
+      return const ScanModeScreen();
+    }
+
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
@@ -251,23 +258,15 @@ class POSScreenState extends State<POSScreen>
       ),
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(bottom: 105), // Above floating nav
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            const SizedBox(height: 12),
-            // Cart FAB
-            Consumer<POSController>(
-              builder: (context, controller, _) {
-                return _CartFloatingButton(
-                  itemCount: controller.cartItemCount,
-                  total: controller.cartTotal,
-                  onTap: () => _openCartModal(context, controller),
-                  key: _cartIconKey,
-                );
-              },
-            ),
-          ],
+        child: Consumer<POSController>(
+          builder: (context, controller, _) {
+            return _CartFloatingButton(
+              itemCount: controller.cartItemCount,
+              total: controller.cartTotal,
+              onTap: () => _openCartModal(context, controller),
+              key: _cartIconKey,
+            );
+          },
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
@@ -922,38 +921,6 @@ class POSScreenState extends State<POSScreen>
     Navigator.of(
       context,
     ).push(MaterialPageRoute(builder: (context) => const HeldOrdersScreen()));
-  }
-
-  void _openBarcodeScanner() {
-    final controller = context.read<POSController>();
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => BarcodeScannerScreen(
-          title: 'Scan Produk',
-          instruction: 'Arahkan barcode ke dalam bingkai',
-          mode: ScannerMode.preview,
-          productLookup: (barcode) {
-            final product = controller.products.firstWhere(
-              (p) => p.barcode == barcode,
-              orElse: () => controller.products.firstWhere(
-                (p) => p.id.toString() == barcode,
-                orElse: () => Product(id: -1, name: '', price: 0, stock: 0),
-              ),
-            );
-            if (product.id == -1) return null;
-            return {
-              'name': product.name,
-              'price': 'Rp ${product.price.toStringAsFixed(0)}',
-              'stock': product.stock.toString(),
-            };
-          },
-          onScanned: (barcode) {
-            // Handle the scanned barcode
-            handleBarcodeScanned(barcode);
-          },
-        ),
-      ),
-    );
   }
 
   void handleBarcodeScanned(String barcode) {

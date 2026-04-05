@@ -351,6 +351,11 @@ class DatabaseHelper {
         await _migrateToV13(db);
       }
 
+      if (oldVersion < 14) {
+        // Migration from version 13 to 14 (add cash_counts table)
+        await _migrateToV14(db);
+      }
+
       AppLogger.database('Database upgrade completed successfully');
     } catch (e, stackTrace) {
       AppLogger.error(
@@ -856,6 +861,31 @@ class DatabaseHelper {
     await db.execute('CREATE INDEX IF NOT EXISTS idx_expenses_created_by ON expenses(created_by)');
 
     AppLogger.database('Database migration to v13 completed');
+  }
+
+  /// Migration from version 13 to 14
+  /// Add cash_counts table for detailed bill denomination tracking
+  Future _migrateToV14(Database db) async {
+    AppLogger.database('Migrating database to v14');
+
+    // Create cash_counts table
+    await db.execute('''
+      CREATE TABLE cash_counts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        shift_id INTEGER NOT NULL,
+        denomination INTEGER NOT NULL,
+        count INTEGER NOT NULL DEFAULT 0,
+        counted_at INTEGER NOT NULL,
+        counted_by TEXT NOT NULL,
+        FOREIGN KEY (shift_id) REFERENCES shifts(id) ON DELETE CASCADE
+      )
+    ''');
+
+    // Create indexes
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_cash_counts_shift ON cash_counts(shift_id)');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_cash_counts_denomination ON cash_counts(denomination)');
+
+    AppLogger.database('Database migration to v14 completed');
   }
 
   /// Simple password hash for demo purposes

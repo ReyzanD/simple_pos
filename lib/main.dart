@@ -86,12 +86,16 @@ import 'features/settings/presentation/controllers/settings_controller.dart';
 
 // Features - Shifts
 import 'features/shifts/data/datasources/shift_local_datasource_impl.dart';
+import 'features/shifts/data/datasources/cash_count_local_datasource_impl.dart';
 import 'features/shifts/data/repositories/shift_repository_impl.dart';
+import 'features/shifts/data/repositories/cash_count_repository_impl.dart';
 import 'features/shifts/domain/usecases/open_shift_usecase.dart';
 import 'features/shifts/domain/usecases/close_shift_usecase.dart';
 import 'features/shifts/domain/usecases/get_current_shift_usecase.dart';
 import 'features/shifts/domain/usecases/get_shifts_usecase.dart';
 import 'features/shifts/domain/usecases/update_shift_totals_usecase.dart';
+import 'features/shifts/domain/usecases/save_cash_count_usecase.dart';
+import 'features/shifts/domain/usecases/get_cash_count_by_shift_usecase.dart';
 import 'features/shifts/presentation/controllers/shift_controller.dart';
 
 // Features - Users
@@ -607,6 +611,19 @@ class POSApp extends StatelessWidget {
               ShiftRepositoryImpl(localDataSource: dataSource),
         ),
 
+        // Cash count data source
+        ProxyProvider<ShiftLocalDataSourceImpl, CashCountLocalDataSourceImpl>(
+          update: (_, shiftDataSource, __) => CashCountLocalDataSourceImpl(
+            databaseHelper: shiftDataSource.databaseHelper,
+          ),
+        ),
+
+        ProxyProvider<CashCountLocalDataSourceImpl, CashCountRepositoryImpl>(
+          update: (_, dataSource, __) => CashCountRepositoryImpl(
+            localDataSource: dataSource,
+          ),
+        ),
+
         // Shift - Domain Layer (Use Cases)
         ProxyProvider<ShiftRepositoryImpl, OpenShiftUseCase>(
           update: (_, repo, _) => OpenShiftUseCase(shiftRepository: repo),
@@ -624,6 +641,15 @@ class POSApp extends StatelessWidget {
           update: (_, repo, _) => UpdateShiftTotalsUseCase(shiftRepository: repo),
         ),
 
+        // Cash count use cases
+        ProxyProvider<CashCountRepositoryImpl, SaveCashCountUseCase>(
+          update: (_, repo, __) => SaveCashCountUseCase(cashCountRepository: repo),
+        ),
+
+        ProxyProvider<CashCountRepositoryImpl, GetCashCountByShiftUseCase>(
+          update: (_, repo, __) => GetCashCountByShiftUseCase(cashCountRepository: repo),
+        ),
+
         // Shift - Presentation Layer (Controller)
         ChangeNotifierProvider<ShiftController>(
           create: (context) => ShiftController(
@@ -632,6 +658,8 @@ class POSApp extends StatelessWidget {
             getCurrentShiftUseCase: context.read<GetCurrentShiftUseCase>(),
             getShiftsUseCase: context.read<GetShiftsUseCase>(),
             updateShiftTotalsUseCase: context.read<UpdateShiftTotalsUseCase>(),
+            saveCashCountUseCase: context.read<SaveCashCountUseCase>(),
+            getCashCountByShiftUseCase: context.read<GetCashCountByShiftUseCase>(),
           ),
         ),
 

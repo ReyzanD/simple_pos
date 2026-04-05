@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../controllers/shift_controller.dart';
-import '../screens/shift_open_screen.dart';
-import '../screens/shift_close_screen.dart';
+import 'shift_open_screen.dart';
+import 'shift_close_screen.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/modern_card.dart';
 import '../../../../core/widgets/modern_button.dart';
@@ -37,18 +37,15 @@ class _ShiftManagementScreenState extends State<ShiftManagementScreen> {
   }
 
   Future<void> _handleCloseShift() async {
-    final controller = context.read<ShiftController>();
-    if (controller.currentShift == null) return;
-
     final result = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
-        builder: (_) => ShiftCloseScreen(shift: controller.currentShift!),
+        builder: (_) => const ShiftCloseScreen(),
       ),
     );
     if (result == true && mounted) {
-      controller.loadCurrentShift();
-      controller.loadShiftHistory();
+      context.read<ShiftController>().loadCurrentShift();
+      context.read<ShiftController>().loadShiftHistory();
     }
   }
 
@@ -275,7 +272,7 @@ class _ShiftManagementScreenState extends State<ShiftManagementScreen> {
             Icon(
               Icons.history,
               size: 48,
-              color: AppTheme.getTextTertiaryColor(context),
+              color: AppTheme.textTertiary,
             ),
             const SizedBox(height: 16),
             Text(
@@ -291,7 +288,7 @@ class _ShiftManagementScreenState extends State<ShiftManagementScreen> {
               'Shift yang sudah ditutup akan muncul di sini',
               style: TextStyle(
                 fontSize: 14,
-                color: AppTheme.getTextTertiaryColor(context),
+                color: AppTheme.textTertiary,
               ),
               textAlign: TextAlign.center,
             ),
@@ -543,10 +540,11 @@ class _ShiftManagementScreenState extends State<ShiftManagementScreen> {
     )}';
   }
 
-  String _formatDateTime(int? timestamp) {
-    if (timestamp == null) return '-';
-    final date = DateTime.fromMillisecondsSinceEpoch(timestamp * 1000);
-    return '${date.day}/${date.month}/${date.year} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+  String _formatDateTime(DateTime? dateTime) {
+    if (dateTime == null) return '-';
+    final hour = dateTime.hour.toString().padLeft(2, '0');
+    final minute = dateTime.minute.toString().padLeft(2, '0');
+    return '${dateTime.day}/${dateTime.month}/${dateTime.year} $hour:$minute';
   }
 
   String _calculateDuration(int openedAt, int closedAt) {

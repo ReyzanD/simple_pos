@@ -2,12 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../controllers/auth_controller.dart';
-import '../domain/entities/user.dart';
-import '../domain/entities/user_role.dart';
+import '../../domain/entities/user.dart';
+import '../../domain/entities/user_role.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/modern_card.dart';
 import '../../../../core/widgets/modern_button.dart';
-import '../../../../core/widgets/modern_secondary_button.dart';
 
 /// Screen for managing application users
 class UserManagementScreen extends StatefulWidget {
@@ -312,7 +311,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                       : 'Belum pernah login',
                   style: TextStyle(
                     fontSize: 12,
-                    color: AppTheme.getTextTertiaryColor(context),
+                    color: AppTheme.textTertiary,
                   ),
                 ),
               ],
@@ -355,11 +354,18 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
               if (!isCurrentUser) ...[
                 const SizedBox(width: 12),
                 Expanded(
-                  child: ModernSecondaryButton(
-                    text: 'Hapus',
-                    icon: Icons.delete_outline,
+                  child: OutlinedButton.icon(
+                    icon: const Icon(Icons.delete_outline, size: 18),
+                    label: const Text('Hapus'),
                     onPressed: onDelete,
-                    foregroundColor: AppTheme.errorColor,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppTheme.errorColor,
+                      side: BorderSide(color: AppTheme.errorColor, width: 2),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -370,19 +376,18 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
     );
   }
 
-  String _formatDateTime(int timestamp) {
-    final date = DateTime.fromMillisecondsSinceEpoch(timestamp * 1000);
+  String _formatDateTime(DateTime dateTime) {
     final now = DateTime.now();
-    final difference = now.difference(date);
+    final difference = now.difference(dateTime);
 
     if (difference.inDays == 0) {
-      return 'Hari ini, ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+      return 'Hari ini, ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
     } else if (difference.inDays == 1) {
       return 'Kemarin';
     } else if (difference.inDays < 7) {
       return '${difference.inDays} hari lalu';
     } else {
-      return '${date.day}/${date.month}/${date.year}';
+      return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
     }
   }
 }

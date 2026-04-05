@@ -1,4 +1,5 @@
 import '../../../../core/exceptions/app_exceptions.dart';
+import 'cash_count.dart';
 
 /// Shift entity representing a cashier's work shift
 /// Tracks opening/closing balance, sales by payment method, and transaction counts
@@ -14,6 +15,7 @@ class Shift {
   final int totalTransactions;
   final DateTime openedAt;
   final DateTime? closedAt;
+  final CashCount? cashCount;
 
   const Shift({
     this.id,
@@ -27,6 +29,7 @@ class Shift {
     this.totalTransactions = 0,
     required this.openedAt,
     this.closedAt,
+    this.cashCount,
   });
 
   /// Checks if this shift is currently active (not closed)
@@ -64,6 +67,7 @@ class Shift {
     int? totalTransactions,
     DateTime? openedAt,
     DateTime? closedAt,
+    CashCount? cashCount,
   }) {
     return Shift(
       id: id ?? this.id,
@@ -77,6 +81,7 @@ class Shift {
       totalTransactions: totalTransactions ?? this.totalTransactions,
       openedAt: openedAt ?? this.openedAt,
       closedAt: closedAt ?? this.closedAt,
+      cashCount: cashCount ?? this.cashCount,
     );
   }
 
@@ -177,7 +182,8 @@ class Shift {
         other.transferSales == transferSales &&
         other.totalTransactions == totalTransactions &&
         other.openedAt == openedAt &&
-        other.closedAt == closedAt;
+        other.closedAt == closedAt &&
+        other.cashCount == cashCount;
   }
 
   @override
@@ -192,5 +198,6 @@ class Shift {
       transferSales.hashCode ^
       totalTransactions.hashCode ^
       openedAt.hashCode ^
-      closedAt.hashCode;
+      closedAt.hashCode ^
+      cashCount.hashCode;
 }

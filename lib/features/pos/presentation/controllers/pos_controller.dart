@@ -75,6 +75,24 @@ class POSController extends ChangeNotifier {
     super.dispose();
   }
 
+  /// Toggle scan mode on/off
+  void toggleScanMode() {
+    _isInScanMode = !_isInScanMode;
+    notifyListeners();
+  }
+
+  /// Enter scan mode
+  void enterScanMode() {
+    _isInScanMode = true;
+    notifyListeners();
+  }
+
+  /// Exit scan mode
+  void exitScanMode() {
+    _isInScanMode = false;
+    notifyListeners();
+  }
+
   // State
   List<Product> _products = [];
   List<CartItem> _cart = [];
@@ -90,6 +108,9 @@ class POSController extends ChangeNotifier {
   dynamic _lastTransaction; // Transaction from last successful checkout
   double? _lastCashReceived;
   double? _lastChange;
+
+  // Scan mode state
+  bool _isInScanMode = false;
 
   // Filter & Sort state
   bool _inStockOnly = false;
@@ -116,6 +137,9 @@ class POSController extends ChangeNotifier {
   dynamic get lastTransaction => _lastTransaction;
   double? get lastCashReceived => _lastCashReceived;
   double? get lastChange => _lastChange;
+
+  // Scan mode getters
+  bool get isInScanMode => _isInScanMode;
 
   // Filter & Sort getters
   bool get inStockOnly => _inStockOnly;
