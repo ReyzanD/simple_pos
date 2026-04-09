@@ -35,7 +35,8 @@ class _PaymentMethodSelectorState extends State<PaymentMethodSelector> {
     super.initState();
     _selectedMethod = widget.initialMethod;
     // Initialize with total amount (show decimals if amount has cents)
-    final initialValue = widget.totalAmount == widget.totalAmount.truncateToDouble()
+    final initialValue =
+        widget.totalAmount == widget.totalAmount.truncateToDouble()
         ? widget.totalAmount.toStringAsFixed(0)
         : widget.totalAmount.toStringAsFixed(2);
     _cashReceivedController.text = initialValue;
@@ -79,7 +80,8 @@ class _PaymentMethodSelectorState extends State<PaymentMethodSelector> {
   void _notifyPaymentChanged() {
     if (_selectedMethod == PaymentMethod.cash) {
       // Use the local state if available, otherwise parse from controller
-      final cashReceived = _cashReceived ?? double.tryParse(_cashReceivedController.text);
+      final cashReceived =
+          _cashReceived ?? double.tryParse(_cashReceivedController.text);
       widget.onPaymentSelected(_selectedMethod, cashReceived: cashReceived);
     } else if (_selectedMethod == PaymentMethod.card) {
       widget.onPaymentSelected(
@@ -106,7 +108,7 @@ class _PaymentMethodSelectorState extends State<PaymentMethodSelector> {
         ),
         const SizedBox(height: UIConstants.spacingSmall),
 
-        // Payment Method Radio Buttons
+        // Payment Method Radio Buttons (old API + ignore deprecation)
         ...PaymentMethod.values.map((method) {
           return RadioListTile<PaymentMethod>(
             title: Row(

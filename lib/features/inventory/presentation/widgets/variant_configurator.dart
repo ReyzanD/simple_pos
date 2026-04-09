@@ -113,7 +113,7 @@ class _VariantConfiguratorState extends State<VariantConfigurator> {
 
     for (final combo in combinations) {
       // Generate readable name
-      final name = combo.entries.map((e) => '${e.value}').join(' / ');
+      final name = combo.entries.map((e) => e.value).join(' / ');
 
       variants.add(ProductVariant(
         productId: widget.productId,

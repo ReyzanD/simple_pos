@@ -43,12 +43,7 @@ class ExportService {
     );
 
     final rows = <List<String>>[];
-    rows.add([
-      'ID',
-      'Total',
-      'Metode Pembayaran',
-      'Waktu Dibuat',
-    ]);
+    rows.add(['ID', 'Total', 'Metode Pembayaran', 'Waktu Dibuat']);
 
     for (var tx in transactions) {
       final createdAt = tx['created_at'] as int;
@@ -56,13 +51,13 @@ class ExportService {
         tx['id'].toString(),
         (tx['total_amount'] as num).toStringAsFixed(2),
         tx['payment_method'].toString(),
-        DateTime.fromMillisecondsSinceEpoch(createdAt * 1000)
-            .toLocal()
-            .toString(),
+        DateTime.fromMillisecondsSinceEpoch(
+          createdAt * 1000,
+        ).toLocal().toString(),
       ]);
     }
 
-    final csvString = const ListToCsvConverter().convert(rows);
+    final csvString = csv.encode(rows);
 
     final directory = await getTemporaryDirectory();
     final timestamp = DateTime.now().millisecondsSinceEpoch;
@@ -102,7 +97,7 @@ class ExportService {
       ]);
     }
 
-    final csvString = const ListToCsvConverter().convert(rows);
+    final csvString = csv.encode(rows);
 
     final directory = await getTemporaryDirectory();
     final timestamp = DateTime.now().millisecondsSinceEpoch;
@@ -161,13 +156,13 @@ class ExportService {
         (e['amount'] as num).toStringAsFixed(2),
         e['description']?.toString() ?? '',
         e['payment_method'].toString(),
-        DateTime.fromMillisecondsSinceEpoch(dateValue * 1000)
-            .toLocal()
-            .toString(),
+        DateTime.fromMillisecondsSinceEpoch(
+          dateValue * 1000,
+        ).toLocal().toString(),
       ]);
     }
 
-    final csvString = const ListToCsvConverter().convert(rows);
+    final csvString = csv.encode(rows);
 
     final directory = await getTemporaryDirectory();
     final timestamp = DateTime.now().millisecondsSinceEpoch;
@@ -227,9 +222,9 @@ class ExportService {
         DoubleCellValue((tx['total_amount'] as num).toDouble()),
         TextCellValue(tx['payment_method'].toString()),
         TextCellValue(
-          DateTime.fromMillisecondsSinceEpoch(createdAt * 1000)
-              .toLocal()
-              .toString(),
+          DateTime.fromMillisecondsSinceEpoch(
+            createdAt * 1000,
+          ).toLocal().toString(),
         ),
       ]);
     }
@@ -282,6 +277,12 @@ class ExportService {
 
   /// Share exported file
   Future<void> shareExport(String filePath) async {
-    await Share.shareXFiles([XFile(filePath)]);
+    await SharePlus.instance.share(
+      ShareParams(
+        files: [XFile(filePath)],
+        text: 'Laporan Penjualan',
+        subject: 'Laporan Penjualan',
+      ),
+    );
   }
 }

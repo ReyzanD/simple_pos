@@ -108,7 +108,7 @@ class PromotionsTabWidget extends StatelessWidget {
           child: ListView.separated(
             padding: const EdgeInsets.all(16),
             itemCount: controller.promotions.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 12),
+            separatorBuilder: (_, _) => const SizedBox(height: 12),
             itemBuilder: (context, index) {
               final promotion = controller.promotions[index];
               return _buildPromotionCard(context, promotion, controller);
@@ -227,7 +227,7 @@ class PromotionsTabWidget extends StatelessWidget {
                     onChanged: (value) {
                       controller.togglePromotion(promotion.id!, value);
                     },
-                    activeColor: AppTheme.successColor,
+                    activeThumbColor: AppTheme.successColor,
                   ),
 
                   const SizedBox(width: 8),

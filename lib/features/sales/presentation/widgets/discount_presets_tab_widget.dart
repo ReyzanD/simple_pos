@@ -81,7 +81,7 @@ class DiscountPresetsTabWidget extends StatelessWidget {
     return ListView.separated(
       padding: const EdgeInsets.all(16),
       itemCount: controller.discountPresets.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      separatorBuilder: (_, _) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final preset = controller.discountPresets[index];
         return _buildPresetCard(context, preset, controller);

@@ -45,7 +45,7 @@ class PrintReceiptDialog extends StatefulWidget {
 class _PrintReceiptDialogState extends State<PrintReceiptDialog> {
   bool _isPrinting = false;
   String? _errorMessage;
-  int _paperWidth = 58; // Default to 58mm
+  final int _paperWidth = 58; // Default to 58mm
 
   @override
   Widget build(BuildContext context) {

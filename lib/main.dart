@@ -295,20 +295,28 @@ class POSApp extends StatelessWidget {
 
         // Product Variant - Data Layer
         ProxyProvider<DatabaseHelper, ProductVariantLocalDataSourceImpl>(
-          update: (_, db, __) => ProductVariantLocalDataSourceImpl(databaseHelper: db),
+          update: (_, db, _) =>
+              ProductVariantLocalDataSourceImpl(databaseHelper: db),
         ),
 
-        ProxyProvider<ProductVariantLocalDataSourceImpl, ProductVariantRepositoryImpl>(
-          update: (_, dataSource, __) =>
+        ProxyProvider<
+          ProductVariantLocalDataSourceImpl,
+          ProductVariantRepositoryImpl
+        >(
+          update: (_, dataSource, _) =>
               ProductVariantRepositoryImpl(dataSource: dataSource),
         ),
 
         ProxyProvider<DatabaseHelper, VariantAttributeLocalDataSourceImpl>(
-          update: (_, db, __) => VariantAttributeLocalDataSourceImpl(databaseHelper: db),
+          update: (_, db, _) =>
+              VariantAttributeLocalDataSourceImpl(databaseHelper: db),
         ),
 
-        ProxyProvider<VariantAttributeLocalDataSourceImpl, VariantAttributeRepositoryImpl>(
-          update: (_, dataSource, __) =>
+        ProxyProvider<
+          VariantAttributeLocalDataSourceImpl,
+          VariantAttributeRepositoryImpl
+        >(
+          update: (_, dataSource, _) =>
               VariantAttributeRepositoryImpl(dataSource: dataSource),
         ),
 
@@ -319,33 +327,59 @@ class POSApp extends StatelessWidget {
         ProxyProvider<ProductVariantRepositoryImpl, AddProductVariantUseCase>(
           update: (_, repo, _) => AddProductVariantUseCase(repository: repo),
         ),
-        ProxyProvider<ProductVariantRepositoryImpl, AddProductVariantsBatchUseCase>(
-          update: (_, repo, _) => AddProductVariantsBatchUseCase(repository: repo),
+        ProxyProvider<
+          ProductVariantRepositoryImpl,
+          AddProductVariantsBatchUseCase
+        >(
+          update: (_, repo, _) =>
+              AddProductVariantsBatchUseCase(repository: repo),
         ),
-        ProxyProvider<ProductVariantRepositoryImpl, UpdateProductVariantUseCase>(
+        ProxyProvider<
+          ProductVariantRepositoryImpl,
+          UpdateProductVariantUseCase
+        >(
           update: (_, repo, _) => UpdateProductVariantUseCase(repository: repo),
         ),
         ProxyProvider<ProductVariantRepositoryImpl, UpdateVariantStockUseCase>(
           update: (_, repo, _) => UpdateVariantStockUseCase(repository: repo),
         ),
-        ProxyProvider<ProductVariantRepositoryImpl, DeleteProductVariantUseCase>(
+        ProxyProvider<
+          ProductVariantRepositoryImpl,
+          DeleteProductVariantUseCase
+        >(
           update: (_, repo, _) => DeleteProductVariantUseCase(repository: repo),
         ),
-        ProxyProvider<ProductVariantRepositoryImpl, DeleteProductVariantsByProductIdUseCase>(
-          update: (_, repo, _) => DeleteProductVariantsByProductIdUseCase(repository: repo),
+        ProxyProvider<
+          ProductVariantRepositoryImpl,
+          DeleteProductVariantsByProductIdUseCase
+        >(
+          update: (_, repo, _) =>
+              DeleteProductVariantsByProductIdUseCase(repository: repo),
         ),
 
-        ProxyProvider<VariantAttributeRepositoryImpl, GetVariantAttributesUseCase>(
+        ProxyProvider<
+          VariantAttributeRepositoryImpl,
+          GetVariantAttributesUseCase
+        >(
           update: (_, repo, _) => GetVariantAttributesUseCase(repository: repo),
         ),
-        ProxyProvider<VariantAttributeRepositoryImpl, AddVariantAttributeUseCase>(
-          update: (_, repo, _) => AddVariantAttributeUseCase(repository: repo),
+        ProxyProvider<
+          VariantAttributeRepositoryImpl,
+          AddVariantAttributeUseCase
+        >(update: (_, repo, _) => AddVariantAttributeUseCase(repository: repo)),
+        ProxyProvider<
+          VariantAttributeRepositoryImpl,
+          AddVariantAttributesBatchUseCase
+        >(
+          update: (_, repo, _) =>
+              AddVariantAttributesBatchUseCase(repository: repo),
         ),
-        ProxyProvider<VariantAttributeRepositoryImpl, AddVariantAttributesBatchUseCase>(
-          update: (_, repo, _) => AddVariantAttributesBatchUseCase(repository: repo),
-        ),
-        ProxyProvider<VariantAttributeRepositoryImpl, DeleteVariantAttributesByProductIdUseCase>(
-          update: (_, repo, _) => DeleteVariantAttributesByProductIdUseCase(repository: repo),
+        ProxyProvider<
+          VariantAttributeRepositoryImpl,
+          DeleteVariantAttributesByProductIdUseCase
+        >(
+          update: (_, repo, _) =>
+              DeleteVariantAttributesByProductIdUseCase(repository: repo),
         ),
 
         // Product Variant - Presentation Layer (Controller)
@@ -353,15 +387,20 @@ class POSApp extends StatelessWidget {
           create: (context) => ProductVariantController(
             getVariantsUseCase: context.read<GetProductVariantsUseCase>(),
             addVariantUseCase: context.read<AddProductVariantUseCase>(),
-            addVariantsBatchUseCase: context.read<AddProductVariantsBatchUseCase>(),
+            addVariantsBatchUseCase: context
+                .read<AddProductVariantsBatchUseCase>(),
             updateVariantUseCase: context.read<UpdateProductVariantUseCase>(),
-            updateVariantStockUseCase: context.read<UpdateVariantStockUseCase>(),
+            updateVariantStockUseCase: context
+                .read<UpdateVariantStockUseCase>(),
             deleteVariantUseCase: context.read<DeleteProductVariantUseCase>(),
-            deleteVariantsByProductIdUseCase: context.read<DeleteProductVariantsByProductIdUseCase>(),
+            deleteVariantsByProductIdUseCase: context
+                .read<DeleteProductVariantsByProductIdUseCase>(),
             getAttributesUseCase: context.read<GetVariantAttributesUseCase>(),
             addAttributeUseCase: context.read<AddVariantAttributeUseCase>(),
-            addAttributesBatchUseCase: context.read<AddVariantAttributesBatchUseCase>(),
-            deleteAttributesByProductIdUseCase: context.read<DeleteVariantAttributesByProductIdUseCase>(),
+            addAttributesBatchUseCase: context
+                .read<AddVariantAttributesBatchUseCase>(),
+            deleteAttributesByProductIdUseCase: context
+                .read<DeleteVariantAttributesByProductIdUseCase>(),
           ),
         ),
 
@@ -401,11 +440,12 @@ class POSApp extends StatelessWidget {
           CategoryRepositoryImpl,
           GetSalesReportUseCase
         >(
-          update: (_, transactionRepo, productRepo, categoryRepo, _) => GetSalesReportUseCase(
-            transactionRepository: transactionRepo,
-            productRepository: productRepo,
-            categoryRepository: categoryRepo,
-          ),
+          update: (_, transactionRepo, productRepo, categoryRepo, _) =>
+              GetSalesReportUseCase(
+                transactionRepository: transactionRepo,
+                productRepository: productRepo,
+                categoryRepository: categoryRepo,
+              ),
         ),
         Provider<ExportSalesToCsvUseCase>(
           create: (_) => ExportSalesToCsvUseCase(),
@@ -415,10 +455,11 @@ class POSApp extends StatelessWidget {
           ProductRepositoryImpl,
           RefundTransactionUseCase
         >(
-          update: (_, transactionRepo, productRepo, _) => RefundTransactionUseCase(
-            transactionRepository: transactionRepo,
-            productRepository: productRepo,
-          ),
+          update: (_, transactionRepo, productRepo, _) =>
+              RefundTransactionUseCase(
+                transactionRepository: transactionRepo,
+                productRepository: productRepo,
+              ),
         ),
 
         // Sales - Presentation Layer (Controllers)
@@ -431,12 +472,11 @@ class POSApp extends StatelessWidget {
               RefundController(refundTransactionUseCase: context.read()),
         ),
         ChangeNotifierProvider<SalesReportController>(
-          create: (context) =>
-              SalesReportController(
-                getSalesReportUseCase: context.read(),
-                exportSalesToCsvUseCase: context.read(),
-                getProfitReportUseCase: context.read(),
-              ),
+          create: (context) => SalesReportController(
+            getSalesReportUseCase: context.read(),
+            exportSalesToCsvUseCase: context.read(),
+            getProfitReportUseCase: context.read(),
+          ),
         ),
 
         // Settings - Data Layer
@@ -458,7 +498,7 @@ class POSApp extends StatelessWidget {
 
         // POS - Data Layer
         ProxyProvider<DatabaseHelper, CartRepositoryImpl>(
-          update: (_, db, __) => CartRepositoryImpl(databaseHelper: db),
+          update: (_, db, _) => CartRepositoryImpl(databaseHelper: db),
         ),
 
         // POS - Domain Layer (Use Cases)
@@ -523,9 +563,7 @@ class POSApp extends StatelessWidget {
         ),
 
         // POS - Favorites
-        Provider<FavoritesRepository>(
-          create: (_) => FavoritesRepository(),
-        ),
+        Provider<FavoritesRepository>(create: (_) => FavoritesRepository()),
         ChangeNotifierProvider<FavoritesController>(
           create: (context) =>
               FavoritesController(context.read<FavoritesRepository>())
@@ -549,39 +587,57 @@ class POSApp extends StatelessWidget {
               DiscountPresetLocalDataSourceImpl(databaseHelper: db),
         ),
 
-        ProxyProvider<DiscountPresetLocalDataSourceImpl, DiscountPresetRepositoryImpl>(
+        ProxyProvider<
+          DiscountPresetLocalDataSourceImpl,
+          DiscountPresetRepositoryImpl
+        >(
           update: (_, dataSource, _) =>
               DiscountPresetRepositoryImpl(localDataSource: dataSource),
         ),
 
         // Discount Management - Domain Layer (Use Cases)
         ProxyProvider<PromotionRepositoryImpl, GetPromotionsUseCase>(
-          update: (_, repo, _) => GetPromotionsUseCase(promotionRepository: repo),
+          update: (_, repo, _) =>
+              GetPromotionsUseCase(promotionRepository: repo),
         ),
         ProxyProvider<PromotionRepositoryImpl, AddPromotionUseCase>(
-          update: (_, repo, _) => AddPromotionUseCase(promotionRepository: repo),
+          update: (_, repo, _) =>
+              AddPromotionUseCase(promotionRepository: repo),
         ),
         ProxyProvider<PromotionRepositoryImpl, UpdatePromotionUseCase>(
-          update: (_, repo, _) => UpdatePromotionUseCase(promotionRepository: repo),
+          update: (_, repo, _) =>
+              UpdatePromotionUseCase(promotionRepository: repo),
         ),
         ProxyProvider<PromotionRepositoryImpl, DeletePromotionUseCase>(
-          update: (_, repo, _) => DeletePromotionUseCase(promotionRepository: repo),
+          update: (_, repo, _) =>
+              DeletePromotionUseCase(promotionRepository: repo),
         ),
         ProxyProvider<PromotionRepositoryImpl, TogglePromotionUseCase>(
-          update: (_, repo, _) => TogglePromotionUseCase(promotionRepository: repo),
+          update: (_, repo, _) =>
+              TogglePromotionUseCase(promotionRepository: repo),
         ),
 
         ProxyProvider<DiscountPresetRepositoryImpl, GetDiscountPresetsUseCase>(
-          update: (_, repo, _) => GetDiscountPresetsUseCase(discountPresetRepository: repo),
+          update: (_, repo, _) =>
+              GetDiscountPresetsUseCase(discountPresetRepository: repo),
         ),
         ProxyProvider<DiscountPresetRepositoryImpl, AddDiscountPresetUseCase>(
-          update: (_, repo, _) => AddDiscountPresetUseCase(discountPresetRepository: repo),
+          update: (_, repo, _) =>
+              AddDiscountPresetUseCase(discountPresetRepository: repo),
         ),
-        ProxyProvider<DiscountPresetRepositoryImpl, UpdateDiscountPresetUseCase>(
-          update: (_, repo, _) => UpdateDiscountPresetUseCase(discountPresetRepository: repo),
+        ProxyProvider<
+          DiscountPresetRepositoryImpl,
+          UpdateDiscountPresetUseCase
+        >(
+          update: (_, repo, _) =>
+              UpdateDiscountPresetUseCase(discountPresetRepository: repo),
         ),
-        ProxyProvider<DiscountPresetRepositoryImpl, DeleteDiscountPresetUseCase>(
-          update: (_, repo, _) => DeleteDiscountPresetUseCase(discountPresetRepository: repo),
+        ProxyProvider<
+          DiscountPresetRepositoryImpl,
+          DeleteDiscountPresetUseCase
+        >(
+          update: (_, repo, _) =>
+              DeleteDiscountPresetUseCase(discountPresetRepository: repo),
         ),
 
         // Discount Management - Presentation Layer (Controller)
@@ -592,18 +648,20 @@ class POSApp extends StatelessWidget {
             updatePromotionUseCase: context.read<UpdatePromotionUseCase>(),
             deletePromotionUseCase: context.read<DeletePromotionUseCase>(),
             togglePromotionUseCase: context.read<TogglePromotionUseCase>(),
-            getDiscountPresetsUseCase: context.read<GetDiscountPresetsUseCase>(),
+            getDiscountPresetsUseCase: context
+                .read<GetDiscountPresetsUseCase>(),
             addDiscountPresetUseCase: context.read<AddDiscountPresetUseCase>(),
-            updateDiscountPresetUseCase: context.read<UpdateDiscountPresetUseCase>(),
-            deleteDiscountPresetUseCase: context.read<DeleteDiscountPresetUseCase>(),
+            updateDiscountPresetUseCase: context
+                .read<UpdateDiscountPresetUseCase>(),
+            deleteDiscountPresetUseCase: context
+                .read<DeleteDiscountPresetUseCase>(),
           ),
         ),
 
         // ========== SHIFT MANAGEMENT ==========
         // Shift - Data Layer
         ProxyProvider<DatabaseHelper, ShiftLocalDataSourceImpl>(
-          update: (_, db, _) =>
-              ShiftLocalDataSourceImpl(databaseHelper: db),
+          update: (_, db, _) => ShiftLocalDataSourceImpl(databaseHelper: db),
         ),
 
         ProxyProvider<ShiftLocalDataSourceImpl, ShiftRepositoryImpl>(
@@ -613,15 +671,14 @@ class POSApp extends StatelessWidget {
 
         // Cash count data source
         ProxyProvider<ShiftLocalDataSourceImpl, CashCountLocalDataSourceImpl>(
-          update: (_, shiftDataSource, __) => CashCountLocalDataSourceImpl(
+          update: (_, shiftDataSource, _) => CashCountLocalDataSourceImpl(
             databaseHelper: shiftDataSource.databaseHelper,
           ),
         ),
 
         ProxyProvider<CashCountLocalDataSourceImpl, CashCountRepositoryImpl>(
-          update: (_, dataSource, __) => CashCountRepositoryImpl(
-            localDataSource: dataSource,
-          ),
+          update: (_, dataSource, _) =>
+              CashCountRepositoryImpl(localDataSource: dataSource),
         ),
 
         // Shift - Domain Layer (Use Cases)
@@ -638,16 +695,19 @@ class POSApp extends StatelessWidget {
           update: (_, repo, _) => GetShiftsUseCase(shiftRepository: repo),
         ),
         ProxyProvider<ShiftRepositoryImpl, UpdateShiftTotalsUseCase>(
-          update: (_, repo, _) => UpdateShiftTotalsUseCase(shiftRepository: repo),
+          update: (_, repo, _) =>
+              UpdateShiftTotalsUseCase(shiftRepository: repo),
         ),
 
         // Cash count use cases
         ProxyProvider<CashCountRepositoryImpl, SaveCashCountUseCase>(
-          update: (_, repo, __) => SaveCashCountUseCase(cashCountRepository: repo),
+          update: (_, repo, _) =>
+              SaveCashCountUseCase(cashCountRepository: repo),
         ),
 
         ProxyProvider<CashCountRepositoryImpl, GetCashCountByShiftUseCase>(
-          update: (_, repo, __) => GetCashCountByShiftUseCase(cashCountRepository: repo),
+          update: (_, repo, _) =>
+              GetCashCountByShiftUseCase(cashCountRepository: repo),
         ),
 
         // Shift - Presentation Layer (Controller)
@@ -659,7 +719,8 @@ class POSApp extends StatelessWidget {
             getShiftsUseCase: context.read<GetShiftsUseCase>(),
             updateShiftTotalsUseCase: context.read<UpdateShiftTotalsUseCase>(),
             saveCashCountUseCase: context.read<SaveCashCountUseCase>(),
-            getCashCountByShiftUseCase: context.read<GetCashCountByShiftUseCase>(),
+            getCashCountByShiftUseCase: context
+                .read<GetCashCountByShiftUseCase>(),
           ),
         ),
 
@@ -675,10 +736,14 @@ class POSApp extends StatelessWidget {
         ),
 
         ProxyProvider<DatabaseHelper, UserSessionLocalDataSourceImpl>(
-          update: (_, db, _) => UserSessionLocalDataSourceImpl(databaseHelper: db),
+          update: (_, db, _) =>
+              UserSessionLocalDataSourceImpl(databaseHelper: db),
         ),
 
-        ProxyProvider<UserSessionLocalDataSourceImpl, UserSessionRepositoryImpl>(
+        ProxyProvider<
+          UserSessionLocalDataSourceImpl,
+          UserSessionRepositoryImpl
+        >(
           update: (_, dataSource, _) =>
               UserSessionRepositoryImpl(localDataSource: dataSource),
         ),
@@ -760,10 +825,14 @@ class POSApp extends StatelessWidget {
           update: (_, repo, _) => GetExpenseSummaryUseCase(repo),
         ),
         ProxyProvider<ExpenseRepositoryImpl, GetExpenseCountByCategoryUseCase>(
-          update: (_, repo, _) => GetExpenseCountByCategoryUseCase(repository: repo),
+          update: (_, repo, _) =>
+              GetExpenseCountByCategoryUseCase(repository: repo),
         ),
-        ProxyProvider2<ExpenseRepositoryImpl, TransactionRepositoryImpl,
-            GetProfitReportUseCase>(
+        ProxyProvider2<
+          ExpenseRepositoryImpl,
+          TransactionRepositoryImpl,
+          GetProfitReportUseCase
+        >(
           update: (_, expenseRepo, transactionRepo, _) =>
               GetProfitReportUseCase(
                 expenseRepository: expenseRepo,
@@ -789,21 +858,19 @@ class POSApp extends StatelessWidget {
             getExpenseSummaryUseCase: context.read(),
             getExpenseCountByCategoryUseCase: context.read(),
           ),
-          update: (_, add, get, update, delete, summary, count, __) =>
+          update: (_, add, get, update, delete, summary, count, _) =>
               ExpenseController(
-            addExpenseUseCase: add,
-            getExpensesUseCase: get,
-            updateExpenseUseCase: update,
-            deleteExpenseUseCase: delete,
-            getExpenseSummaryUseCase: summary,
-            getExpenseCountByCategoryUseCase: count,
-          ),
+                addExpenseUseCase: add,
+                getExpensesUseCase: get,
+                updateExpenseUseCase: update,
+                deleteExpenseUseCase: delete,
+                getExpenseSummaryUseCase: summary,
+                getExpenseCountByCategoryUseCase: count,
+              ),
         ),
 
         // ========== PRINTER SERVICE ==========
-        ChangeNotifierProvider<PrinterService>(
-          create: (_) => PrinterService(),
-        ),
+        ChangeNotifierProvider<PrinterService>(create: (_) => PrinterService()),
       ],
       child: Consumer<ThemeController>(
         builder: (context, themeController, _) {

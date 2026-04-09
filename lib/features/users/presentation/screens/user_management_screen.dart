@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../controllers/auth_controller.dart';
 import '../../domain/entities/user.dart';
@@ -520,7 +519,7 @@ class _AddUserDialogState extends State<_AddUserDialog> {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<UserRole>(
-                value: _selectedRole,
+                initialValue: _selectedRole,
                 decoration: const InputDecoration(
                   labelText: 'Role',
                   prefixIcon: Icon(Icons.admin_panel_settings),
@@ -655,7 +654,7 @@ class _EditUserDialogState extends State<_EditUserDialog> {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<UserRole>(
-                value: _selectedRole,
+                initialValue: _selectedRole,
                 decoration: const InputDecoration(
                   labelText: 'Role',
                   prefixIcon: Icon(Icons.admin_panel_settings),

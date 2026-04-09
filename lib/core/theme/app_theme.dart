@@ -165,7 +165,7 @@ class AppTheme {
             : const SystemUiOverlayStyle(
                 statusBarBrightness: Brightness.light,
                 statusBarIconBrightness: Brightness.dark,
-              ) as SystemUiOverlayStyle,
+              ),
       ),
 
       cardTheme: CardThemeData(

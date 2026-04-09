@@ -80,8 +80,16 @@ class POSScreenState extends State<POSScreen>
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => WillPopScope(
-        onWillPop: () async => false,
+      builder: (context) => PopScope(
+        // ── Modern replacement for onWillPop ──
+        canPop: false, // Prevents back button / swipe from closing the dialog
+        onPopInvokedWithResult: (didPop, result) {
+          // Optional: you can add extra logic here if needed
+          // For now we just block the pop (canPop: false already does this)
+          if (!didPop) {
+            return;
+          }
+        },
         child: AlertDialog(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
@@ -121,18 +129,15 @@ class POSScreenState extends State<POSScreen>
                 Navigator.pop(context);
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
-                    builder: (_) => const ShiftOpenScreen(),
-                  ),
+                  MaterialPageRoute(builder: (_) => const ShiftOpenScreen()),
                 ).then((result) {
                   if (result == true) {
                     // Shift opened successfully, reload current shift
                     _checkActiveShift();
                   } else {
                     // User cancelled, go back to home
-                    if (mounted) {
-                      Navigator.pop(context);
-                    }
+                    if (!mounted) return;
+                    Navigator.pop(context);
                   }
                 });
               },
@@ -720,7 +725,10 @@ class POSScreenState extends State<POSScreen>
           );
 
           if (selectedVariant != null && mounted) {
-            final success = await controller.addToCartWithVariant(product, selectedVariant);
+            final success = await controller.addToCartWithVariant(
+              product,
+              selectedVariant,
+            );
 
             if (success) {
               _cartIconKey.currentState?.bumpAnimation();
@@ -752,9 +760,7 @@ class POSScreenState extends State<POSScreen>
         content: Text(message),
         backgroundColor: AppTheme.errorColor,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         margin: const EdgeInsets.all(16),
       ),
     );

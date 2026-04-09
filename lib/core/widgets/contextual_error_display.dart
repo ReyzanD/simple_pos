@@ -4,12 +4,7 @@ import '../theme/app_theme.dart';
 import 'modern_button.dart';
 
 /// Error types for contextual error display
-enum ErrorType {
-  validation,
-  notFound,
-  database,
-  unknown,
-}
+enum ErrorType { validation, notFound, database, unknown }
 
 /// Contextual error display widget with auto-detection for AppException types
 /// Shows appropriate icon, color, and actions based on error type
@@ -38,12 +33,19 @@ class ContextualErrorDisplay extends StatelessWidget {
   }) {
     ErrorType detectedType = ErrorType.unknown;
 
-    if (error is ValidationException) detectedType = ErrorType.validation;
-    else if (error is NotFoundException) detectedType = ErrorType.notFound;
-    else if (error is DatabaseException) detectedType = ErrorType.database;
-    else if (error is ConflictException) detectedType = ErrorType.validation;
-    else if (error is InsufficientStockException) detectedType = ErrorType.validation;
-    else if (error is EmptyCartException) detectedType = ErrorType.validation;
+    if (error is ValidationException) {
+      detectedType = ErrorType.validation;
+    } else if (error is NotFoundException) {
+      detectedType = ErrorType.notFound;
+    } else if (error is DatabaseException) {
+      detectedType = ErrorType.database;
+    } else if (error is ConflictException) {
+      detectedType = ErrorType.validation;
+    } else if (error is InsufficientStockException) {
+      detectedType = ErrorType.validation;
+    } else if (error is EmptyCartException) {
+      detectedType = ErrorType.validation;
+    }
 
     return ContextualErrorDisplay(
       error: error,
@@ -115,10 +117,7 @@ class ContextualErrorDisplay extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 (error as AppException).message,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: AppTheme.textSecondary,
-                ),
+                style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -132,7 +131,8 @@ class ContextualErrorDisplay extends StatelessWidget {
                     icon: const Icon(Icons.arrow_back),
                     label: const Text('Kembali'),
                   ),
-                if (onBack != null && onRetry != null) const SizedBox(width: 12),
+                if (onBack != null && onRetry != null)
+                  const SizedBox(width: 12),
                 if (onRetry != null)
                   ModernButton(
                     text: 'Coba Lagi',

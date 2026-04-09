@@ -9,18 +9,27 @@ class ExportSalesToCsvUseCase {
   /// Executes the use case to export sales report to CSV file
   Future<File> execute(SalesReport report) async {
     try {
-      AppLogger.useCase('ExportSalesToCsv', details: 'Report: ${report.startDate} to ${report.endDate}');
+      AppLogger.useCase(
+        'ExportSalesToCsv',
+        details: 'Report: ${report.startDate} to ${report.endDate}',
+      );
 
       // Create CSV data
       final rows = <List<String>>[];
 
       // Summary section
       rows.add(['LAPORAN PENJUALAN']);
-      rows.add(['Periode', '${report.startDate.day}/${report.startDate.month}/${report.startDate.year} - ${report.endDate.day}/${report.endDate.month}/${report.endDate.year}']);
+      rows.add([
+        'Periode',
+        '${report.startDate.day}/${report.startDate.month}/${report.startDate.year} - ${report.endDate.day}/${report.endDate.month}/${report.endDate.year}',
+      ]);
       rows.add(['Total Transaksi', report.totalTransactions.toString()]);
       rows.add(['Total Pendapatan', _formatCurrency(report.totalRevenue)]);
       rows.add(['Total Laba', _formatCurrency(report.totalProfit)]);
-      rows.add(['Rata-rata Transaksi', _formatCurrency(report.averageTransactionValue)]);
+      rows.add([
+        'Rata-rata Transaksi',
+        _formatCurrency(report.averageTransactionValue),
+      ]);
       rows.add(['Margin Laba', '${report.profitMargin.toStringAsFixed(2)}%']);
       rows.add([]);
 
@@ -63,7 +72,7 @@ class ExportSalesToCsvUseCase {
       }
 
       // Convert to CSV string
-      final csvString = const ListToCsvConverter().convert(rows);
+      final csvString = csv.encode(rows);
 
       // Save to file
       final directory = await getApplicationDocumentsDirectory();
@@ -73,7 +82,10 @@ class ExportSalesToCsvUseCase {
         await reportsDir.create(recursive: true);
       }
 
-      final timestamp = DateTime.now().toIso8601String().replaceAll(':', '-').replaceAll('.', '-');
+      final timestamp = DateTime.now()
+          .toIso8601String()
+          .replaceAll(':', '-')
+          .replaceAll('.', '-');
       final file = File('${reportsDir.path}/sales_report_$timestamp.csv');
 
       await file.writeAsString(csvString);
@@ -92,9 +104,6 @@ class ExportSalesToCsvUseCase {
   }
 
   String _formatCurrency(double amount) {
-    return 'Rp ${amount.toStringAsFixed(0).replaceAllMapped(
-          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-          (Match m) => '${m[1]}.',
-        )}';
+    return 'Rp ${amount.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}';
   }
 }

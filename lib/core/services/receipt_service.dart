@@ -8,12 +8,16 @@ import '../utils/logger.dart';
 
 /// Service for managing receipts (print, share, save)
 class ReceiptService {
-  final GenerateReceiptUseCase _generateReceiptUseCase = GenerateReceiptUseCase();
+  final GenerateReceiptUseCase _generateReceiptUseCase =
+      GenerateReceiptUseCase();
 
   /// Prints the receipt
   Future<void> printReceipt(Receipt receipt) async {
     try {
-      AppLogger.service('PrintReceipt', details: 'Transaction: ${receipt.transaction.id}');
+      AppLogger.service(
+        'PrintReceipt',
+        details: 'Transaction: ${receipt.transaction.id}',
+      );
 
       // Generate PDF
       final file = await _generateReceiptUseCase.execute(receipt);
@@ -38,16 +42,21 @@ class ReceiptService {
   /// Shares the receipt
   Future<void> shareReceipt(Receipt receipt) async {
     try {
-      AppLogger.service('ShareReceipt', details: 'Transaction: ${receipt.transaction.id}');
+      AppLogger.service(
+        'ShareReceipt',
+        details: 'Transaction: ${receipt.transaction.id}',
+      );
 
       // Generate PDF
       final file = await _generateReceiptUseCase.execute(receipt);
 
       // Share the PDF
-      await Share.shareXFiles(
-        [XFile(file.path)],
-        subject: 'Receipt #${receipt.transaction.id}',
-        text: 'Transaction receipt from ${receipt.storeInfo.name}',
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(file.path)],
+          subject: 'Receipt #${receipt.transaction.id}',
+          text: 'Transaction receipt from ${receipt.storeInfo.name}',
+        ),
       );
 
       AppLogger.info('Receipt shared successfully');
@@ -64,7 +73,10 @@ class ReceiptService {
   /// Saves the receipt to device storage
   Future<File> saveReceipt(Receipt receipt) async {
     try {
-      AppLogger.service('SaveReceipt', details: 'Transaction: ${receipt.transaction.id}');
+      AppLogger.service(
+        'SaveReceipt',
+        details: 'Transaction: ${receipt.transaction.id}',
+      );
 
       // Generate PDF
       final tempFile = await _generateReceiptUseCase.execute(receipt);
@@ -83,7 +95,9 @@ class ReceiptService {
           .toIso8601String()
           .replaceAll(':', '-')
           .replaceAll('.', '-');
-      final file = File('${receiptsDir.path}/receipt_${receipt.transaction.id}_$timestamp.pdf');
+      final file = File(
+        '${receiptsDir.path}/receipt_${receipt.transaction.id}_$timestamp.pdf',
+      );
 
       await file.writeAsBytes(await tempFile.readAsBytes());
 
@@ -112,10 +126,16 @@ class ReceiptService {
         return [];
       }
 
-      final files = await receiptsDir.list().where((entity) => entity is File).cast<File>().toList();
+      final files = await receiptsDir
+          .list()
+          .where((entity) => entity is File)
+          .cast<File>()
+          .toList();
 
       // Sort by modification date (newest first)
-      files.sort((a, b) => b.lastModifiedSync().compareTo(a.lastModifiedSync()));
+      files.sort(
+        (a, b) => b.lastModifiedSync().compareTo(a.lastModifiedSync()),
+      );
 
       AppLogger.info('Found ${files.length} saved receipts');
 

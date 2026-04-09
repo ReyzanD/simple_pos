@@ -43,9 +43,7 @@ class ThemeController extends ChangeNotifier {
 
   /// Save theme mode to shared preferences
   Future<void> _saveThemeMode() async {
-    if (_prefs == null) {
-      _prefs = await SharedPreferences.getInstance();
-    }
+    _prefs ??= await SharedPreferences.getInstance();
     await _prefs!.setString(_themeKey, _isDarkMode ? 'dark' : 'light');
   }
 

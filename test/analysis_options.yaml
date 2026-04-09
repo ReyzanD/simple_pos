@@ -1,0 +1,43 @@
+# test/analysis_options.yaml
+# This file overrides the root analysis_options.yaml ONLY for everything inside the test/ folder
+# (including all subfolders: core/, features/, integration/, unit/, widget/, etc.)
+
+include: ../analysis_options.yaml
+
+linter:
+  rules:
+    # === Rules that are almost always noisy in tests ===
+    avoid_print: false # Tests need debug prints
+    prefer_const_constructors: false
+    prefer_const_declarations: false
+    prefer_const_literals_to_create_immutables: false
+    prefer_final_locals: false
+    prefer_final_in_for_each: false
+    prefer_final_parameters: false
+    public_member_api_docs: false # No need for docs in test helpers/mocks
+    unnecessary_lambdas: false
+    unnecessary_this: false
+    sort_constructors_first: false
+    sort_unnamed_constructors_first: false
+
+    # === Mockito / test-specific common lints ===
+    invalid_use_of_visible_for_testing_member: false
+    always_specify_types: false
+    type_annotate_public_apis: false
+    avoid_types_on_closure_parameters: false
+    omit_local_variable_types: false
+    prefer_asserts_with_message: false
+
+    # === Other common test-only violations ===
+    avoid_function_literals_in_foreach_calls: false
+    cascade_invocations: false
+    prefer_interpolation_to_compose_strings: false
+    prefer_expression_function_bodies: false
+
+analyzer:
+  errors:
+    # Downgrade some strict errors to warnings inside tests only
+    missing_return: warning
+    dead_code: warning
+    unused_local_variable: warning
+    unused_import: warning

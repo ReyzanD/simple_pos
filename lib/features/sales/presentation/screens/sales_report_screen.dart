@@ -26,7 +26,8 @@ class SalesReportScreen extends StatelessWidget {
             leading: IconButton(
               icon: const Icon(Icons.menu),
               onPressed: () {
-                final mainNavState = context.findAncestorStateOfType<MainNavigationState>();
+                final mainNavState = context
+                    .findAncestorStateOfType<MainNavigationState>();
                 mainNavState?.openDrawer();
               },
             ),
@@ -51,10 +52,7 @@ class SalesReportScreen extends StatelessWidget {
                           AppTheme.darkSurface,
                           AppTheme.darkSurface.withValues(alpha: 0.95),
                         ]
-                      : [
-                          AppTheme.primaryColor,
-                          AppTheme.primaryLight,
-                        ],
+                      : [AppTheme.primaryColor, AppTheme.primaryLight],
                 ),
               ),
             ),
@@ -62,99 +60,109 @@ class SalesReportScreen extends StatelessWidget {
           body: controller.isLoading
               ? const Center(child: CircularProgressIndicator())
               : controller.report == null
-                  ? _buildEmptyState()
-                  : RefreshIndicator(
-                      onRefresh: controller.refresh,
-                      color: AppTheme.primaryColor,
-                      displacement: 80,
-                      strokeWidth: 3,
-                      child: SingleChildScrollView(
-                        physics: const AlwaysScrollableScrollPhysics(), // Enable pull-to-refresh even when content is small
-                        padding: const EdgeInsets.only(
-                          left: 16,
-                          right: 16,
-                          top: 16,
-                          bottom: 140, // Space for floating nav
+              ? _buildEmptyState()
+              : RefreshIndicator(
+                  onRefresh: controller.refresh,
+                  color: AppTheme.primaryColor,
+                  displacement: 80,
+                  strokeWidth: 3,
+                  child: SingleChildScrollView(
+                    physics:
+                        const AlwaysScrollableScrollPhysics(), // Enable pull-to-refresh even when content is small
+                    padding: const EdgeInsets.only(
+                      left: 16,
+                      right: 16,
+                      top: 16,
+                      bottom: 140, // Space for floating nav
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Date Range
+                        _buildDateRangeSelector(context, controller),
+                        const SizedBox(height: 24),
+
+                        // Summary Cards
+                        _buildSummarySection(context, controller.report!),
+                        const SizedBox(height: 24),
+
+                        // Daily Sales Chart
+                        _buildDailySalesChart(context, controller.report!),
+                        const SizedBox(height: 24),
+
+                        // Payment Methods Chart
+                        _buildPaymentMethodsChart(context, controller.report!),
+                        const SizedBox(height: 24),
+
+                        // Expense Breakdown (if expense data available)
+                        if (controller.report!.profitReport != null &&
+                            controller.report!.totalExpenses > 0)
+                          _buildExpenseBreakdownSection(
+                            context,
+                            controller.report!,
+                          ),
+                        if (controller.report!.profitReport != null &&
+                            controller.report!.totalExpenses > 0)
+                          const SizedBox(height: 24),
+
+                        // Top Products Table
+                        _buildTopProductsTable(context, controller.report!),
+                        const SizedBox(height: 24),
+
+                        // Category Performance
+                        if (controller.report!.categoryBreakdown.isNotEmpty)
+                          _buildCategoryPerformanceSection(
+                            context,
+                            controller.report!,
+                          ),
+                        if (controller.report!.categoryBreakdown.isNotEmpty)
+                          const SizedBox(height: 24),
+
+                        // Period Comparison (MoM / YoY)
+                        _buildPeriodComparisonSection(
+                          context,
+                          controller.report!,
                         ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Date Range
-                            _buildDateRangeSelector(context, controller),
-                            const SizedBox(height: 24),
+                        const SizedBox(height: 24),
 
-                            // Summary Cards
-                            _buildSummarySection(context, controller.report!),
-                            const SizedBox(height: 24),
+                        // Peak Hours Analysis
+                        _buildPeakHoursSection(context, controller.report!),
+                        if (controller.report!.peakHours.isNotEmpty)
+                          const SizedBox(height: 24),
 
-                            // Daily Sales Chart
-                            _buildDailySalesChart(context, controller.report!),
-                            const SizedBox(height: 24),
-
-                            // Payment Methods Chart
-                            _buildPaymentMethodsChart(context, controller.report!),
-                            const SizedBox(height: 24),
-
-                            // Expense Breakdown (if expense data available)
-                            if (controller.report!.profitReport != null &&
-                                controller.report!.totalExpenses > 0)
-                              _buildExpenseBreakdownSection(context, controller.report!),
-                            if (controller.report!.profitReport != null &&
-                                controller.report!.totalExpenses > 0)
-                              const SizedBox(height: 24),
-
-                            // Top Products Table
-                            _buildTopProductsTable(context, controller.report!),
-                            const SizedBox(height: 24),
-
-                            // Category Performance
-                            if (controller.report!.categoryBreakdown.isNotEmpty)
-                              _buildCategoryPerformanceSection(context, controller.report!),
-                            if (controller.report!.categoryBreakdown.isNotEmpty)
-                              const SizedBox(height: 24),
-
-                            // Period Comparison (MoM / YoY)
-                            _buildPeriodComparisonSection(context, controller.report!),
-                            const SizedBox(height: 24),
-
-                            // Peak Hours Analysis
-                            _buildPeakHoursSection(context, controller.report!),
-                            if (controller.report!.peakHours.isNotEmpty)
-                              const SizedBox(height: 24),
-
-                            // Export Button
-                            SizedBox(
-                              width: double.infinity,
-                            child: ElevatedButton.icon(
-                              onPressed: controller.isExporting
-                                  ? null
-                                  : () => _exportReport(context, controller),
-                              icon: controller.isExporting
-                                  ? const SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: Colors.white,
-                                      ),
-                                    )
-                                  : const Icon(Icons.download),
-                              label: Text(controller.isExporting
+                        // Export Button
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: controller.isExporting
+                                ? null
+                                : () => _exportReport(context, controller),
+                            icon: controller.isExporting
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : const Icon(Icons.download),
+                            label: Text(
+                              controller.isExporting
                                   ? 'Mengekspor...'
-                                  : 'Ekspor Laporan'),
-                              style: ElevatedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 16,
-                                ),
-                                backgroundColor: AppTheme.primaryColor,
-                                foregroundColor: Colors.white,
-                              ),
+                                  : 'Ekspor Laporan',
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              backgroundColor: AppTheme.primaryColor,
+                              foregroundColor: Colors.white,
                             ),
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
+                ),
         );
       },
     );
@@ -190,17 +198,17 @@ class SalesReportScreen extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             'Pilih periode tanggal untuk melihat laporan',
-            style: TextStyle(
-              fontSize: 14,
-              color: AppTheme.textTertiary,
-            ),
+            style: TextStyle(fontSize: 14, color: AppTheme.textTertiary),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildDateRangeSelector(BuildContext context, SalesReportController controller) {
+  Widget _buildDateRangeSelector(
+    BuildContext context,
+    SalesReportController controller,
+  ) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -223,9 +231,7 @@ class SalesReportScreen extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 '${_formatDate(controller.dateRange.start)} - ${_formatDate(controller.dateRange.end)}',
-                style: const TextStyle(
-                  fontSize: 16,
-                ),
+                style: const TextStyle(fontSize: 16),
               ),
             ],
           ),
@@ -251,9 +257,9 @@ class SalesReportScreen extends StatelessWidget {
           child: Text(
             'Ringkasan',
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.getTextPrimaryColor(context),
-                ),
+              fontWeight: FontWeight.bold,
+              color: AppTheme.getTextPrimaryColor(context),
+            ),
           ),
         ),
         const SizedBox(height: 16),
@@ -261,21 +267,29 @@ class SalesReportScreen extends StatelessWidget {
         Row(
           children: [
             Expanded(
-              child: SummaryStatCard(
-                title: 'Total Transaksi',
-                value: '${report.totalTransactions}',
-                icon: Icons.receipt_long_rounded,
-                color: AppTheme.infoColor,
-              ).animate().fadeIn(duration: 300.ms).slideY(begin: 0.1, end: 0, duration: 300.ms),
+              child:
+                  SummaryStatCard(
+                        title: 'Total Transaksi',
+                        value: '${report.totalTransactions}',
+                        icon: Icons.receipt_long_rounded,
+                        color: AppTheme.infoColor,
+                      )
+                      .animate()
+                      .fadeIn(duration: 300.ms)
+                      .slideY(begin: 0.1, end: 0, duration: 300.ms),
             ),
             const SizedBox(width: 16),
             Expanded(
-              child: SummaryStatCard(
-                title: 'Total Pendapatan',
-                value: CurrencyFormatter.format(report.totalRevenue),
-                icon: Icons.payments_outlined,
-                color: AppTheme.successColor,
-              ).animate(delay: 100.ms).fadeIn(duration: 300.ms).slideY(begin: 0.1, end: 0, duration: 300.ms),
+              child:
+                  SummaryStatCard(
+                        title: 'Total Pendapatan',
+                        value: CurrencyFormatter.format(report.totalRevenue),
+                        icon: Icons.payments_outlined,
+                        color: AppTheme.successColor,
+                      )
+                      .animate(delay: 100.ms)
+                      .fadeIn(duration: 300.ms)
+                      .slideY(begin: 0.1, end: 0, duration: 300.ms),
             ),
           ],
         ),
@@ -283,23 +297,33 @@ class SalesReportScreen extends StatelessWidget {
         Row(
           children: [
             Expanded(
-              child: SummaryStatCard(
-                title: 'Laba Kotor',
-                value: CurrencyFormatter.format(report.totalProfit),
-                icon: Icons.trending_up_rounded,
-                color: AppTheme.warningColor,
-                subtitle: 'Sebelum pengeluaran',
-              ).animate(delay: 200.ms).fadeIn(duration: 300.ms).slideY(begin: 0.1, end: 0, duration: 300.ms),
+              child:
+                  SummaryStatCard(
+                        title: 'Laba Kotor',
+                        value: CurrencyFormatter.format(report.totalProfit),
+                        icon: Icons.trending_up_rounded,
+                        color: AppTheme.warningColor,
+                        subtitle: 'Sebelum pengeluaran',
+                      )
+                      .animate(delay: 200.ms)
+                      .fadeIn(duration: 300.ms)
+                      .slideY(begin: 0.1, end: 0, duration: 300.ms),
             ),
             const SizedBox(width: 16),
             Expanded(
-              child: SummaryStatCard(
-                title: 'Pengeluaran',
-                value: CurrencyFormatter.format(report.totalExpenses),
-                icon: Icons.shopping_cart_outlined,
-                color: AppTheme.errorColor,
-                subtitle: hasExpenseData ? '${report.expenseRatio.toStringAsFixed(1)}% dari pendapatan' : null,
-              ).animate(delay: 300.ms).fadeIn(duration: 300.ms).slideY(begin: 0.1, end: 0, duration: 300.ms),
+              child:
+                  SummaryStatCard(
+                        title: 'Pengeluaran',
+                        value: CurrencyFormatter.format(report.totalExpenses),
+                        icon: Icons.shopping_cart_outlined,
+                        color: AppTheme.errorColor,
+                        subtitle: hasExpenseData
+                            ? '${report.expenseRatio.toStringAsFixed(1)}% dari pendapatan'
+                            : null,
+                      )
+                      .animate(delay: 300.ms)
+                      .fadeIn(duration: 300.ms)
+                      .slideY(begin: 0.1, end: 0, duration: 300.ms),
             ),
           ],
         ),
@@ -307,23 +331,33 @@ class SalesReportScreen extends StatelessWidget {
         Row(
           children: [
             Expanded(
-              child: SummaryStatCard(
-                title: 'Laba Bersih',
-                value: CurrencyFormatter.format(report.netProfit),
-                icon: Icons.account_balance_wallet_outlined,
-                color: AppTheme.successColor,
-                subtitle: showNetProfit ? 'Setelah pengeluaran' : null,
-              ).animate(delay: 400.ms).fadeIn(duration: 300.ms).slideY(begin: 0.1, end: 0, duration: 300.ms),
+              child:
+                  SummaryStatCard(
+                        title: 'Laba Bersih',
+                        value: CurrencyFormatter.format(report.netProfit),
+                        icon: Icons.account_balance_wallet_outlined,
+                        color: AppTheme.successColor,
+                        subtitle: showNetProfit ? 'Setelah pengeluaran' : null,
+                      )
+                      .animate(delay: 400.ms)
+                      .fadeIn(duration: 300.ms)
+                      .slideY(begin: 0.1, end: 0, duration: 300.ms),
             ),
             const SizedBox(width: 16),
             Expanded(
-              child: SummaryStatCard(
-                title: 'Margin Bersih',
-                value: '${report.netProfitMargin.toStringAsFixed(1)}%',
-                icon: Icons.show_chart,
-                color: AppTheme.primaryColor,
-                subtitle: showNetProfit ? 'Margin bersih' : 'Margin kotor',
-              ).animate(delay: 500.ms).fadeIn(duration: 300.ms).slideY(begin: 0.1, end: 0, duration: 300.ms),
+              child:
+                  SummaryStatCard(
+                        title: 'Margin Bersih',
+                        value: '${report.netProfitMargin.toStringAsFixed(1)}%',
+                        icon: Icons.show_chart,
+                        color: AppTheme.primaryColor,
+                        subtitle: showNetProfit
+                            ? 'Margin bersih'
+                            : 'Margin kotor',
+                      )
+                      .animate(delay: 500.ms)
+                      .fadeIn(duration: 300.ms)
+                      .slideY(begin: 0.1, end: 0, duration: 300.ms),
             ),
           ],
         ),
@@ -345,9 +379,9 @@ class SalesReportScreen extends StatelessWidget {
               children: [
                 Text(
                   'Tren Penjualan',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                 ),
               ],
             ),
@@ -369,7 +403,9 @@ class SalesReportScreen extends StatelessWidget {
                 color: AppTheme.getCardColor(context),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: AppTheme.getBorderColor(context).withValues(alpha: 0.5),
+                  color: AppTheme.getBorderColor(
+                    context,
+                  ).withValues(alpha: 0.5),
                   width: 0.5,
                 ),
                 boxShadow: AppShadows.shadowSm,
@@ -386,7 +422,10 @@ class SalesReportScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildChartTypeSelector(BuildContext context, SalesReportController controller) {
+  Widget _buildChartTypeSelector(
+    BuildContext context,
+    SalesReportController controller,
+  ) {
     return Wrap(
       spacing: 8,
       children: ChartType.values.map((type) {
@@ -416,7 +455,10 @@ class SalesReportScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildMetricSelector(BuildContext context, SalesReportController controller) {
+  Widget _buildMetricSelector(
+    BuildContext context,
+    SalesReportController controller,
+  ) {
     return Wrap(
       spacing: 8,
       children: ChartMetric.values.map((metric) {
@@ -432,13 +474,17 @@ class SalesReportScreen extends StatelessWidget {
           selectedColor: AppTheme.secondaryColor.withValues(alpha: 0.2),
           checkmarkColor: AppTheme.secondaryColor,
           labelStyle: TextStyle(
-            color: isSelected ? AppTheme.secondaryColor : AppTheme.textSecondary,
+            color: isSelected
+                ? AppTheme.secondaryColor
+                : AppTheme.textSecondary,
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
           ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
             side: BorderSide(
-              color: isSelected ? AppTheme.secondaryColor : AppTheme.borderColor,
+              color: isSelected
+                  ? AppTheme.secondaryColor
+                  : AppTheme.borderColor,
             ),
           ),
         );
@@ -471,12 +517,12 @@ class SalesReportScreen extends StatelessWidget {
         gridData: FlGridData(
           show: true,
           drawVerticalLine: false,
-          horizontalInterval: _calculateYInterval(dailyData, controller.chartMetric),
+          horizontalInterval: _calculateYInterval(
+            dailyData,
+            controller.chartMetric,
+          ),
           getDrawingHorizontalLine: (value) {
-            return FlLine(
-              color: AppTheme.dividerColor,
-              strokeWidth: 1,
-            );
+            return FlLine(color: AppTheme.dividerColor, strokeWidth: 1);
           },
         ),
         titlesData: FlTitlesData(
@@ -536,7 +582,10 @@ class SalesReportScreen extends StatelessWidget {
         maxY: _calculateMaxYForMetric(dailyData, controller.chartMetric),
         lineBarsData: [
           LineChartBarData(
-            spots: _generateLineSpotsForMetric(dailyData, controller.chartMetric),
+            spots: _generateLineSpotsForMetric(
+              dailyData,
+              controller.chartMetric,
+            ),
             isCurved: true,
             color: AppTheme.primaryColor,
             barWidth: 3,
@@ -577,9 +626,9 @@ class SalesReportScreen extends StatelessWidget {
       children: [
         Text(
           'Metode Pembayaran',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
         Container(
@@ -641,20 +690,14 @@ class SalesReportScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: color.withValues(alpha: 0.2),
-          width: 1,
-        ),
+        border: Border.all(color: color.withValues(alpha: 0.2), width: 1),
       ),
       child: Row(
         children: [
           Container(
             width: 8,
             height: 8,
-            decoration: BoxDecoration(
-              color: color,
-              shape: BoxShape.circle,
-            ),
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
           ),
           const SizedBox(width: 6),
           Expanded(
@@ -688,9 +731,9 @@ class SalesReportScreen extends StatelessWidget {
       children: [
         Text(
           'Produk Terlaris',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
         Container(
@@ -717,14 +760,28 @@ class SalesReportScreen extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    Expanded(flex: 3, child: Text('Produk', style: TextStyle(fontWeight: FontWeight.bold))),
+                    Expanded(
+                      flex: 3,
+                      child: Text(
+                        'Produk',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
                     Expanded(
                       flex: 2,
-                      child: Text('Qty', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold)),
+                      child: Text(
+                        'Qty',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
                     ),
                     Expanded(
                       flex: 3,
-                      child: Text('Pendapatan', textAlign: TextAlign.right, style: TextStyle(fontWeight: FontWeight.bold)),
+                      child: Text(
+                        'Pendapatan',
+                        textAlign: TextAlign.right,
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
                     ),
                   ],
                 ),
@@ -741,11 +798,15 @@ class SalesReportScreen extends StatelessWidget {
                     color: index % 2 == 0
                         ? Colors.transparent
                         : (isDark
-                            ? AppTheme.darkSurfaceVariant.withValues(alpha: 0.3)
-                            : AppTheme.lightSurfaceVariant),
+                              ? AppTheme.darkSurfaceVariant.withValues(
+                                  alpha: 0.3,
+                                )
+                              : AppTheme.lightSurfaceVariant),
                     border: Border(
                       bottom: BorderSide(
-                        color: AppTheme.getBorderColor(context).withValues(alpha: 0.5),
+                        color: AppTheme.getBorderColor(
+                          context,
+                        ).withValues(alpha: 0.5),
                       ),
                     ),
                   ),
@@ -790,7 +851,10 @@ class SalesReportScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildCategoryPerformanceSection(BuildContext context, SalesReport report) {
+  Widget _buildCategoryPerformanceSection(
+    BuildContext context,
+    SalesReport report,
+  ) {
     final categoryData = report.categoryBreakdown;
 
     return Column(
@@ -798,9 +862,9 @@ class SalesReportScreen extends StatelessWidget {
       children: [
         Text(
           'Performa Kategori',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
         Container(
@@ -827,18 +891,36 @@ class SalesReportScreen extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    Expanded(flex: 3, child: Text('Kategori', style: TextStyle(fontWeight: FontWeight.bold))),
+                    Expanded(
+                      flex: 3,
+                      child: Text(
+                        'Kategori',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
                     Expanded(
                       flex: 2,
-                      child: Text('Qty', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold)),
+                      child: Text(
+                        'Qty',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
                     ),
                     Expanded(
                       flex: 3,
-                      child: Text('Pendapatan', textAlign: TextAlign.right, style: TextStyle(fontWeight: FontWeight.bold)),
+                      child: Text(
+                        'Pendapatan',
+                        textAlign: TextAlign.right,
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
                     ),
                     Expanded(
                       flex: 2,
-                      child: Text('Margin', textAlign: TextAlign.right, style: TextStyle(fontWeight: FontWeight.bold)),
+                      child: Text(
+                        'Margin',
+                        textAlign: TextAlign.right,
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
                     ),
                   ],
                 ),
@@ -852,8 +934,8 @@ class SalesReportScreen extends StatelessWidget {
                 final marginColor = category.profitMargin >= 20
                     ? AppTheme.successColor
                     : category.profitMargin >= 10
-                        ? AppTheme.warningColor
-                        : AppTheme.errorColor;
+                    ? AppTheme.warningColor
+                    : AppTheme.errorColor;
 
                 return Container(
                   padding: const EdgeInsets.all(16),
@@ -861,11 +943,15 @@ class SalesReportScreen extends StatelessWidget {
                     color: index % 2 == 0
                         ? Colors.transparent
                         : (isDark
-                            ? AppTheme.darkSurfaceVariant.withValues(alpha: 0.3)
-                            : AppTheme.lightSurfaceVariant),
+                              ? AppTheme.darkSurfaceVariant.withValues(
+                                  alpha: 0.3,
+                                )
+                              : AppTheme.lightSurfaceVariant),
                     border: Border(
                       bottom: BorderSide(
-                        color: AppTheme.getBorderColor(context).withValues(alpha: 0.5),
+                        color: AppTheme.getBorderColor(
+                          context,
+                        ).withValues(alpha: 0.5),
                       ),
                     ),
                   ),
@@ -922,7 +1008,10 @@ class SalesReportScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildPeriodComparisonSection(BuildContext context, SalesReport report) {
+  Widget _buildPeriodComparisonSection(
+    BuildContext context,
+    SalesReport report,
+  ) {
     final hasMonthOverMonth = report.monthOverMonth != null;
     final hasYearOverYear = report.yearOverYear != null;
 
@@ -932,9 +1021,9 @@ class SalesReportScreen extends StatelessWidget {
         children: [
           Text(
             'Perbandingan Periode',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
           Container(
@@ -983,9 +1072,9 @@ class SalesReportScreen extends StatelessWidget {
       children: [
         Text(
           'Perbandingan Periode',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
         Row(
@@ -1081,10 +1170,7 @@ class SalesReportScreen extends StatelessWidget {
       children: [
         Text(
           label,
-          style: TextStyle(
-            fontSize: 12,
-            color: AppTheme.textSecondary,
-          ),
+          style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
         ),
         const SizedBox(height: 4),
         Row(
@@ -1102,15 +1188,10 @@ class SalesReportScreen extends StatelessWidget {
                   decorationColor: AppTheme.textTertiary,
                 ),
               ),
-            if (previousValue == null)
-              const Spacer(),
+            if (previousValue == null) const Spacer(),
             Row(
               children: [
-                Icon(
-                  icon,
-                  size: 14,
-                  color: color,
-                ),
+                Icon(icon, size: 14, color: color),
                 const SizedBox(width: 4),
                 Text(
                   '${change.abs().toStringAsFixed(1)}%',
@@ -1137,9 +1218,9 @@ class SalesReportScreen extends StatelessWidget {
         children: [
           Text(
             'Jam Sibuk',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
           Container(
@@ -1188,9 +1269,9 @@ class SalesReportScreen extends StatelessWidget {
       children: [
         Text(
           'Jam Sibuk',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
         Container(
@@ -1213,7 +1294,9 @@ class SalesReportScreen extends StatelessWidget {
                 final barWidth = hour.transactionCount / maxTransactions;
 
                 return Padding(
-                  padding: EdgeInsets.only(bottom: index < peakHours.length - 1 ? 12 : 0),
+                  padding: EdgeInsets.only(
+                    bottom: index < peakHours.length - 1 ? 12 : 0,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -1231,9 +1314,14 @@ class SalesReportScreen extends StatelessWidget {
                           Row(
                             children: [
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 2,
+                                ),
                                 decoration: BoxDecoration(
-                                  color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                                  color: AppTheme.primaryColor.withValues(
+                                    alpha: 0.1,
+                                  ),
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: Text(
@@ -1264,7 +1352,9 @@ class SalesReportScreen extends StatelessWidget {
                           Container(
                             height: 8,
                             decoration: BoxDecoration(
-                              color: AppTheme.getBorderColor(context).withValues(alpha: 0.3),
+                              color: AppTheme.getBorderColor(
+                                context,
+                              ).withValues(alpha: 0.3),
                               borderRadius: BorderRadius.circular(4),
                             ),
                           ),
@@ -1317,7 +1407,9 @@ class SalesReportScreen extends StatelessWidget {
     );
   }
 
-  List<PieChartSectionData> _generatePieSections(List<PaymentMethodBreakdown> data) {
+  List<PieChartSectionData> _generatePieSections(
+    List<PaymentMethodBreakdown> data,
+  ) {
     return data.map((item) {
       return PieChartSectionData(
         value: item.totalAmount,
@@ -1359,7 +1451,10 @@ class SalesReportScreen extends StatelessWidget {
     return '${date.day}/${date.month}/${date.year}';
   }
 
-  Future<void> _selectDateRange(BuildContext context, SalesReportController controller) async {
+  Future<void> _selectDateRange(
+    BuildContext context,
+    SalesReportController controller,
+  ) async {
     final picked = await showDateRangePicker(
       context: context,
       firstDate: DateTime(2020),
@@ -1375,7 +1470,10 @@ class SalesReportScreen extends StatelessWidget {
     }
   }
 
-  Future<void> _exportReport(BuildContext context, SalesReportController controller) async {
+  Future<void> _exportReport(
+    BuildContext context,
+    SalesReportController controller,
+  ) async {
     try {
       final file = await controller.exportSalesReport();
 
@@ -1383,7 +1481,9 @@ class SalesReportScreen extends StatelessWidget {
         // Show success message and share file
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Laporan berhasil diekspor: ${file.path.split('/').last}'),
+            content: Text(
+              'Laporan berhasil diekspor: ${file.path.split('/').last}',
+            ),
             backgroundColor: AppTheme.successColor,
             action: SnackBarAction(
               label: 'Bagikan',
@@ -1419,10 +1519,12 @@ class SalesReportScreen extends StatelessWidget {
 
   Future<void> _shareFile(File file) async {
     try {
-      await Share.shareXFiles(
-        [XFile(file.path)],
-        subject: 'Laporan Penjualan',
-        text: 'Laporan penjualan dari aplikasi POS',
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(file.path)],
+          subject: 'Laporan Penjualan',
+          text: 'Laporan penjualan dari aplikasi POS',
+        ),
       );
     } catch (e) {
       // If sharing fails, just show the file path
@@ -1477,11 +1579,12 @@ class SalesReportScreen extends StatelessWidget {
         gridData: FlGridData(
           show: true,
           drawVerticalLine: false,
-          horizontalInterval: _calculateYInterval(dailyData, controller.chartMetric),
-          getDrawingHorizontalLine: (value) => FlLine(
-            color: AppTheme.dividerColor,
-            strokeWidth: 1,
+          horizontalInterval: _calculateYInterval(
+            dailyData,
+            controller.chartMetric,
           ),
+          getDrawingHorizontalLine: (value) =>
+              FlLine(color: AppTheme.dividerColor, strokeWidth: 1),
         ),
         titlesData: FlTitlesData(
           show: true,
@@ -1565,11 +1668,12 @@ class SalesReportScreen extends StatelessWidget {
         gridData: FlGridData(
           show: true,
           drawVerticalLine: false,
-          horizontalInterval: _calculateYInterval(dailyData, controller.chartMetric),
-          getDrawingHorizontalLine: (value) => FlLine(
-            color: AppTheme.dividerColor,
-            strokeWidth: 1,
+          horizontalInterval: _calculateYInterval(
+            dailyData,
+            controller.chartMetric,
           ),
+          getDrawingHorizontalLine: (value) =>
+              FlLine(color: AppTheme.dividerColor, strokeWidth: 1),
         ),
         titlesData: FlTitlesData(
           show: true,
@@ -1628,7 +1732,10 @@ class SalesReportScreen extends StatelessWidget {
         maxY: _calculateMaxYForMetric(dailyData, controller.chartMetric),
         lineBarsData: [
           LineChartBarData(
-            spots: _generateLineSpotsForMetric(dailyData, controller.chartMetric),
+            spots: _generateLineSpotsForMetric(
+              dailyData,
+              controller.chartMetric,
+            ),
             isCurved: true,
             color: AppTheme.secondaryColor,
             barWidth: 3,
@@ -1669,9 +1776,13 @@ class SalesReportScreen extends StatelessWidget {
     }
 
     final recentTotal = recentWeek.fold<double>(
-        0, (sum, day) => sum + day.revenue);
+      0,
+      (sum, day) => sum + day.revenue,
+    );
     final previousTotal = previousWeek.fold<double>(
-        0, (sum, day) => sum + day.revenue);
+      0,
+      (sum, day) => sum + day.revenue,
+    );
 
     final percentageChange = previousTotal > 0
         ? ((recentTotal - previousTotal) / previousTotal * 100)
@@ -1711,19 +1822,28 @@ class SalesReportScreen extends StatelessWidget {
     );
   }
 
-  double _calculateMaxYForMetric(List<DailySales> dailyData, ChartMetric metric) {
+  double _calculateMaxYForMetric(
+    List<DailySales> dailyData,
+    ChartMetric metric,
+  ) {
     if (dailyData.isEmpty) return 100000;
 
     double maxValue;
     switch (metric) {
       case ChartMetric.revenue:
-        maxValue = dailyData.map((d) => d.revenue).reduce((a, b) => a > b ? a : b);
+        maxValue = dailyData
+            .map((d) => d.revenue)
+            .reduce((a, b) => a > b ? a : b);
         break;
       case ChartMetric.profit:
-        maxValue = dailyData.map((d) => d.profit).reduce((a, b) => a > b ? a : b);
+        maxValue = dailyData
+            .map((d) => d.profit)
+            .reduce((a, b) => a > b ? a : b);
         break;
       case ChartMetric.transactions:
-        maxValue = dailyData.map((d) => d.transactionCount.toDouble()).reduce((a, b) => a > b ? a : b);
+        maxValue = dailyData
+            .map((d) => d.transactionCount.toDouble())
+            .reduce((a, b) => a > b ? a : b);
         break;
     }
 
@@ -1735,10 +1855,7 @@ class SalesReportScreen extends StatelessWidget {
     ChartMetric metric,
   ) {
     return dailyData.asMap().entries.map((entry) {
-      return FlSpot(
-        entry.key.toDouble(),
-        _getMetricValue(entry.value, metric),
-      );
+      return FlSpot(entry.key.toDouble(), _getMetricValue(entry.value, metric));
     }).toList();
   }
 
@@ -1748,20 +1865,29 @@ class SalesReportScreen extends StatelessWidget {
     double maxValue;
     switch (metric) {
       case ChartMetric.revenue:
-        maxValue = dailyData.map((d) => d.revenue).reduce((a, b) => a > b ? a : b);
+        maxValue = dailyData
+            .map((d) => d.revenue)
+            .reduce((a, b) => a > b ? a : b);
         break;
       case ChartMetric.profit:
-        maxValue = dailyData.map((d) => d.profit).reduce((a, b) => a > b ? a : b);
+        maxValue = dailyData
+            .map((d) => d.profit)
+            .reduce((a, b) => a > b ? a : b);
         break;
       case ChartMetric.transactions:
-        maxValue = dailyData.map((d) => d.transactionCount.toDouble()).reduce((a, b) => a > b ? a : b);
+        maxValue = dailyData
+            .map((d) => d.transactionCount.toDouble())
+            .reduce((a, b) => a > b ? a : b);
         break;
     }
 
     return maxValue / 5;
   }
 
-  Widget _buildExpenseBreakdownSection(BuildContext context, SalesReport report) {
+  Widget _buildExpenseBreakdownSection(
+    BuildContext context,
+    SalesReport report,
+  ) {
     final profitReport = report.profitReport!;
     final netProfitIsPositive = profitReport.netProfit >= 0;
 
@@ -1771,9 +1897,9 @@ class SalesReportScreen extends StatelessWidget {
         Text(
           'Analisis Pengeluaran',
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: AppTheme.getTextPrimaryColor(context),
-              ),
+            fontWeight: FontWeight.bold,
+            color: AppTheme.getTextPrimaryColor(context),
+          ),
         ),
         const SizedBox(height: 16),
         Container(
@@ -1816,7 +1942,9 @@ class SalesReportScreen extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          netProfitIsPositive ? 'Keuntungan Bersih' : 'Kerugian Bersih',
+                          netProfitIsPositive
+                              ? 'Keuntungan Bersih'
+                              : 'Kerugian Bersih',
                           style: TextStyle(
                             fontSize: 14,
                             color: AppTheme.getTextSecondaryColor(context),
@@ -1839,10 +1967,7 @@ class SalesReportScreen extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 20),
-              Container(
-                height: 1,
-                color: AppTheme.getBorderColor(context),
-              ),
+              Container(height: 1, color: AppTheme.getBorderColor(context)),
               const SizedBox(height: 20),
 
               // Breakdown bars
@@ -1868,7 +1993,9 @@ class SalesReportScreen extends StatelessWidget {
                 'Laba Bersih',
                 profitReport.netProfit,
                 report.totalRevenue,
-                netProfitIsPositive ? AppTheme.successColor : AppTheme.errorColor,
+                netProfitIsPositive
+                    ? AppTheme.successColor
+                    : AppTheme.errorColor,
                 showPercentage: true,
               ),
             ],
@@ -1887,7 +2014,9 @@ class SalesReportScreen extends StatelessWidget {
     bool isNegative = false,
     bool showPercentage = false,
   }) {
-    final percentage = totalRevenue > 0 ? (value.abs() / totalRevenue * 100) : 0.0;
+    final percentage = totalRevenue > 0
+        ? (value.abs() / totalRevenue * 100)
+        : 0.0;
     final barWidth = totalRevenue > 0 ? (value.abs() / totalRevenue) : 0.0;
 
     return Column(
@@ -1916,7 +2045,10 @@ class SalesReportScreen extends StatelessWidget {
                 if (showPercentage) ...[
                   const SizedBox(width: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: color.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(10),
@@ -1943,7 +2075,9 @@ class SalesReportScreen extends StatelessWidget {
               Container(
                 height: 8,
                 decoration: BoxDecoration(
-                  color: AppTheme.getBorderColor(context).withValues(alpha: 0.3),
+                  color: AppTheme.getBorderColor(
+                    context,
+                  ).withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),

@@ -1,4 +1,3 @@
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:print_bluetooth_thermal/print_bluetooth_thermal.dart';
 import '../../features/sales/domain/entities/transaction.dart';

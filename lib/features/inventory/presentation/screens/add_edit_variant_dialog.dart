@@ -32,7 +32,7 @@ class _AddEditVariantDialogState extends State<AddEditVariantDialog> {
   final _barcodeController = TextEditingController();
 
   Map<String, String>? _selectedAttributes;
-  bool _isSaving = false;
+  final bool _isSaving = false;
 
   bool get _isEditing => widget.existingVariant != null;
 
@@ -281,7 +281,7 @@ class _AddEditVariantDialogState extends State<AddEditVariantDialog> {
                         const SizedBox(height: 8),
                       ],
                     );
-                  }).toList(),
+                  }),
                 ],
               ],
             ),

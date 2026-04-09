@@ -488,7 +488,7 @@ class ModernDrawerMenuItem extends StatelessWidget {
                   ),
                 ),
               ),
-            if (trailing != null) trailing!,
+            ?trailing,
           ],
         ),
         onTap: () {

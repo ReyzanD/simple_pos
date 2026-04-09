@@ -339,7 +339,7 @@ class _SupplierScreenState extends State<SupplierScreen> {
     return Container(
       margin: const EdgeInsets.only(left: 8),
       child: Material(
-        color: AppTheme.getCardColor(context as BuildContext).withValues(alpha: 0.5),
+        color: AppTheme.getCardColor(context).withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(10),
         child: InkWell(
           onTap: onTap,

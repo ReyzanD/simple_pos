@@ -16,7 +16,7 @@ class ListItemShimmer extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView.builder(
       itemCount: itemCount,
-      itemBuilder: (_, __) => Padding(
+      itemBuilder: (_, _) => Padding(
         padding: const EdgeInsets.only(bottom: 12),
         child: ShimmerLoading(
           child: ModernCard(
