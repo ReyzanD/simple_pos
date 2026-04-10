@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/constants/backup_constants.dart';
 import '../../../../core/widgets/modern_button.dart';
+import '../../../../core/widgets/modern_card.dart';
 import '../../../shared/presentation/main_navigation.dart';
 import '../controllers/backup_controller.dart';
 import '../../domain/entities/backup_metadata.dart';
@@ -963,77 +964,393 @@ class _CreateBackupDialogState extends State<_CreateBackupDialog> {
 }
 
 /// Restore Dialog
-class _RestoreDialog extends StatelessWidget {
+class _RestoreDialog extends StatefulWidget {
   final BackupMetadata backup;
 
   const _RestoreDialog({required this.backup});
 
   @override
+  State<_RestoreDialog> createState() => _RestoreDialogState();
+}
+
+class _RestoreDialogState extends State<_RestoreDialog> {
+  RestoreMode _selectedMode = RestoreMode.replaceAll;
+  bool _showConfirmation = false;
+  bool _isRestoring = false;
+
+  @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Restore Backup'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Restore backup from ${_formatDate(backup.createdAt)}?'),
-          const SizedBox(height: 16),
-          const Text('Restore Mode'),
-          const SizedBox(height: 8),
-          SegmentedButton<RestoreMode>(
-            segments: const [
-              ButtonSegment(
-                value: RestoreMode.replaceAll,
-                label: Text('Replace All'),
-                icon: Icon(Icons.delete_sweep),
+    if (_showConfirmation) {
+      return _buildConfirmationDialog(context);
+    }
+
+    return Dialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 500),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            Row(
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: AppTheme.warningColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.restore,
+                    color: AppTheme.warningColor,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Restore Backup',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.getTextPrimaryColor(context),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Restore data from this backup',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: AppTheme.getTextSecondaryColor(context),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            // Backup Details Card
+            ModernCard(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  _buildDetailRow(
+                    context,
+                    icon: Icons.calendar_today,
+                    label: 'Date',
+                    value: _formatDate(widget.backup.createdAt),
+                  ),
+                  const Divider(height: 20),
+                  _buildDetailRow(
+                    context,
+                    icon: Icons.access_time,
+                    label: 'Time',
+                    value: _formatTime(widget.backup.createdAt),
+                  ),
+                  const Divider(height: 20),
+                  _buildDetailRow(
+                    context,
+                    icon: Icons.storage,
+                    label: 'Size',
+                    value: widget.backup.sizeFormatted,
+                  ),
+                  const Divider(height: 20),
+                  _buildDetailRow(
+                    context,
+                    icon: widget.backup.type == BackupType.full
+                        ? Icons.backup
+                        : Icons.update,
+                    label: 'Type',
+                    value: widget.backup.type == BackupType.full ? 'Full' : 'Incremental',
+                  ),
+                  const Divider(height: 20),
+                  _buildDetailRow(
+                    context,
+                    icon: widget.backup.location == StorageLocation.local
+                        ? Icons.smartphone
+                        : Icons.cloud,
+                    label: 'Location',
+                    value: widget.backup.location.name.toUpperCase(),
+                  ),
+                ],
               ),
-              ButtonSegment(
-                value: RestoreMode.merge,
-                label: Text('Merge'),
-                icon: Icon(Icons.merge_type),
+            ),
+            const SizedBox(height: 20),
+
+            // Restore Mode Selection
+            _buildSectionTitle('Restore Mode', Icons.settings),
+            const SizedBox(height: 12),
+            SegmentedButton<RestoreMode>(
+              segments: const [
+                ButtonSegment(
+                  value: RestoreMode.replaceAll,
+                  label: Text('Replace All'),
+                  icon: Icon(Icons.delete_sweep),
+                ),
+                ButtonSegment(
+                  value: RestoreMode.merge,
+                  label: Text('Merge'),
+                  icon: Icon(Icons.merge_type),
+                ),
+              ],
+              selected: {_selectedMode},
+              onSelectionChanged: (Set<RestoreMode> selected) {
+                setState(() {
+                  _selectedMode = selected.first;
+                });
+              },
+              style: ButtonStyle(
+                backgroundColor: WidgetStateProperty.resolveWith((states) {
+                  if (states.contains(WidgetState.selected)) {
+                    return AppTheme.warningColor.withValues(alpha: 0.1);
+                  }
+                  return null;
+                }),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _selectedMode == RestoreMode.replaceAll
+                  ? 'Replace all existing data with backup data'
+                  : 'Merge backup data with existing data',
+              style: TextStyle(
+                fontSize: 12,
+                color: AppTheme.getTextSecondaryColor(context),
+              ),
+            ),
+
+            // Warning for Replace All mode
+            if (_selectedMode == RestoreMode.replaceAll) ...[
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppTheme.errorColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: AppTheme.errorColor.withValues(alpha: 0.3),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.warning_amber,
+                      color: AppTheme.errorColor,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Warning: This will replace all your current data. This action cannot be undone.',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppTheme.errorColor,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
-            selected: const {RestoreMode.replaceAll},
-            onSelectionChanged: (Set<RestoreMode> selected) {
-              // Handle selection
-            },
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Warning: This will replace your current data.',
-            style: TextStyle(
-              fontSize: 12,
-              color: AppTheme.errorColor,
-            ),
-          ),
-        ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
-        ),
-        ElevatedButton(
-          onPressed: () async {
-            final controller = context.read<BackupController>();
-            final success = await controller.restoreBackup(RestoreMode.replaceAll);
+            const SizedBox(height: 24),
 
-            if (context.mounted) {
-              Navigator.pop(context);
-              if (success) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Backup restored successfully'),
-                    backgroundColor: AppTheme.successColor,
+            // Actions
+            Row(
+              children: [
+                Expanded(
+                  child: ModernSecondaryButton(
+                    text: 'Cancel',
+                    onPressed: _isRestoring ? null : () => Navigator.pop(context),
                   ),
-                );
-              }
-            }
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppTheme.warningColor,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ModernButton(
+                    text: 'Restore',
+                    icon: Icons.restore,
+                    backgroundColor: AppTheme.warningColor,
+                    onPressed: _isRestoring
+                        ? null
+                        : () {
+                            setState(() {
+                              _showConfirmation = true;
+                            });
+                          },
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildConfirmationDialog(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 400),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.help_outline,
+              size: 48,
+              color: AppTheme.warningColor,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Confirm Restore',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.getTextPrimaryColor(context),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Are you sure you want to restore this backup?',
+              style: TextStyle(
+                fontSize: 14,
+                color: AppTheme.getTextSecondaryColor(context),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            if (_selectedMode == RestoreMode.replaceAll) ...[
+              const SizedBox(height: 12),
+              Text(
+                'All current data will be replaced.',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: AppTheme.errorColor,
+                  fontWeight: FontWeight.w500,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(
+                  child: ModernSecondaryButton(
+                    text: 'Back',
+                    onPressed: _isRestoring
+                        ? null
+                        : () {
+                            setState(() {
+                              _showConfirmation = false;
+                            });
+                          },
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ModernButton(
+                    text: 'Confirm',
+                    icon: Icons.check,
+                    backgroundColor: AppTheme.warningColor,
+                    onPressed: _isRestoring
+                        ? null
+                        : () async {
+                            setState(() {
+                              _isRestoring = true;
+                            });
+
+                            final controller = context.read<BackupController>();
+                            final success = await controller.restoreBackup(_selectedMode);
+
+                            if (mounted) {
+                              Navigator.pop(context); // Close confirmation
+                              Navigator.pop(context); // Close restore dialog
+                              if (success) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: const Text('Backup restored successfully'),
+                                    backgroundColor: AppTheme.successColor,
+                                    behavior: SnackBarBehavior.floating,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                );
+                              }
+                            }
+                          },
+                    isLoading: _isRestoring,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(String title, IconData icon) {
+    return Row(
+      children: [
+        Icon(
+          icon,
+          size: 18,
+          color: AppTheme.getTextSecondaryColor(context),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: AppTheme.getTextSecondaryColor(context),
           ),
-          child: const Text('Restore'),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDetailRow(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
+    return Row(
+      children: [
+        Icon(
+          icon,
+          size: 18,
+          color: AppTheme.getTextSecondaryColor(context),
+        ),
+        const SizedBox(width: 12),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 13,
+            color: AppTheme.getTextSecondaryColor(context),
+          ),
+        ),
+        const Spacer(),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: AppTheme.getTextPrimaryColor(context),
+          ),
         ),
       ],
     );
@@ -1041,6 +1358,10 @@ class _RestoreDialog extends StatelessWidget {
 
   String _formatDate(DateTime date) {
     return '${date.day}/${date.month}/${date.year}';
+  }
+
+  String _formatTime(DateTime date) {
+    return '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
   }
 }
 
