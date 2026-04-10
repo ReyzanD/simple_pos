@@ -27,6 +27,7 @@ import 'features/inventory/domain/usecases/delete_product_usecase.dart';
 import 'features/inventory/domain/usecases/get_products_usecase.dart';
 import 'features/inventory/domain/usecases/search_products_usecase.dart';
 import 'features/inventory/domain/usecases/update_product_usecase.dart';
+import 'features/inventory/domain/usecases/import_products_from_csv_usecase.dart';
 import 'features/inventory/domain/usecases/category_usecases.dart';
 import 'features/inventory/domain/usecases/supplier_usecases.dart';
 import 'features/inventory/domain/usecases/get_product_variants_usecase.dart';
@@ -74,8 +75,10 @@ import 'features/sales/domain/usecases/get_discount_presets_usecase.dart';
 import 'features/sales/domain/usecases/add_discount_preset_usecase.dart';
 import 'features/sales/domain/usecases/update_discount_preset_usecase.dart';
 import 'features/sales/domain/usecases/delete_discount_preset_usecase.dart';
+import 'features/sales/domain/usecases/get_sales_analytics_usecase.dart';
 import 'features/sales/presentation/controllers/sales_history_controller.dart';
 import 'features/sales/presentation/controllers/sales_report_controller.dart';
+import 'features/sales/presentation/controllers/analytics_controller.dart';
 import 'features/sales/presentation/controllers/refund_controller.dart';
 import 'features/sales/presentation/controllers/discount_controller.dart';
 
@@ -110,6 +113,13 @@ import 'features/users/domain/usecases/update_user_usecase.dart';
 import 'features/users/domain/usecases/delete_user_usecase.dart';
 import 'features/users/domain/usecases/get_current_user_usecase.dart';
 import 'features/users/presentation/controllers/auth_controller.dart';
+
+// Features - Backup
+import 'features/backup/data/datasources/backup_local_datasource.dart';
+import 'features/backup/data/datasources/backup_drive_datasource.dart';
+import 'features/backup/data/repositories/backup_repository_impl.dart';
+import 'core/services/backup_service.dart';
+import 'features/backup/presentation/controllers/backup_controller.dart';
 
 // Features - Expenses
 import 'features/expenses/data/datasources/expense_local_datasource_impl.dart';
@@ -174,14 +184,18 @@ class POSApp extends StatelessWidget {
         ProxyProvider<ProductRepositoryImpl, SearchProductsUseCase>(
           update: (_, repo, _) => SearchProductsUseCase(repository: repo),
         ),
+        ProxyProvider<ProductRepositoryImpl, ImportProductsFromCsvUseCase>(
+          update: (_, repo, _) => ImportProductsFromCsvUseCase(productRepository: repo),
+        ),
 
         // Inventory - Presentation Layer (Controller)
-        ChangeNotifierProxyProvider5<
+        ChangeNotifierProxyProvider6<
           GetProductsUseCase,
           AddProductUseCase,
           UpdateProductUseCase,
           DeleteProductUseCase,
           SearchProductsUseCase,
+          ImportProductsFromCsvUseCase,
           InventoryController
         >(
           create: (context) => InventoryController(
@@ -190,14 +204,16 @@ class POSApp extends StatelessWidget {
             updateProductUseCase: context.read(),
             deleteProductUseCase: context.read(),
             searchProductsUseCase: context.read(),
+            importProductsFromCsvUseCase: context.read(),
           ),
-          update: (_, getProducts, add, update, delete, search, _) =>
+          update: (_, getProducts, add, update, delete, search, import, _) =>
               InventoryController(
                 getProductsUseCase: getProducts,
                 addProductUseCase: add,
                 updateProductUseCase: update,
                 deleteProductUseCase: delete,
                 searchProductsUseCase: search,
+                importProductsFromCsvUseCase: import,
               ),
         ),
 
@@ -453,6 +469,17 @@ class POSApp extends StatelessWidget {
         ProxyProvider2<
           TransactionRepositoryImpl,
           ProductRepositoryImpl,
+          GetSalesAnalyticsUseCase
+        >(
+          update: (_, transactionRepo, productRepo, _) =>
+              GetSalesAnalyticsUseCase(
+                transactionRepository: transactionRepo,
+                productRepository: productRepo,
+              ),
+        ),
+        ProxyProvider2<
+          TransactionRepositoryImpl,
+          ProductRepositoryImpl,
           RefundTransactionUseCase
         >(
           update: (_, transactionRepo, productRepo, _) =>
@@ -476,6 +503,11 @@ class POSApp extends StatelessWidget {
             getSalesReportUseCase: context.read(),
             exportSalesToCsvUseCase: context.read(),
             getProfitReportUseCase: context.read(),
+          ),
+        ),
+        ChangeNotifierProvider<AnalyticsController>(
+          create: (context) => AnalyticsController(
+            getSalesAnalyticsUseCase: context.read(),
           ),
         ),
 
@@ -867,6 +899,40 @@ class POSApp extends StatelessWidget {
                 getExpenseSummaryUseCase: summary,
                 getExpenseCountByCategoryUseCase: count,
               ),
+        ),
+
+        // ========== BACKUP SYSTEM ==========
+        // Backup - Data Layer
+        Provider<BackupLocalDataSource>(
+          create: (_) => BackupLocalDataSource(),
+        ),
+
+        Provider<BackupDriveDataSource>(
+          create: (_) => BackupDriveDataSource(),
+        ),
+
+        // Backup - Repository Layer
+        ProxyProvider2<
+          BackupLocalDataSource,
+          BackupDriveDataSource,
+          BackupRepositoryImpl
+        >(
+          update: (_, local, drive, __) => BackupRepositoryImpl(
+            localDataSource: local,
+            driveDataSource: drive,
+          ),
+        ),
+
+        // Backup - Service Layer
+        ProxyProvider<BackupRepositoryImpl, BackupService>(
+          update: (_, repo, _) => BackupService(backupRepository: repo),
+        ),
+
+        // Backup - Presentation Layer (Controller)
+        ChangeNotifierProvider<BackupController>(
+          create: (context) => BackupController(
+            backupService: context.read<BackupService>(),
+          ),
         ),
 
         // ========== PRINTER SERVICE ==========
