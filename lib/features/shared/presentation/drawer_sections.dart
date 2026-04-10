@@ -8,11 +8,14 @@ import '../../inventory/presentation/screens/low_stock_dashboard_screen.dart';
 import '../../sales/presentation/controllers/discount_controller.dart';
 import '../../sales/presentation/screens/discount_management_screen.dart';
 import '../../sales/presentation/controllers/sales_report_controller.dart';
+import '../../sales/presentation/screens/analytics_screen.dart';
 import '../../../core/controllers/theme_controller.dart';
 import '../../inventory/domain/entities/product.dart';
 import '../../expenses/presentation/screens/expense_screen.dart';
 import '../../shifts/presentation/screens/shift_management_screen.dart';
 import '../../users/presentation/screens/user_management_screen.dart';
+import '../../backup/presentation/screens/backup_screen.dart';
+import '../../backup/presentation/controllers/backup_controller.dart';
 
 /// Section divider for drawer content
 class DrawerSectionDivider extends StatelessWidget {
@@ -687,6 +690,87 @@ class DrawerDiscountItem extends StatelessWidget {
   }
 }
 
+/// Modern Backup Item
+class DrawerBackupItem extends StatelessWidget {
+  const DrawerBackupItem({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<BackupController>(
+      builder: (context, controller, _) {
+        final backupCount = controller.backups.length;
+
+        return ListTile(
+          leading: Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: AppTheme.primaryColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              Icons.backup_outlined,
+              color: AppTheme.primaryColor,
+              size: 20,
+            ),
+          ),
+          title: Text(
+            'Backup & Restore',
+            style: TextStyle(
+              fontSize: 14,
+              color: AppTheme.getTextPrimaryColor(context),
+            ),
+          ),
+          subtitle: Text(
+            'Kelola backup data',
+            style: TextStyle(
+              fontSize: 12,
+              color: AppTheme.getTextSecondaryColor(context),
+            ),
+          ),
+          trailing: backupCount > 0
+              ? Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryColor.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: AppTheme.primaryColor.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Text(
+                    backupCount.toString(),
+                    style: TextStyle(
+                      color: AppTheme.primaryColor,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
+                )
+              : Icon(
+                  Icons.chevron_right,
+                  size: 20,
+                  color: AppTheme.getTextSecondaryColor(context),
+                ),
+          onTap: () {
+            HapticHelper.lightImpact();
+            Navigator.pop(context);
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ChangeNotifierProvider.value(
+                  value: controller,
+                  child: const BackupScreen(),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+}
+
 /// Modern Expenses Item
 class DrawerExpensesItem extends StatelessWidget {
   const DrawerExpensesItem({super.key});
@@ -839,6 +923,64 @@ class DrawerUsersItem extends StatelessWidget {
           context,
           MaterialPageRoute(
             builder: (context) => const UserManagementScreen(),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// Modern Analytics Item
+class DrawerAnalyticsItem extends StatelessWidget {
+  const DrawerAnalyticsItem({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              AppTheme.primaryColor.withValues(alpha: 0.15),
+              AppTheme.secondaryColor.withValues(alpha: 0.15),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: const Icon(
+          Icons.analytics_outlined,
+          color: AppTheme.primaryColor,
+          size: 20,
+        ),
+      ),
+      title: Text(
+        'Analitik Penjualan',
+        style: TextStyle(
+          fontSize: 14,
+          color: AppTheme.getTextPrimaryColor(context),
+        ),
+      ),
+      subtitle: Text(
+        'Tren & insight penjualan',
+        style: TextStyle(
+          fontSize: 12,
+          color: AppTheme.getTextSecondaryColor(context),
+        ),
+      ),
+      trailing: Icon(
+        Icons.chevron_right,
+        size: 20,
+        color: AppTheme.getTextSecondaryColor(context),
+      ),
+      onTap: () {
+        HapticHelper.lightImpact();
+        Navigator.pop(context);
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const AnalyticsScreen(),
           ),
         );
       },

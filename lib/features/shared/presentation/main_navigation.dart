@@ -15,6 +15,7 @@ import '../../settings/presentation/screens/settings_screen.dart';
 import '../../users/presentation/controllers/auth_controller.dart';
 import '../../users/presentation/screens/login_screen.dart';
 import '../../users/domain/entities/user_role.dart';
+import '../../backup/presentation/screens/backup_screen.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/animations/animation_constants.dart';
@@ -359,9 +360,11 @@ class MainNavigationState extends State<MainNavigation>
                   // Quick Actions
                   DrawerLowStockItem(),
                   DrawerDiscountItem(),
+                  const DrawerBackupItem(),
                   DrawerExpensesItem(),
                   DrawerShiftsItem(),
                   DrawerUsersItem(),
+                  DrawerAnalyticsItem(),
                   DrawerThemeToggle(),
 
                   // Recent Products Section
