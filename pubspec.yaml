@@ -65,6 +65,9 @@ dependencies:
   # Image Picker
   image_picker: ^1.1.2
 
+  # File Picker for CSV import
+  file_picker: ^8.0.0
+
   # Phase 9: Internationalization
   flutter_localizations:
     sdk: flutter
@@ -76,6 +79,11 @@ dependencies:
   url_launcher: ^6.3.0
   excel: ^4.0.0
   crypto: ^3.0.3
+
+  # Backup System
+  googleapis: ^13.0.0
+  archive: ^3.6.0
+  android_alarm_manager_plus: ^4.0.0
 
 dev_dependencies:
   flutter_test:
