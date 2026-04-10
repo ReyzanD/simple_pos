@@ -1,165 +1,359 @@
-import 'dart:io';
-import 'package:path/path.dart' as path;
-import 'package:path_provider/path_provider.dart';
-import 'package:simple_pos/services/database/database_helper.dart';
+import 'dart:async';
+import 'package:simple_pos/core/exceptions/app_exceptions.dart';
+import 'package:simple_pos/core/utils/logger.dart';
+import 'package:simple_pos/features/backup/domain/entities/backup_config.dart';
+import 'package:simple_pos/features/backup/domain/entities/backup_data.dart';
+import 'package:simple_pos/features/backup/domain/entities/backup_metadata.dart';
+import 'package:simple_pos/features/backup/domain/repositories/backup_repository.dart';
+import 'package:simple_pos/core/constants/backup_constants.dart';
 
-/// BackupService for database backup and restore operations
+/// Core service orchestrating all backup operations
+/// Provides high-level backup management with validation and error handling
 class BackupService {
-  final DatabaseHelper databaseHelper;
+  final BackupRepository backupRepository;
 
-  BackupService({required this.databaseHelper});
+  BackupService({required this.backupRepository});
 
-  /// Create a backup of the database
-  /// Returns the path to the backup file
-  Future<String> createBackup() async {
-    final db = await databaseHelper.database;
-    final dbPath = db.path;
+  /// Create a backup with the given configuration
+  /// Returns BackupResult with success status and metadata
+  Future<BackupResult> createBackup(BackupConfig config) async {
+    try {
+      AppLogger.info('Starting backup creation', tag: 'BackupService');
 
-    // Get the application documents directory
-    final directory = await getApplicationDocumentsDirectory();
-    final backupDir = Directory('${directory.path}/backups');
+      // Check storage space
+      final availableSpace = await backupRepository.getAvailableStorageSpace();
+      if (availableSpace < BackupConstants.maxBackupSizeBytes) {
+        AppLogger.warning(
+          'Low storage space: ${availableSpace ~/ (1024 * 1024)} MB',
+          tag: 'BackupService',
+        );
+      }
 
-    // Create backup directory if it doesn't exist
-    if (!await backupDir.exists()) {
-      await backupDir.create(recursive: true);
+      // Collect backup data
+      final data = await _collectBackupData(config);
+
+      // Validate data
+      if (!await _validateBackupData(data)) {
+        return BackupResult(
+          success: false,
+          error: 'Data backup tidak valid',
+          metadata: null,
+        );
+      }
+
+      // Create backup
+      final metadata = await backupRepository.createBackup(config, data);
+
+      AppLogger.info(
+        'Backup created successfully: ${metadata.id}',
+        tag: 'BackupService',
+      );
+
+      return BackupResult(
+        success: true,
+        error: null,
+        metadata: metadata,
+      );
+    } on AppException catch (e) {
+      AppLogger.error(
+        'Backup creation failed',
+        error: e,
+        tag: 'BackupService',
+      );
+      return BackupResult(
+        success: false,
+        error: e.userMessage,
+        metadata: null,
+      );
+    } catch (e, stackTrace) {
+      AppLogger.error(
+        'Unexpected error in createBackup',
+        error: e,
+        stackTrace: stackTrace,
+        tag: 'BackupService',
+      );
+      return BackupResult(
+        success: false,
+        error: 'Terjadi kesalahan tidak terduga',
+        metadata: null,
+      );
     }
-
-    // Create backup file with timestamp
-    final timestamp = DateTime.now().toIso8601String().replaceAll(':', '-');
-    final backupFileName = 'backup_$timestamp.db';
-    final backupPath = path.join(backupDir.path, backupFileName);
-
-    // Copy the database file
-    await File(dbPath).copy(backupPath);
-
-    return backupPath;
   }
 
-  /// Get list of available backups
-  Future<List<BackupInfo>> getAvailableBackups() async {
-    final directory = await getApplicationDocumentsDirectory();
-    final backupDir = Directory('${directory.path}/backups');
+  /// Restore backup with given mode
+  /// Returns RestoreResult with success status and details
+  Future<RestoreResult> restoreBackup(
+    String backupId,
+    RestoreMode mode,
+  ) async {
+    try {
+      AppLogger.info(
+        'Starting backup restore: $backupId (mode: ${mode.name})',
+        tag: 'BackupService',
+      );
 
-    if (!await backupDir.exists()) {
+      // Load backup data
+      final data = await backupRepository.loadBackup(backupId);
+
+      // Validate backup
+      final validation = await validateBackup(backupId);
+      if (!validation.isValid) {
+        return RestoreResult(
+          success: false,
+          error: validation.error ?? 'Backup tidak valid',
+          recordsProcessed: 0,
+        );
+      }
+
+      // Restore based on mode
+      if (mode == RestoreMode.replaceAll) {
+        await _restoreReplaceAll(data);
+      } else {
+        await _restoreMerge(data);
+      }
+
+      AppLogger.info('Backup restored successfully', tag: 'BackupService');
+
+      return RestoreResult(
+        success: true,
+        error: null,
+        recordsProcessed: await _estimateRecordsProcessed(data),
+      );
+    } on AppException catch (e) {
+      AppLogger.error(
+        'Backup restore failed',
+        error: e,
+        tag: 'BackupService',
+      );
+      return RestoreResult(
+        success: false,
+        error: e.userMessage,
+        recordsProcessed: 0,
+      );
+    } catch (e, stackTrace) {
+      AppLogger.error(
+        'Unexpected error in restoreBackup',
+        error: e,
+        stackTrace: stackTrace,
+        tag: 'BackupService',
+      );
+      return RestoreResult(
+        success: false,
+        error: 'Terjadi kesalahan tidak terduga',
+        recordsProcessed: 0,
+      );
+    }
+  }
+
+  /// Validate backup integrity
+  /// Returns ValidationResult with validity status
+  Future<ValidationResult> validateBackup(String backupId) async {
+    try {
+      AppLogger.info('Validating backup: $backupId', tag: 'BackupService');
+
+      // Load backup to validate
+      final data = await backupRepository.loadBackup(backupId);
+
+      // Check if data exists
+      if (data.databaseFile == null && data.imageFiles.isEmpty) {
+        return ValidationResult(
+          isValid: false,
+          error: 'File backup kosong atau rusak',
+          warnings: [],
+        );
+      }
+
+      // Check database file
+      if (data.databaseFile != null) {
+        final exists = await data.databaseFile!.exists();
+        if (!exists) {
+          return ValidationResult(
+            isValid: false,
+            error: 'File database tidak ditemukan',
+            warnings: [],
+          );
+        }
+      }
+
+      // Collect warnings
+      final warnings = <String>[];
+
+      if (data.databaseFile == null) {
+        warnings.add('Backup tidak mengandung database');
+      }
+
+      if (data.imageFiles.isEmpty) {
+        warnings.add('Backup tidak mengandung gambar');
+      }
+
+      AppLogger.info('Backup validation completed', tag: 'BackupService');
+
+      return ValidationResult(
+        isValid: true,
+        error: null,
+        warnings: warnings,
+      );
+    } on AppException catch (e) {
+      AppLogger.error(
+        'Backup validation failed',
+        error: e,
+        tag: 'BackupService',
+      );
+      return ValidationResult(
+        isValid: false,
+        error: e.userMessage,
+        warnings: [],
+      );
+    } catch (e, stackTrace) {
+      AppLogger.error(
+        'Unexpected error in validateBackup',
+        error: e,
+        stackTrace: stackTrace,
+        tag: 'BackupService',
+      );
+      return ValidationResult(
+        isValid: false,
+        error: 'Terjadi kesalahan tidak terduga',
+        warnings: [],
+      );
+    }
+  }
+
+  /// List all available backups
+  Future<List<BackupMetadata>> listBackups() async {
+    try {
+      AppLogger.info('Listing backups', tag: 'BackupService');
+
+      final backups = await backupRepository.listBackups();
+
+      AppLogger.info('Found ${backups.length} backups', tag: 'BackupService');
+      return backups;
+    } catch (e, stackTrace) {
+      AppLogger.error(
+        'Failed to list backups',
+        error: e,
+        stackTrace: stackTrace,
+        tag: 'BackupService',
+      );
       return [];
     }
-
-    final files = await backupDir.list().where((f) => f.path.endsWith('.db')).toList();
-
-    final backups = <BackupInfo>[];
-    for (var file in files) {
-      if (file is File) {
-        final stat = await file.stat();
-        final fileName = path.basename(file.path);
-
-        // Extract timestamp from filename
-        final timestampStr = fileName.replaceAll('backup_', '').replaceAll('.db', '');
-        DateTime? timestamp;
-        try {
-          timestamp = DateTime.parse(timestampStr.replaceAll('-', ':'));
-        } catch (e) {
-          timestamp = stat.modified;
-        }
-
-        backups.add(BackupInfo(
-          path: file.path,
-          fileName: fileName,
-          size: stat.size,
-          createdAt: timestamp,
-        ));
-      }
-    }
-
-    // Sort by creation date, newest first
-    backups.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-
-    return backups;
   }
 
-  /// Restore database from backup
-  /// WARNING: This will replace the current database
-  Future<bool> restoreFromBackup(String backupPath) async {
+  /// Delete a backup
+  Future<bool> deleteBackup(String backupId) async {
     try {
-      // Close current database connection
-      // Note: DatabaseHelper will need to handle this
+      AppLogger.info('Deleting backup: $backupId', tag: 'BackupService');
 
-      final db = await databaseHelper.database;
-      final currentDbPath = db.path;
+      final backups = await listBackups();
+      final backup = backups.where((b) => b.id == backupId).firstOrNull;
 
-      // Copy backup file to replace current database
-      await File(backupPath).copy(currentDbPath);
+      if (backup == null) {
+        AppLogger.warning('Backup not found: $backupId', tag: 'BackupService');
+        return false;
+      }
 
+      await backupRepository.deleteBackup(backup);
+
+      AppLogger.info('Backup deleted successfully', tag: 'BackupService');
       return true;
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error(
+        'Failed to delete backup',
+        error: e,
+        stackTrace: stackTrace,
+        tag: 'BackupService',
+      );
       return false;
     }
   }
 
-  /// Delete a backup file
-  Future<bool> deleteBackup(String backupPath) async {
-    try {
-      final file = File(backupPath);
-      if (await file.exists()) {
-        await file.delete();
-        return true;
-      }
-      return false;
-    } catch (e) {
-      return false;
-    }
+  /// Collect backup data from database and files
+  /// TODO: Implement in future tasks
+  Future<BackupData> _collectBackupData(BackupConfig config) async {
+    throw UnimplementedError(
+      'Data collection will be implemented in future tasks. '
+      'Requires database export and file collection logic.'
+    );
   }
 
-  /// Get total size of all backups
-  Future<int> getTotalBackupSize() async {
-    final backups = await getAvailableBackups();
-    return backups.fold<int>(0, (sum, backup) => sum + backup.size);
+  /// Restore backup by replacing all existing data
+  /// TODO: Implement in future tasks
+  Future<void> _restoreReplaceAll(BackupData data) async {
+    throw UnimplementedError(
+      'Replace all restore will be implemented in future tasks. '
+      'Requires database import and file restoration logic.'
+    );
   }
 
-  /// Delete old backups (older than specified days)
-  Future<int> deleteOldBackups(int daysToKeep) async {
-    final cutoffDate = DateTime.now().subtract(Duration(days: daysToKeep));
-    final backups = await getAvailableBackups();
+  /// Restore backup by merging with existing data
+  /// TODO: Implement in future tasks
+  Future<void> _restoreMerge(BackupData data) async {
+    throw UnimplementedError(
+      'Merge restore will be implemented in future tasks. '
+      'Requires conflict resolution and merge logic.'
+    );
+  }
 
-    int deletedCount = 0;
-    for (var backup in backups) {
-      if (backup.createdAt.isBefore(cutoffDate)) {
-        if (await deleteBackup(backup.path)) {
-          deletedCount++;
-        }
-      }
-    }
+  /// Validate backup data before creating backup
+  Future<bool> _validateBackupData(BackupData data) async {
+    // Basic validation - will be expanded in future tasks
+    return true;
+  }
 
-    return deletedCount;
+  /// Estimate number of records processed (for reporting)
+  Future<int> _estimateRecordsProcessed(BackupData data) async {
+    // TODO: Implement actual counting in future tasks
+    return 0;
   }
 }
 
-/// Information about a backup file
-class BackupInfo {
-  final String path;
-  final String fileName;
-  final int size;
-  final DateTime createdAt;
+/// Result of backup creation operation
+class BackupResult {
+  final bool success;
+  final String? error;
+  final BackupMetadata? metadata;
 
-  BackupInfo({
-    required this.path,
-    required this.fileName,
-    required this.size,
-    required this.createdAt,
+  BackupResult({
+    required this.success,
+    this.error,
+    this.metadata,
   });
 
-  /// Get human-readable size string
-  String get sizeFormatted {
-    if (size < 1024) return '$size B';
-    if (size < 1024 * 1024) return '${(size / 1024).toStringAsFixed(1)} KB';
-    if (size < 1024 * 1024 * 1024) {
-      return '${(size / (1024 * 1024)).toStringAsFixed(1)} MB';
-    }
-    return '${(size / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
-  }
+  @override
+  String toString() =>
+      'BackupResult(success: $success, error: $error, metadata: ${metadata?.id})';
+}
 
-  /// Get formatted date string
-  String get dateFormatted {
-    return '${createdAt.day}/${createdAt.month}/${createdAt.year} '
-        '${createdAt.hour}:${createdAt.minute.toString().padLeft(2, '0')}';
-  }
+/// Result of restore operation
+class RestoreResult {
+  final bool success;
+  final String? error;
+  final int recordsProcessed;
+
+  RestoreResult({
+    required this.success,
+    this.error,
+    required this.recordsProcessed,
+  });
+
+  @override
+  String toString() =>
+      'RestoreResult(success: $success, error: $error, records: $recordsProcessed)';
+}
+
+/// Result of backup validation
+class ValidationResult {
+  final bool isValid;
+  final String? error;
+  final List<String> warnings;
+
+  ValidationResult({
+    required this.isValid,
+    this.error,
+    this.warnings = const [],
+  });
+
+  @override
+  String toString() =>
+      'ValidationResult(isValid: $isValid, error: $error, warnings: ${warnings.length})';
 }
