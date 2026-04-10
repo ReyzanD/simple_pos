@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/constants/backup_constants.dart';
+import '../../../../core/widgets/modern_button.dart';
 import '../../../shared/presentation/main_navigation.dart';
 import '../controllers/backup_controller.dart';
 import '../../domain/entities/backup_metadata.dart';
@@ -652,107 +653,312 @@ class _CreateBackupDialog extends StatefulWidget {
 class _CreateBackupDialogState extends State<_CreateBackupDialog> {
   BackupType _selectedType = BackupType.full;
   StorageLocation _selectedLocation = StorageLocation.local;
+  BackupDataType _selectedDataType = BackupDataType.all;
+  bool _compress = true;
   bool _isCreating = false;
+  final TextEditingController _nameController = TextEditingController();
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Create Backup'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('Backup Type'),
-          const SizedBox(height: 8),
-          SegmentedButton<BackupType>(
-            segments: const [
-              ButtonSegment(
-                value: BackupType.full,
-                label: Text('Full'),
-                icon: Icon(Icons.backup),
-              ),
-              ButtonSegment(
-                value: BackupType.incremental,
-                label: Text('Incremental'),
-                icon: Icon(Icons.update),
-              ),
-            ],
-            selected: {_selectedType},
-            onSelectionChanged: (Set<BackupType> selected) {
-              setState(() {
-                _selectedType = selected.first;
-              });
-            },
-          ),
-          const SizedBox(height: 16),
-          const Text('Storage Location'),
-          const SizedBox(height: 8),
-          SegmentedButton<StorageLocation>(
-            segments: const [
-              ButtonSegment(
-                value: StorageLocation.local,
-                label: Text('Local'),
-                icon: Icon(Icons.smartphone),
-              ),
-              ButtonSegment(
-                value: StorageLocation.drive,
-                label: Text('Drive'),
-                icon: Icon(Icons.cloud),
-              ),
-            ],
-            selected: {_selectedLocation},
-            onSelectionChanged: (Set<StorageLocation> selected) {
-              setState(() {
-                _selectedLocation = selected.first;
-              });
-            },
-          ),
-        ],
+    return Dialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
       ),
-      actions: [
-        TextButton(
-          onPressed: _isCreating ? null : () => Navigator.pop(context),
-          child: const Text('Cancel'),
-        ),
-        ElevatedButton(
-          onPressed: _isCreating
-              ? null
-              : () async {
-                  setState(() {
-                    _isCreating = true;
-                  });
-
-                  final config = BackupConfig(
-                    type: _selectedType,
-                    dataTypes: const [BackupDataType.all],
-                    location: _selectedLocation,
-                    compress: true,
-                  );
-
-                  final success = await widget.controller.createManualBackup(config);
-
-                  if (mounted) {
-                    Navigator.pop(context);
-                    if (success) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Backup created successfully'),
-                          backgroundColor: AppTheme.successColor,
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 500),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            Row(
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.backup,
+                    color: AppTheme.primaryColor,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Create Backup',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.getTextPrimaryColor(context),
                         ),
-                      );
-                    }
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Configure your backup settings',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: AppTheme.getTextSecondaryColor(context),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            // Backup Type Selection
+            _buildSectionTitle('Backup Type', Icons.backup),
+            const SizedBox(height: 12),
+            SegmentedButton<BackupType>(
+              segments: const [
+                ButtonSegment(
+                  value: BackupType.full,
+                  label: Text('Full'),
+                  icon: Icon(Icons.backup),
+                ),
+                ButtonSegment(
+                  value: BackupType.incremental,
+                  label: Text('Incremental'),
+                  icon: Icon(Icons.update),
+                ),
+              ],
+              selected: {_selectedType},
+              onSelectionChanged: (Set<BackupType> selected) {
+                setState(() {
+                  _selectedType = selected.first;
+                });
+              },
+              style: ButtonStyle(
+                backgroundColor: WidgetStateProperty.resolveWith((states) {
+                  if (states.contains(WidgetState.selected)) {
+                    return AppTheme.primaryColor.withValues(alpha: 0.1);
                   }
-                },
-          child: _isCreating
-              ? const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Text('Create'),
+                  return null;
+                }),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _selectedType == BackupType.full
+                  ? 'Complete backup of all data'
+                  : 'Backup changes since last full backup',
+              style: TextStyle(
+                fontSize: 12,
+                color: AppTheme.getTextSecondaryColor(context),
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Data Type Selection
+            _buildSectionTitle('Data to Backup', Icons.data_object),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: BackupDataType.values.map((type) {
+                final isSelected = _selectedDataType == type;
+                return FilterChip(
+                  label: Text(_getDataTypeLabel(type)),
+                  avatar: Icon(
+                    _getDataTypeIcon(type),
+                    size: 18,
+                  ),
+                  selected: isSelected,
+                  onSelected: (selected) {
+                    setState(() {
+                      _selectedDataType = type;
+                    });
+                  },
+                  backgroundColor: AppTheme.getCardColor(context),
+                  selectedColor: AppTheme.primaryColor.withValues(alpha: 0.2),
+                  checkmarkColor: AppTheme.primaryColor,
+                  side: BorderSide(
+                    color: isSelected
+                        ? AppTheme.primaryColor
+                        : AppTheme.getBorderColor(context),
+                  ),
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 20),
+
+            // Compression Toggle
+            Row(
+              children: [
+                Icon(
+                  Icons.compress,
+                  size: 20,
+                  color: AppTheme.getTextSecondaryColor(context),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Compress Backup',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    color: AppTheme.getTextPrimaryColor(context),
+                  ),
+                ),
+                const Spacer(),
+                Switch(
+                  value: _compress,
+                  onChanged: (value) {
+                    setState(() {
+                      _compress = value;
+                    });
+                  },
+                  activeColor: AppTheme.primaryColor,
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+
+            // Storage Location
+            _buildSectionTitle('Storage Location', Icons.cloud_upload),
+            const SizedBox(height: 12),
+            SegmentedButton<StorageLocation>(
+              segments: const [
+                ButtonSegment(
+                  value: StorageLocation.local,
+                  label: Text('Local'),
+                  icon: Icon(Icons.smartphone),
+                ),
+                ButtonSegment(
+                  value: StorageLocation.drive,
+                  label: Text('Drive'),
+                  icon: Icon(Icons.cloud),
+                ),
+              ],
+              selected: {_selectedLocation},
+              onSelectionChanged: (Set<StorageLocation> selected) {
+                setState(() {
+                  _selectedLocation = selected.first;
+                });
+              },
+              style: ButtonStyle(
+                backgroundColor: WidgetStateProperty.resolveWith((states) {
+                  if (states.contains(WidgetState.selected)) {
+                    return AppTheme.primaryColor.withValues(alpha: 0.1);
+                  }
+                  return null;
+                }),
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // Actions
+            Row(
+              children: [
+                Expanded(
+                  child: ModernSecondaryButton(
+                    text: 'Cancel',
+                    onPressed: _isCreating ? null : () => Navigator.pop(context),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ModernButton(
+                    text: 'Create Backup',
+                    icon: Icons.backup,
+                    onPressed: _isCreating
+                        ? null
+                        : () async {
+                            setState(() {
+                              _isCreating = true;
+                            });
+
+                            final config = BackupConfig(
+                              type: _selectedType,
+                              dataTypes: [_selectedDataType],
+                              location: _selectedLocation,
+                              compress: _compress,
+                            );
+
+                            final success = await widget.controller.createManualBackup(config);
+
+                            if (mounted) {
+                              Navigator.pop(context);
+                              if (success) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: const Text('Backup created successfully'),
+                                    backgroundColor: AppTheme.successColor,
+                                    behavior: SnackBarBehavior.floating,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                );
+                              }
+                            }
+                          },
+                    isLoading: _isCreating,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(String title, IconData icon) {
+    return Row(
+      children: [
+        Icon(
+          icon,
+          size: 18,
+          color: AppTheme.getTextSecondaryColor(context),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: AppTheme.getTextSecondaryColor(context),
+          ),
         ),
       ],
     );
+  }
+
+  String _getDataTypeLabel(BackupDataType type) {
+    switch (type) {
+      case BackupDataType.database:
+        return 'Database';
+      case BackupDataType.images:
+        return 'Images';
+      case BackupDataType.all:
+        return 'All Data';
+    }
+  }
+
+  IconData _getDataTypeIcon(BackupDataType type) {
+    switch (type) {
+      case BackupDataType.database:
+        return Icons.storage;
+      case BackupDataType.images:
+        return Icons.image;
+      case BackupDataType.all:
+        return Icons.apps;
+    }
   }
 }
 

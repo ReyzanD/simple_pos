@@ -7,6 +7,7 @@ import '../../domain/usecases/create_user_usecase.dart';
 import '../../domain/usecases/update_user_usecase.dart';
 import '../../domain/usecases/delete_user_usecase.dart';
 import '../../domain/usecases/get_current_user_usecase.dart';
+import '../../../../core/services/audit_logger.dart';
 
 /// AuthController manages authentication state and user operations
 class AuthController extends ChangeNotifier {
@@ -29,12 +30,12 @@ class AuthController extends ChangeNotifier {
     required UpdateUserUseCase updateUserUseCase,
     required DeleteUserUseCase deleteUserUseCase,
     required GetCurrentUserUseCase getCurrentUserUseCase,
-  })  : _loginUseCase = loginUseCase,
-        _getUsersUseCase = getUsersUseCase,
-        _createUserUseCase = createUserUseCase,
-        _updateUserUseCase = updateUserUseCase,
-        _deleteUserUseCase = deleteUserUseCase,
-        _getCurrentUserUseCase = getCurrentUserUseCase;
+  }) : _loginUseCase = loginUseCase,
+       _getUsersUseCase = getUsersUseCase,
+       _createUserUseCase = createUserUseCase,
+       _updateUserUseCase = updateUserUseCase,
+       _deleteUserUseCase = deleteUserUseCase,
+       _getCurrentUserUseCase = getCurrentUserUseCase;
 
   // Getters
   User? get currentUser => _currentUser;
@@ -53,6 +54,13 @@ class AuthController extends ChangeNotifier {
       final user = await _loginUseCase.execute(username, password);
       if (user != null) {
         _currentUser = user;
+
+        // Log successful login
+        await AuditLogger.instance.logLogin(
+          username: user.username,
+          userId: user.id.toString(),
+        );
+
         _setLoading(false);
         return true;
       } else {
@@ -69,8 +77,17 @@ class AuthController extends ChangeNotifier {
 
   /// Logout current user
   void logout() {
+    final user = _currentUser;
     _currentUser = null;
     notifyListeners();
+
+    // Log logout
+    if (user != null) {
+      AuditLogger.instance.logLogout(
+        username: user.username,
+        userId: user.id.toString(),
+      );
+    }
   }
 
   /// Set current user (for session restore)
@@ -197,7 +214,10 @@ class AuthController extends ChangeNotifier {
     _clearError();
 
     try {
-      final success = await _updateUserUseCase.changePassword(userId, newPassword);
+      final success = await _updateUserUseCase.changePassword(
+        userId,
+        newPassword,
+      );
       _setLoading(false);
       return success;
     } catch (e) {

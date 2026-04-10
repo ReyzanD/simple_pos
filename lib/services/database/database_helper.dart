@@ -104,6 +104,9 @@ class DatabaseHelper {
       await db.execute('CREATE INDEX idx_products_name ON products(name)');
       await db.execute('CREATE INDEX idx_products_category ON products(category_id)');
       await db.execute('CREATE INDEX idx_products_supplier ON products(supplier_id)');
+      await db.execute('CREATE INDEX idx_products_barcode ON products(barcode)'); // For fast barcode lookups
+      await db.execute('CREATE INDEX idx_products_stock ON products(stock)'); // For low stock queries
+      await db.execute('CREATE INDEX idx_products_has_variants ON products(has_variants)'); // For variant filtering
 
       // Create transactions table
       await db.execute('''
@@ -178,7 +181,10 @@ class DatabaseHelper {
 
       // Create indexes for transactions
       await db.execute('CREATE INDEX idx_transactions_date ON transactions(transaction_date)');
+      await db.execute('CREATE INDEX idx_transactions_created_at ON transactions(created_at)'); // For sales reports
+      await db.execute('CREATE INDEX idx_transactions_payment_method ON transactions(payment_method)'); // For payment method reports
       await db.execute('CREATE INDEX idx_transaction_items_transaction ON transaction_items(transaction_id)');
+      await db.execute('CREATE INDEX idx_transaction_items_product ON transaction_items(product_id)'); // For product sales history
 
       // Create indexes for promotions and discount_presets
       await db.execute('CREATE INDEX idx_promotions_enabled ON promotions(is_enabled)');
@@ -354,6 +360,16 @@ class DatabaseHelper {
       if (oldVersion < 14) {
         // Migration from version 13 to 14 (add cash_counts table)
         await _migrateToV14(db);
+      }
+
+      if (oldVersion < 15) {
+        // Migration from version 14 to 15 (add performance indexes)
+        await _migrateToV15(db);
+      }
+
+      if (oldVersion < 16) {
+        // Migration from version 15 to 16 (add audit_logs table)
+        await _migrateToV16(db);
       }
 
       AppLogger.database('Database upgrade completed successfully');
@@ -886,6 +902,82 @@ class DatabaseHelper {
     await db.execute('CREATE INDEX IF NOT EXISTS idx_cash_counts_denomination ON cash_counts(denomination)');
 
     AppLogger.database('Database migration to v14 completed');
+  }
+
+  /// Migration from version 14 to 15
+  /// Add performance indexes for frequently queried fields
+  Future _migrateToV15(Database db) async {
+    AppLogger.database('Migrating database to v15 (adding performance indexes)');
+
+    try {
+      // Add indexes for products table (if they don't exist)
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_products_barcode ON products(barcode)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_products_stock ON products(stock)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_products_has_variants ON products(has_variants)');
+
+      // Add indexes for transactions table (if they don't exist)
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_transactions_created_at ON transactions(created_at)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_transactions_payment_method ON transactions(payment_method)');
+
+      // Add indexes for transaction_items table (if they don't exist)
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_transaction_items_product ON transaction_items(product_id)');
+
+      AppLogger.database('Performance indexes created successfully');
+      AppLogger.database('Database migration to v15 completed');
+    } catch (e, stackTrace) {
+      AppLogger.error(
+        'Failed to create performance indexes',
+        error: e,
+        stackTrace: stackTrace,
+        tag: 'DatabaseHelper',
+      );
+      // Don't throw - indexes are nice to have but not critical
+      AppLogger.database('Continuing without some indexes');
+    }
+  }
+
+  /// Migration from version 15 to 16
+  /// Add audit_logs table for tracking sensitive operations
+  Future _migrateToV16(Database db) async {
+    AppLogger.database('Migrating database to v16 (adding audit_logs table)');
+
+    try {
+      // Create audit_logs table
+      await db.execute('''
+        CREATE TABLE audit_logs (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          action TEXT NOT NULL,
+          entity_type TEXT NOT NULL,
+          entity_id TEXT,
+          description TEXT,
+          username TEXT,
+          user_id TEXT,
+          old_values TEXT,
+          new_values TEXT,
+          ip_address TEXT,
+          user_agent TEXT,
+          created_at INTEGER NOT NULL
+        )
+      ''');
+
+      // Create indexes for audit_logs
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_audit_logs_entity ON audit_logs(entity_type, entity_id)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON audit_logs(created_at DESC)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_audit_logs_action ON audit_logs(action)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_audit_logs_user ON audit_logs(username)');
+
+      AppLogger.database('Audit logs table created successfully');
+      AppLogger.database('Database migration to v16 completed');
+    } catch (e, stackTrace) {
+      AppLogger.error(
+        'Failed to create audit_logs table',
+        error: e,
+        stackTrace: stackTrace,
+        tag: 'DatabaseHelper',
+      );
+      // Don't throw - audit logs are important but not critical
+      AppLogger.database('Continuing without audit logs');
+    }
   }
 
   /// Simple password hash for demo purposes

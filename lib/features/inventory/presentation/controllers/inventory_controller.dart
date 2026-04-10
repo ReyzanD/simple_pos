@@ -5,8 +5,10 @@ import '../../domain/usecases/delete_product_usecase.dart';
 import '../../domain/usecases/get_products_usecase.dart';
 import '../../domain/usecases/search_products_usecase.dart';
 import '../../domain/usecases/update_product_usecase.dart';
+import '../../domain/usecases/import_products_from_csv_usecase.dart';
 import '../../../../core/exceptions/app_exceptions.dart';
 import '../../../../core/utils/logger.dart';
+import '../../../../core/utils/csv_import_helper.dart';
 
 /// Sort options for product listing
 enum ProductSortOption {
@@ -30,6 +32,7 @@ class InventoryController extends ChangeNotifier {
   final UpdateProductUseCase updateProductUseCase;
   final DeleteProductUseCase deleteProductUseCase;
   final SearchProductsUseCase searchProductsUseCase;
+  final ImportProductsFromCsvUseCase importProductsFromCsvUseCase;
 
   bool _disposed = false;
 
@@ -39,6 +42,7 @@ class InventoryController extends ChangeNotifier {
     required this.updateProductUseCase,
     required this.deleteProductUseCase,
     required this.searchProductsUseCase,
+    required this.importProductsFromCsvUseCase,
   });
 
   @override
@@ -546,6 +550,41 @@ class InventoryController extends ChangeNotifier {
 
     if (!_disposed) {
       notifyListeners();
+    }
+  }
+
+  /// Import products from CSV file
+  /// Returns number of successfully imported products
+  Future<int> importProductsFromCsv({
+    required List<CsvProductData> products,
+    required String username,
+  }) async {
+    try {
+      _setLoading(true);
+      _clearError();
+
+      final count = await importProductsFromCsvUseCase.execute(
+        products: products,
+        username: username,
+      );
+
+      // Reload products to show newly imported items
+      await loadProducts();
+
+      return count;
+    } on AppException catch (e) {
+      _setError(e);
+      rethrow;
+    } catch (e, stackTrace) {
+      _setError(DatabaseException(
+        'Gagal mengimpor produk',
+        operation: 'importProductsFromCsv',
+        originalError: e,
+        stackTrace: stackTrace,
+      ));
+      rethrow;
+    } finally {
+      _setLoading(false);
     }
   }
 }

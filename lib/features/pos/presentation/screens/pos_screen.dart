@@ -25,6 +25,7 @@ import '../../../shared/widgets/empty_state_display.dart';
 import '../../../shared/widgets/error_display.dart';
 import '../../../shared/presentation/main_navigation.dart';
 import '../../../shifts/presentation/screens/shift_open_screen.dart';
+import '../../../../core/utils/audio_feedback_helper.dart';
 
 /// Point of Sale screen with modern design
 class POSScreen extends StatefulWidget {
@@ -52,6 +53,7 @@ class POSScreenState extends State<POSScreen>
   @override
   void initState() {
     super.initState();
+    AudioFeedbackHelper.instance.init();
     WidgetsBinding.instance.addObserver(this);
     // Load products when screen initializes
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -710,45 +712,47 @@ class POSScreenState extends State<POSScreen>
   void _handleAddToCart(BuildContext context, Product product) async {
     final controller = context.read<POSController>();
 
-    // Check if product has variants
     if (product.hasVariants) {
-      // Show variant selector
       final variantController = context.read<ProductVariantController>();
       await variantController.loadVariants(product.id!);
 
+      if (!mounted) return; // ✅
+
       if (variantController.hasVariants) {
-        if (mounted) {
-          final selectedVariant = await VariantSelectorDialog.show(
-            context: context,
-            product: product,
-            variants: variantController.variants,
+        final selectedVariant = await VariantSelectorDialog.show(
+          context: context,
+          product: product,
+          variants: variantController.variants,
+        );
+
+        if (!mounted) return; // ✅
+
+        if (selectedVariant != null) {
+          final success = await controller.addToCartWithVariant(
+            product,
+            selectedVariant,
           );
 
-          if (selectedVariant != null && mounted) {
-            final success = await controller.addToCartWithVariant(
-              product,
-              selectedVariant,
-            );
+          if (!mounted) return; // ✅
 
-            if (success) {
-              _cartIconKey.currentState?.bumpAnimation();
-            } else if (controller.hasError) {
-              _showErrorSnackBar(context, controller.error!.userMessage);
-              controller.clearError();
-            }
+          if (success) {
+            _cartIconKey.currentState?.bumpAnimation();
+          } else if (controller.hasError) {
+            _showErrorSnackBar(context, controller.error!.userMessage);
+            controller.clearError();
           }
         }
         return;
       }
     }
 
-    // No variants or variant loading failed - add product directly
     final success = await controller.addToCart(product);
 
+    if (!mounted) return; // ✅
+
     if (success) {
-      // Trigger cart icon bump animation
       _cartIconKey.currentState?.bumpAnimation();
-    } else if (controller.hasError && context.mounted) {
+    } else if (controller.hasError) {
       _showErrorSnackBar(context, controller.error!.userMessage);
       controller.clearError();
     }
@@ -842,15 +846,10 @@ class POSScreenState extends State<POSScreen>
   }
 
   void _handleCheckout(BuildContext context, POSController controller) async {
-    // Close the cart modal first
     if (context.mounted) {
       Navigator.of(context).pop();
     }
-
-    // Get controllers BEFORE showing dialog (while context is still valid)
     final salesController = context.read<SalesHistoryController>();
-
-    // Show checkout dialog with payment method selection
     final success = await showCheckoutDialog(
       context: context,
       cart: controller.cart,
@@ -863,41 +862,30 @@ class POSScreenState extends State<POSScreen>
             );
           },
     );
-
     if (success) {
-      // Small delay to ensure database transaction is fully committed
       await Future.delayed(const Duration(milliseconds: 300));
-
-      // Directly refresh SalesHistoryController for immediate KPI update
-      // This will trigger Consumer3 to rebuild and update KPI
       await salesController.refresh();
-
-      // Notify parent to refresh other controllers
       widget.onCheckoutSuccess?.call();
-
-      // Show success celebration overlay (handle deactivated context gracefully)
-      if (mounted) {
-        try {
-          SuccessAnimationOverlay.show(context, message: 'Checkout Berhasil!');
-        } catch (_) {
-          // Widget was deactivated, ignore error
-        }
-      }
-
-      // Show print receipt dialog
-      if (mounted && controller.lastTransaction != null) {
+      if (!mounted) return; // ✅ single clean guard after all awaits
+      try {
+        SuccessAnimationOverlay.show(
+          context,
+          message: 'Checkout Berhasil!',
+        ); // ✅
+      } catch (_) {}
+      if (controller.lastTransaction != null) {
+        if (!mounted) return; // ✅ second guard before the next async call
         try {
           await PrintReceiptDialog.show(
-            context: context,
+            context: context, // ✅ safe
             transaction: controller.lastTransaction,
             cashReceived: controller.lastCashReceived,
             change: controller.lastChange,
           );
-        } catch (_) {
-          // Dialog was dismissed or context was deactivated
-        }
+        } catch (_) {}
       }
-    } else if (controller.hasError && context.mounted) {
+    } else if (controller.hasError) {
+      if (!mounted) return; // ✅ State.mounted guard
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(controller.error!.userMessage),
@@ -914,11 +902,10 @@ class POSScreenState extends State<POSScreen>
   }
 
   void _handleHoldOrder(BuildContext context, POSController controller) async {
-    // Show hold order dialog
     final held = await showHoldOrderDialog(context, controller);
-
-    // If order was held successfully, close the cart modal
-    if (held == true && context.mounted) {
+    if (!mounted) return; // ✅ clean standalone guard after await
+    if (held == true) {
+      // ✅ separate condition with curly braces
       Navigator.of(context).pop();
     }
   }
@@ -930,39 +917,38 @@ class POSScreenState extends State<POSScreen>
   }
 
   void handleBarcodeScanned(String barcode) {
+    if (!mounted) {
+      return; // ✅ top-level State.mounted guard covers everything below
+    }
     final controller = context.read<POSController>();
-
-    // Search for product by barcode
     final product = controller.products.firstWhere(
       (p) => p.barcode == barcode,
       orElse: () => controller.products.firstWhere(
         (p) => p.id.toString() == barcode,
         orElse: () {
-          // Product not found, show error
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  'Produk dengan barcode "$barcode" tidak ditemukan',
-                ),
-                backgroundColor: AppTheme.errorColor,
-                duration: const Duration(seconds: 3),
-                behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                margin: const EdgeInsets.all(16),
+          // ✅ No mounted check needed — guarded at top of method
+          // Play error sound for product not found
+          AudioFeedbackHelper.instance.playError();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Produk dengan barcode "$barcode" tidak ditemukan'),
+              backgroundColor: AppTheme.errorColor,
+              duration: const Duration(seconds: 3),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
               ),
-            );
-          }
-          // Return a dummy product that won't be added
+              margin: const EdgeInsets.all(16),
+            ),
+          );
           return Product(id: -1, name: '', price: 0, stock: 0);
         },
       ),
     );
-
-    // If found (not the dummy product), add to cart
-    if (product.id != -1 && context.mounted) {
+    // ✅ Remove context.mounted — already guarded at top
+    if (product.id != -1) {
+      // Play success sound for product found
+      AudioFeedbackHelper.instance.playBeep();
       _handleAddToCart(context, product);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/theme.dart';
+import '../../../../core/utils/audio_feedback_helper.dart';
 
 /// Scanner behavior modes
 enum ScannerMode {
@@ -153,6 +153,7 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
   @override
   void initState() {
     super.initState();
+    AudioFeedbackHelper.instance.init();
     _loadSettings();
     _loadHistory();
     _controller.barcodes.listen(_onBarcodeDetected);
@@ -221,8 +222,8 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
         _detectedFormatName = formatName;
       });
 
-      // Haptic feedback on successful scan
-      HapticFeedback.mediumImpact();
+      // Audio and haptic feedback on successful scan
+      AudioFeedbackHelper.instance.playBeep();
 
       // Run validation if provided
       if (widget.onValidate != null) {
@@ -274,7 +275,7 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
     });
 
     // Brief feedback
-    HapticFeedback.mediumImpact();
+    AudioFeedbackHelper.instance.playClick();
   }
 
   void _resetScanner() {

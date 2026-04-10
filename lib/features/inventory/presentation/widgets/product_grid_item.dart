@@ -41,15 +41,6 @@ class ProductGridItem extends StatelessWidget {
     }
   }
 
-  Supplier? get _supplier {
-    if (product.supplierId == null) return null;
-    try {
-      return suppliers.firstWhere((s) => s.id == product.supplierId);
-    } catch (_) {
-      return null;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final isOutOfStock = product.isOutOfStock;
@@ -119,8 +110,8 @@ class ProductGridItem extends StatelessWidget {
                         color: product.hasDiscount
                             ? AppTheme.successColor
                             : (isOutOfStock
-                                ? Colors.grey.shade600
-                                : AppTheme.primaryColor),
+                                  ? Colors.grey.shade600
+                                  : AppTheme.primaryColor),
                       ),
                     ),
 
@@ -163,9 +154,7 @@ class ProductGridItem extends StatelessWidget {
           width: double.infinity,
           decoration: BoxDecoration(
             color: categoryColor.withValues(alpha: 0.1),
-            borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(16),
-            ),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
           ),
           child: product.imagePath != null && product.imagePath!.isNotEmpty
               ? ClipRRect(
@@ -248,11 +237,7 @@ class ProductGridItem extends StatelessWidget {
               child: const Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
-                    Icons.category_outlined,
-                    size: 10,
-                    color: Colors.white,
-                  ),
+                  Icon(Icons.category_outlined, size: 10, color: Colors.white),
                   SizedBox(width: 3),
                   Text(
                     'Varian',
@@ -298,11 +283,7 @@ class ProductGridItem extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            icon,
-            size: 11,
-            color: textColor,
-          ),
+          Icon(icon, size: 11, color: textColor),
           const SizedBox(width: 4),
           Text(
             text,
@@ -367,16 +348,9 @@ class ProductGridItem extends StatelessWidget {
           decoration: BoxDecoration(
             color: color.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: color.withValues(alpha: 0.3),
-              width: 0.5,
-            ),
+            border: Border.all(color: color.withValues(alpha: 0.3), width: 0.5),
           ),
-          child: Icon(
-            icon,
-            size: 16,
-            color: color,
-          ),
+          child: Icon(icon, size: 16, color: color),
         ),
       ),
     );

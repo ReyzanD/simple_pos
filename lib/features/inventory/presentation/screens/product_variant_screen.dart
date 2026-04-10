@@ -12,10 +12,7 @@ import 'add_edit_variant_dialog.dart';
 class ProductVariantScreen extends StatefulWidget {
   final Product product;
 
-  const ProductVariantScreen({
-    super.key,
-    required this.product,
-  });
+  const ProductVariantScreen({super.key, required this.product});
 
   @override
   State<ProductVariantScreen> createState() => _ProductVariantScreenState();
@@ -88,11 +85,11 @@ class _ProductVariantScreenState extends State<ProductVariantScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text('Hapus Varian'),
-        content: Text('Apakah Anda yakin ingin menghapus varian "${variant.displayName}"?'),
+        content: Text(
+          'Apakah Anda yakin ingin menghapus varian "${variant.displayName}"?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -115,10 +112,7 @@ class _ProductVariantScreenState extends State<ProductVariantScreen> {
   }
 
   String _formatCurrency(double value) {
-    return 'Rp ${value.toStringAsFixed(0).replaceAllMapped(
-          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d)'),
-          (Match m) => '${m[1]}.',
-        )}';
+    return 'Rp ${value.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}';
   }
 
   @override
@@ -149,15 +143,23 @@ class _ProductVariantScreenState extends State<ProductVariantScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.error_outline, size: 64, color: AppTheme.errorColor),
+                  Icon(
+                    Icons.error_outline,
+                    size: 64,
+                    color: AppTheme.errorColor,
+                  ),
                   const SizedBox(height: 16),
                   Text(
                     controller.error?.userMessage ?? 'Terjadi kesalahan',
-                    style: TextStyle(fontSize: 16, color: AppTheme.textSecondary),
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: AppTheme.textSecondary,
+                    ),
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton(
-                    onPressed: () => controller.loadVariants(widget.product.id!),
+                    onPressed: () =>
+                        controller.loadVariants(widget.product.id!),
                     child: const Text('Coba Lagi'),
                   ),
                 ],
@@ -170,8 +172,11 @@ class _ProductVariantScreenState extends State<ProductVariantScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.dashboard_customize_outlined,
-                      size: 64, color: AppTheme.textTertiary),
+                  Icon(
+                    Icons.dashboard_customize_outlined,
+                    size: 64,
+                    color: AppTheme.textTertiary,
+                  ),
                   const SizedBox(height: 16),
                   Text(
                     'Belum Ada Varian',
@@ -184,7 +189,10 @@ class _ProductVariantScreenState extends State<ProductVariantScreen> {
                   const SizedBox(height: 8),
                   Text(
                     'Tambahkan varian untuk produk ini',
-                    style: TextStyle(fontSize: 14, color: AppTheme.textSecondary),
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: AppTheme.textSecondary,
+                    ),
                   ),
                   const SizedBox(height: 24),
                   ModernButton(
@@ -274,7 +282,10 @@ class _ProductVariantScreenState extends State<ProductVariantScreen> {
     );
   }
 
-  Widget _buildVariantCard(ProductVariant variant, ProductVariantController controller) {
+  Widget _buildVariantCard(
+    ProductVariant variant,
+    ProductVariantController controller,
+  ) {
     final isOutOfStock = variant.isOutOfStock;
     final isLowStock = variant.isLowStock;
 
@@ -318,16 +329,22 @@ class _ProductVariantScreenState extends State<ProductVariantScreen> {
                               label: Text('SKU: ${variant.sku}'),
                               labelStyle: TextStyle(fontSize: 11),
                               padding: EdgeInsets.zero,
-                              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                              backgroundColor: AppTheme.infoColor.withValues(alpha: 0.1),
+                              materialTapTargetSize:
+                                  MaterialTapTargetSize.shrinkWrap,
+                              backgroundColor: AppTheme.infoColor.withValues(
+                                alpha: 0.1,
+                              ),
                             ),
                           if (variant.barcode != null)
                             Chip(
                               label: Text('Barcode: ${variant.barcode}'),
                               labelStyle: TextStyle(fontSize: 11),
                               padding: EdgeInsets.zero,
-                              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                              backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.1),
+                              materialTapTargetSize:
+                                  MaterialTapTargetSize.shrinkWrap,
+                              backgroundColor: AppTheme.primaryColor.withValues(
+                                alpha: 0.1,
+                              ),
                             ),
                         ],
                       ),
@@ -335,7 +352,10 @@ class _ProductVariantScreenState extends State<ProductVariantScreen> {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: stockColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),

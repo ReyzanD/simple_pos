@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:simple_pos/core/exceptions/app_exceptions.dart';
 import 'package:simple_pos/core/utils/validators.dart';
-import '../helpers/test_constants.dart';
+import '../../helpers/test_constants.dart';
 
 void main() {
   group('Validators.validateProductName', () {
@@ -123,26 +123,28 @@ void main() {
       expect(result, 15000.50);
     });
 
-    test('should return 0.0 for invalid string', () {
+    test('should throw ValidationException for invalid string', () {
       // Arrange
       const invalidString = 'invalid';
 
-      // Act
-      final result = Validators.validatePrice(invalidString);
-
-      // Assert
-      expect(result, 0.0);
+      // Act & Assert
+      expect(
+        () => Validators.validatePrice(invalidString),
+        throwsA(isA<ValidationException>()
+            .having((e) => e.message, 'message', 'Format harga tidak valid')),
+      );
     });
 
-    test('should return 0.0 for null-like value', () {
+    test('should throw ValidationException for null-like value', () {
       // Arrange
       final nullValue = null;
 
-      // Act
-      final result = Validators.validatePrice(nullValue);
-
-      // Assert
-      expect(result, 0.0);
+      // Act & Assert
+      expect(
+        () => Validators.validatePrice(nullValue),
+        throwsA(isA<ValidationException>()
+            .having((e) => e.message, 'message', 'Tipe harga tidak valid')),
+      );
     });
 
     test('should throw ValidationException when price is negative', () {
@@ -215,26 +217,28 @@ void main() {
       expect(result, 50);
     });
 
-    test('should return 0 for invalid string', () {
+    test('should throw ValidationException for invalid string', () {
       // Arrange
       const invalidString = 'invalid';
 
-      // Act
-      final result = Validators.validateStock(invalidString);
-
-      // Assert
-      expect(result, 0);
+      // Act & Assert
+      expect(
+        () => Validators.validateStock(invalidString),
+        throwsA(isA<ValidationException>()
+            .having((e) => e.message, 'message', 'Format stok tidak valid')),
+      );
     });
 
-    test('should return 0 for null-like value', () {
+    test('should throw ValidationException for null-like value', () {
       // Arrange
       final nullValue = null;
 
-      // Act
-      final result = Validators.validateStock(nullValue);
-
-      // Assert
-      expect(result, 0);
+      // Act & Assert
+      expect(
+        () => Validators.validateStock(nullValue),
+        throwsA(isA<ValidationException>()
+            .having((e) => e.message, 'message', 'Tipe stok tidak valid')),
+      );
     });
 
     test('should throw ValidationException when stock is negative', () {
@@ -350,7 +354,7 @@ void main() {
       expect(
         () => Validators.validateProductId(invalidString),
         throwsA(isA<ValidationException>()
-            .having((e) => e.message, 'message', 'ID produk tidak valid')),
+            .having((e) => e.message, 'message', 'Format ID produk tidak valid')),
       );
     });
   });
@@ -458,13 +462,17 @@ void main() {
       );
     });
 
-    test('should allow zero quantity request', () {
+    test('should throw ValidationException for zero quantity request', () {
       // Arrange
       const requested = 0;
       const available = 10;
 
       // Act & Assert
-      expect(() => Validators.validateStockAvailability(requested, available), returnsNormally);
+      expect(
+        () => Validators.validateStockAvailability(requested, available),
+        throwsA(isA<ValidationException>()
+            .having((e) => e.message, 'message', 'Jumlah permintaan harus lebih dari 0')),
+      );
     });
   });
 }

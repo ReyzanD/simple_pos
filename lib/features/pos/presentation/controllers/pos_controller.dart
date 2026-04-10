@@ -15,6 +15,7 @@ import '../../../inventory/domain/entities/category.dart' as inventory;
 import '../../../sales/domain/entities/payment_method.dart';
 import '../../../../core/exceptions/app_exceptions.dart';
 import '../../../../core/utils/logger.dart';
+import '../../../../core/services/audit_logger.dart';
 
 /// Sort options for product list
 enum SortOption {
@@ -535,6 +536,16 @@ class POSController extends ChangeNotifier {
         _lastChange = cashReceived - result.totalAmount;
       } else {
         _lastChange = null;
+      }
+
+      // Log transaction creation
+      if (result.transaction != null) {
+        final transaction = result.transaction!;
+        AuditLogger.instance.logTransactionCreated(
+          transactionId: transaction.id!,
+          totalAmount: transaction.totalAmount,
+          paymentMethod: transaction.paymentMethod.name,
+        );
       }
 
       // Clear cart and reload products

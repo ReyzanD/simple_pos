@@ -108,34 +108,40 @@ class _PaymentMethodSelectorState extends State<PaymentMethodSelector> {
         ),
         const SizedBox(height: UIConstants.spacingSmall),
 
-        // Payment Method Radio Buttons (old API + ignore deprecation)
-        ...PaymentMethod.values.map((method) {
-          return RadioListTile<PaymentMethod>(
-            title: Row(
-              children: [
-                Icon(_getPaymentIcon(method)),
-                const SizedBox(width: UIConstants.spacingSmall),
-                Text(method.displayNameId),
-              ],
-            ),
-            value: method,
-            groupValue: _selectedMethod,
-            onChanged: (value) {
-              if (value != null) {
-                setState(() {
-                  _selectedMethod = value;
-                  _changeAmount = null;
-                });
-                _notifyPaymentChanged();
-              }
-            },
-            activeColor: UIConstants.primaryColor,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: UIConstants.spacingSmall,
-              vertical: 0,
-            ),
-          );
-        }),
+        // ✅ NEW — Wrap with RadioGroup to manage groupValue & onChanged
+        RadioGroup<PaymentMethod>(
+          groupValue: _selectedMethod,
+          onChanged: (value) {
+            if (value != null) {
+              setState(() {
+                _selectedMethod = value;
+                _changeAmount = null;
+              });
+              _notifyPaymentChanged();
+            }
+          },
+          child: Column(
+            children: PaymentMethod.values.map((method) {
+              return RadioListTile<PaymentMethod>(
+                title: Row(
+                  children: [
+                    Icon(_getPaymentIcon(method)),
+                    const SizedBox(width: UIConstants.spacingSmall),
+                    Text(method.displayNameId),
+                  ],
+                ),
+                value: method,
+                // ✅ REMOVED: groupValue (managed by RadioGroup)
+                // ✅ REMOVED: onChanged (managed by RadioGroup)
+                activeColor: UIConstants.primaryColor,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: UIConstants.spacingSmall,
+                  vertical: 0,
+                ),
+              );
+            }).toList(),
+          ),
+        ),
 
         // Payment Details
         const SizedBox(height: UIConstants.spacingMedium),

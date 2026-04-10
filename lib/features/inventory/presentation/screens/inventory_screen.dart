@@ -6,12 +6,14 @@ import '../controllers/category_controller.dart';
 import '../controllers/supplier_controller.dart';
 import '../../domain/entities/product.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/exceptions/app_exceptions.dart';
 import '../widgets/add_product_dialog.dart';
 import '../widgets/edit_product_dialog.dart';
 import '../widgets/delete_confirmation_dialog.dart';
 import '../widgets/inventory_search_bar.dart';
 import '../widgets/product_list_item.dart';
 import '../widgets/product_grid_item.dart';
+import '../widgets/csv_import_dialog.dart';
 import '../../../shared/widgets/loading_indicator.dart';
 import '../../../shared/widgets/error_display.dart';
 import '../../../shared/presentation/main_navigation.dart';
@@ -247,7 +249,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(bottom: 105), // Above floating nav
         child: FloatingActionButton(
-          onPressed: () => _showAddDialog(context),
+          onPressed: () => _showAddOptions(context),
           backgroundColor: AppTheme.primaryColor,
           foregroundColor: Colors.white,
           elevation: 4,
@@ -255,6 +257,70 @@ class _InventoryScreenState extends State<InventoryScreen> {
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+    );
+  }
+
+  /// Show add options menu (manual add or CSV import)
+  void _showAddOptions(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: AppTheme.getCardColor(context),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                color: AppTheme.borderColor,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            ListTile(
+              leading: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.add_circle_outline, color: AppTheme.primaryColor),
+              ),
+              title: const Text('Tambah Produk Manual'),
+              subtitle: const Text('Masukkan produk satu per satu'),
+              onTap: () {
+                Navigator.pop(context);
+                _showAddDialog(context);
+              },
+            ),
+            const Divider(),
+            ListTile(
+              leading: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppTheme.secondaryColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.upload_file, color: AppTheme.secondaryColor),
+              ),
+              title: const Text('Import dari CSV'),
+              subtitle: const Text('Import banyak produk sekaligus'),
+              onTap: () {
+                Navigator.pop(context);
+                _showCsvImportDialog(context);
+              },
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -391,6 +457,56 @@ class _InventoryScreenState extends State<InventoryScreen> {
                       color: AppTheme.getBorderColor(context),
                       width: 0.5,
                     ),
+                  ),
+                ),
+              );
+            }
+          }
+        },
+      ),
+    );
+  }
+
+  void _showCsvImportDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => CsvImportDialog(
+        onImportConfirmed: (products) async {
+          final controller = context.read<InventoryController>();
+          final username = 'Admin'; // TODO: Get from auth controller
+
+          try {
+            await controller.importProductsFromCsv(
+              products: products,
+              username: username,
+            );
+
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Berhasil mengimport ${products.length} produk'),
+                  backgroundColor: AppTheme.successColor,
+                  duration: const Duration(seconds: 3),
+                  action: SnackBarAction(
+                    label: 'OK',
+                    textColor: Colors.white,
+                    onPressed: () {},
+                  ),
+                ),
+              );
+            }
+          } catch (e) {
+            if (context.mounted) {
+              final message = e is AppException ? e.userMessage : 'Gagal mengimpor produk';
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(message),
+                  backgroundColor: AppTheme.errorColor,
+                  duration: const Duration(seconds: 5),
+                  action: SnackBarAction(
+                    label: 'Tutup',
+                    textColor: Colors.white,
+                    onPressed: () {},
                   ),
                 ),
               );

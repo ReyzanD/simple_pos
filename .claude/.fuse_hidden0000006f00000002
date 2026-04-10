@@ -8,11 +8,7 @@
       "Skill(superpowers:writing-plans)",
       "Skill(superpowers:subagent-driven-development)",
       "Bash(flutter test:*)",
-      "Bash(git rev-parse:*)",
-      "Bash(flutter pub:*)",
-      "Bash(dart analyze:*)",
-      "Bash(git add:*)",
-      "Bash(git commit -m ':*)"
+      "Bash(git rev-parse:*)"
     ]
   }
 }
