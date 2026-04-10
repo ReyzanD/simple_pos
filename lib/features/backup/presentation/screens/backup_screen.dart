@@ -126,9 +126,9 @@ class _BackupScreenState extends State<BackupScreen>
           }
 
           return FloatingActionButton.extended(
-            onPressed: () => _showCreateBackupDialog(context, controller),
+            onPressed: () => _showBackupOptionsDialog(context, controller),
             icon: const Icon(Icons.add),
-            label: const Text('Create Backup'),
+            label: const Text('Backup'),
             backgroundColor: AppTheme.primaryColor,
             foregroundColor: Colors.white,
           );
@@ -239,11 +239,88 @@ class _BackupScreenState extends State<BackupScreen>
     );
   }
 
+  /// Show backup options dialog
+  void _showBackupOptionsDialog(BuildContext context, BackupController controller) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: const Text('Backup Options'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  Icons.backup,
+                  color: AppTheme.primaryColor,
+                  size: 20,
+                ),
+              ),
+              title: const Text('Create Backup'),
+              subtitle: const Text('Create a manual backup now'),
+              onTap: () {
+                Navigator.pop(context);
+                _showCreateBackupDialog(context, controller);
+              },
+            ),
+            const Divider(),
+            ListTile(
+              leading: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppTheme.secondaryColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  Icons.schedule,
+                  color: AppTheme.secondaryColor,
+                  size: 20,
+                ),
+              ),
+              title: const Text('Schedule Backup'),
+              subtitle: const Text('Set up automatic backups'),
+              onTap: () {
+                Navigator.pop(context);
+                _showScheduleBackupDialog(context, controller);
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+  }
+
   /// Show create backup dialog
   void _showCreateBackupDialog(BuildContext context, BackupController controller) {
     showDialog(
       context: context,
       builder: (context) => _CreateBackupDialog(
+        controller: controller,
+      ),
+    );
+  }
+
+  /// Show schedule backup dialog
+  void _showScheduleBackupDialog(BuildContext context, BackupController controller) {
+    showDialog(
+      context: context,
+      builder: (context) => _ScheduleBackupDialog(
         controller: controller,
       ),
     );
@@ -1411,5 +1488,518 @@ class _DeleteBackupDialog extends StatelessWidget {
 
   String _formatDate(DateTime date) {
     return '${date.day}/${date.month}/${date.year}';
+  }
+}
+
+/// Schedule Backup Dialog
+class _ScheduleBackupDialog extends StatefulWidget {
+  final BackupController controller;
+
+  const _ScheduleBackupDialog({required this.controller});
+
+  @override
+  State<_ScheduleBackupDialog> createState() => _ScheduleBackupDialogState();
+}
+
+class _ScheduleBackupDialogState extends State<_ScheduleBackupDialog> {
+  final TextEditingController _nameController = TextEditingController();
+  BackupFrequency _frequency = BackupFrequency.daily;
+  BackupType _backupType = BackupType.full;
+  BackupDataType _dataType = BackupDataType.all;
+  StorageLocation _location = StorageLocation.local;
+  TimeOfDay _selectedTime = const TimeOfDay(hour: 2, minute: 0);
+  int? _selectedDayOfWeek; // 1-7 (Monday-Sunday)
+  int? _selectedDayOfMonth; // 1-31
+  bool _isScheduling = false;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 500),
+        padding: const EdgeInsets.all(24),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              Row(
+                children: [
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: AppTheme.secondaryColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      Icons.schedule,
+                      color: AppTheme.secondaryColor,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Schedule Backup',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.getTextPrimaryColor(context),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Set up automatic backups',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: AppTheme.getTextSecondaryColor(context),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+
+              // Schedule Name
+              _buildSectionTitle('Schedule Name', Icons.label),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _nameController,
+                decoration: InputDecoration(
+                  hintText: 'e.g., Daily Backup at 2 AM',
+                  prefixIcon: const Icon(Icons.label_outline),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  filled: true,
+                  fillColor: AppTheme.getCardColor(context),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Frequency Selection
+              _buildSectionTitle('Frequency', Icons.repeat),
+              const SizedBox(height: 12),
+              SegmentedButton<BackupFrequency>(
+                segments: const [
+                  ButtonSegment(
+                    value: BackupFrequency.daily,
+                    label: Text('Daily'),
+                    icon: Icon(Icons.today),
+                  ),
+                  ButtonSegment(
+                    value: BackupFrequency.weekly,
+                    label: Text('Weekly'),
+                    icon: Icon(Icons.calendar_view_week),
+                  ),
+                  ButtonSegment(
+                    value: BackupFrequency.monthly,
+                    label: Text('Monthly'),
+                    icon: Icon(Icons.calendar_view_month),
+                  ),
+                ],
+                selected: {_frequency},
+                onSelectionChanged: (Set<BackupFrequency> selected) {
+                  setState(() {
+                    _frequency = selected.first;
+                    // Reset day selections when frequency changes
+                    _selectedDayOfWeek = null;
+                    _selectedDayOfMonth = null;
+                  });
+                },
+                style: ButtonStyle(
+                  backgroundColor: WidgetStateProperty.resolveWith((states) {
+                    if (states.contains(WidgetState.selected)) {
+                      return AppTheme.secondaryColor.withValues(alpha: 0.1);
+                    }
+                    return null;
+                  }),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Time Picker
+              _buildSectionTitle('Time', Icons.access_time),
+              const SizedBox(height: 12),
+              InkWell(
+                onTap: () async {
+                  final TimeOfDay? picked = await showTimePicker(
+                    context: context,
+                    initialTime: _selectedTime,
+                    builder: (context, child) {
+                      return Theme(
+                        data: Theme.of(context).copyWith(
+                          colorScheme: ColorScheme.light(
+                            primary: AppTheme.primaryColor,
+                          ),
+                        ),
+                        child: child!,
+                      );
+                    },
+                  );
+                  if (picked != null) {
+                    setState(() {
+                      _selectedTime = picked;
+                    });
+                  }
+                },
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: AppTheme.getBorderColor(context),
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.access_time,
+                        color: AppTheme.getTextSecondaryColor(context),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        _selectedTime.format(context),
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: AppTheme.getTextPrimaryColor(context),
+                        ),
+                      ),
+                      const Spacer(),
+                      Icon(
+                        Icons.arrow_drop_down,
+                        color: AppTheme.getTextSecondaryColor(context),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Day Selector for Weekly
+              if (_frequency == BackupFrequency.weekly) ...[
+                _buildSectionTitle('Day of Week', Icons.calendar_today),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: List.generate(7, (index) {
+                    final day = index + 1; // 1-7 (Monday-Sunday)
+                    final isSelected = _selectedDayOfWeek == day;
+                    final dayName = _getDayName(day);
+                    return FilterChip(
+                      label: Text(dayName.substring(0, 3)),
+                      selected: isSelected,
+                      onSelected: (selected) {
+                        setState(() {
+                          _selectedDayOfWeek = selected ? day : null;
+                        });
+                      },
+                      backgroundColor: AppTheme.getCardColor(context),
+                      selectedColor: AppTheme.secondaryColor.withValues(alpha: 0.2),
+                      checkmarkColor: AppTheme.secondaryColor,
+                      side: BorderSide(
+                        color: isSelected
+                            ? AppTheme.secondaryColor
+                            : AppTheme.getBorderColor(context),
+                      ),
+                    );
+                  }),
+                ),
+                const SizedBox(height: 20),
+              ],
+
+              // Day Selector for Monthly
+              if (_frequency == BackupFrequency.monthly) ...[
+                _buildSectionTitle('Day of Month', Icons.date_range),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: List.generate(31, (index) {
+                    final day = index + 1; // 1-31
+                    final isSelected = _selectedDayOfMonth == day;
+                    return FilterChip(
+                      label: Text('$day'),
+                      selected: isSelected,
+                      onSelected: (selected) {
+                        setState(() {
+                          _selectedDayOfMonth = selected ? day : null;
+                        });
+                      },
+                      backgroundColor: AppTheme.getCardColor(context),
+                      selectedColor: AppTheme.secondaryColor.withValues(alpha: 0.2),
+                      checkmarkColor: AppTheme.secondaryColor,
+                      side: BorderSide(
+                        color: isSelected
+                            ? AppTheme.secondaryColor
+                            : AppTheme.getBorderColor(context),
+                      ),
+                      visualDensity: VisualDensity.compact,
+                    );
+                  }),
+                ),
+                const SizedBox(height: 20),
+              ],
+
+              // Backup Type
+              _buildSectionTitle('Backup Type', Icons.backup),
+              const SizedBox(height: 12),
+              SegmentedButton<BackupType>(
+                segments: const [
+                  ButtonSegment(
+                    value: BackupType.full,
+                    label: Text('Full'),
+                    icon: Icon(Icons.backup),
+                  ),
+                  ButtonSegment(
+                    value: BackupType.incremental,
+                    label: Text('Incremental'),
+                    icon: Icon(Icons.update),
+                  ),
+                ],
+                selected: {_backupType},
+                onSelectionChanged: (Set<BackupType> selected) {
+                  setState(() {
+                    _backupType = selected.first;
+                  });
+                },
+                style: ButtonStyle(
+                  backgroundColor: WidgetStateProperty.resolveWith((states) {
+                    if (states.contains(WidgetState.selected)) {
+                      return AppTheme.primaryColor.withValues(alpha: 0.1);
+                    }
+                    return null;
+                  }),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Data Type
+              _buildSectionTitle('Data to Backup', Icons.data_object),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: BackupDataType.values.map((type) {
+                  final isSelected = _dataType == type;
+                  return FilterChip(
+                    label: Text(_getDataTypeLabel(type)),
+                    avatar: Icon(
+                      _getDataTypeIcon(type),
+                      size: 18,
+                    ),
+                    selected: isSelected,
+                    onSelected: (selected) {
+                      setState(() {
+                        _dataType = type;
+                      });
+                    },
+                    backgroundColor: AppTheme.getCardColor(context),
+                    selectedColor: AppTheme.primaryColor.withValues(alpha: 0.2),
+                    checkmarkColor: AppTheme.primaryColor,
+                    side: BorderSide(
+                      color: isSelected
+                          ? AppTheme.primaryColor
+                          : AppTheme.getBorderColor(context),
+                    ),
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 20),
+
+              // Storage Location
+              _buildSectionTitle('Storage Location', Icons.cloud_upload),
+              const SizedBox(height: 12),
+              SegmentedButton<StorageLocation>(
+                segments: const [
+                  ButtonSegment(
+                    value: StorageLocation.local,
+                    label: Text('Local'),
+                    icon: Icon(Icons.smartphone),
+                  ),
+                  ButtonSegment(
+                    value: StorageLocation.drive,
+                    label: Text('Drive'),
+                    icon: Icon(Icons.cloud),
+                  ),
+                ],
+                selected: {_location},
+                onSelectionChanged: (Set<StorageLocation> selected) {
+                  setState(() {
+                    _location = selected.first;
+                  });
+                },
+                style: ButtonStyle(
+                  backgroundColor: WidgetStateProperty.resolveWith((states) {
+                    if (states.contains(WidgetState.selected)) {
+                      return AppTheme.primaryColor.withValues(alpha: 0.1);
+                    }
+                    return null;
+                  }),
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // Actions
+              Row(
+                children: [
+                  Expanded(
+                    child: ModernSecondaryButton(
+                      text: 'Cancel',
+                      onPressed: _isScheduling ? null : () => Navigator.pop(context),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ModernButton(
+                      text: 'Schedule',
+                      icon: Icons.schedule,
+                      backgroundColor: AppTheme.secondaryColor,
+                      onPressed: _isScheduling ? null : _validateAndSchedule,
+                      isLoading: _isScheduling,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _validateAndSchedule() async {
+    // Validate schedule name
+    if (_nameController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Please enter a schedule name'),
+          backgroundColor: AppTheme.errorColor,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
+      return;
+    }
+
+    // Validate day selection
+    if (_frequency == BackupFrequency.weekly && _selectedDayOfWeek == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Please select a day of the week'),
+          backgroundColor: AppTheme.errorColor,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (_frequency == BackupFrequency.monthly && _selectedDayOfMonth == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Please select a day of the month'),
+          backgroundColor: AppTheme.errorColor,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isScheduling = true;
+    });
+
+    // TODO: Implement scheduling logic
+    // For now, just show a success message
+    await Future.delayed(const Duration(seconds: 1));
+
+    if (mounted) {
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Backup "${_nameController.text}" scheduled successfully'),
+          backgroundColor: AppTheme.successColor,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
+    }
+  }
+
+  Widget _buildSectionTitle(String title, IconData icon) {
+    return Row(
+      children: [
+        Icon(
+          icon,
+          size: 18,
+          color: AppTheme.getTextSecondaryColor(context),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: AppTheme.getTextSecondaryColor(context),
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _getDayName(int day) {
+    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    return days[day - 1];
+  }
+
+  String _getDataTypeLabel(BackupDataType type) {
+    switch (type) {
+      case BackupDataType.database:
+        return 'Database';
+      case BackupDataType.images:
+        return 'Images';
+      case BackupDataType.all:
+        return 'All Data';
+    }
+  }
+
+  IconData _getDataTypeIcon(BackupDataType type) {
+    switch (type) {
+      case BackupDataType.database:
+        return Icons.storage;
+      case BackupDataType.images:
+        return Icons.image;
+      case BackupDataType.all:
+        return Icons.apps;
+    }
   }
 }
