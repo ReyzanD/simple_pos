@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
 import 'package:simple_pos/core/constants/backup_constants.dart';
+import 'package:simple_pos/core/domain/entities/schedule_time.dart';
 import 'backup_config.dart';
 
 /// Represents a scheduled backup configuration
@@ -7,7 +7,7 @@ class BackupSchedule {
   final int id;
   final String name;
   final BackupFrequency frequency;
-  final TimeOfDay time;
+  final ScheduleTime time;
   final BackupConfig config;
   final bool isActive;
 
@@ -87,7 +87,7 @@ class BackupSchedule {
       id: json['id'] as int,
       name: json['name'] as String,
       frequency: BackupFrequency.values.firstWhere((e) => e.name == json['frequency']),
-      time: TimeOfDay(
+      time: ScheduleTime(
         hour: json['hour'] as int,
         minute: json['minute'] as int,
       ),
