@@ -1,5 +1,8 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:path_provider/path_provider.dart';
+import 'package:archive/archive.dart';
+import 'package:crypto/crypto.dart';
 import 'package:simple_pos/core/constants/backup_constants.dart';
 import 'package:simple_pos/core/exceptions/app_exceptions.dart';
 import 'package:simple_pos/core/utils/logger.dart';
@@ -402,14 +405,286 @@ class BackupLocalDataSource {
   }
 
   /// Create a ZIP file from backup data
-  /// TODO: Implement in Task 12
+  /// Compresses database, images, metadata, and manifest into a ZIP archive
   Future<String> createZipBackup(BackupData data, String outputPath) async {
-    throw UnimplementedError('ZIP creation will be implemented in Task 12');
+    try {
+      AppLogger.info('Creating ZIP backup', tag: 'BackupLocalDataSource');
+
+      // Create archive
+      final archive = Archive();
+
+      // Add database file if present
+      if (data.databaseFile != null && await data.databaseFile!.exists()) {
+        final dbBytes = await data.databaseFile!.readAsBytes();
+        final dbFile = ArchiveFile('database/simple_pos.db', dbBytes.length, dbBytes);
+        archive.addFile(dbFile);
+
+        // Calculate checksum for database
+        final dbDigest = sha256.convert(dbBytes);
+        AppLogger.database('Database checksum: ${dbDigest.toString()}', details: 'BackupLocalDataSource');
+      }
+
+      // Add image files
+      for (final imageFile in data.imageFiles) {
+        if (await imageFile.exists()) {
+          final imageBytes = await imageFile.readAsBytes();
+          final fileName = imageFile.path.split('/').last;
+          final imageFileInArchive = ArchiveFile('images/$fileName', imageBytes.length, imageBytes);
+          archive.addFile(imageFileInArchive);
+        }
+      }
+
+      // Create and add metadata.json
+      final metadata = {
+        'createdAt': DateTime.now().toIso8601String(),
+        'databaseVersion': 2,
+        'appVersion': '1.0.0',
+        'compressionLevel': BackupConstants.compressionLevel,
+        'hasDatabase': data.databaseFile != null,
+        'imageCount': data.imageFiles.length,
+        'isIncremental': data.isIncremental,
+        'baseBackupId': data.baseBackupId,
+      };
+      final metadataJson = metadata.toString();
+      final metadataBytes = metadataJson.codeUnits;
+      final metadataFile = ArchiveFile('metadata.json', metadataBytes.length, metadataBytes);
+      archive.addFile(metadataFile);
+
+      // Create and add manifest.json with file checksums
+      final manifest = <String, dynamic>{
+        'version': '1.0',
+        'files': <String, String>{},
+      };
+
+      // Add database checksum
+      if (data.databaseFile != null && await data.databaseFile!.exists()) {
+        final dbBytes = await data.databaseFile!.readAsBytes();
+        final dbDigest = sha256.convert(dbBytes);
+        manifest['files']['database/simple_pos.db'] = dbDigest.toString();
+      }
+
+      // Add image checksums
+      for (final imageFile in data.imageFiles) {
+        if (await imageFile.exists()) {
+          final imageBytes = await imageFile.readAsBytes();
+          final imageDigest = sha256.convert(imageBytes);
+          final fileName = 'images/${imageFile.path.split('/').last}';
+          manifest['files'][fileName] = imageDigest.toString();
+        }
+      }
+
+      final manifestJson = manifest.toString();
+      final manifestBytes = manifestJson.codeUnits;
+      final manifestFile = ArchiveFile('manifest.json', manifestBytes.length, manifestBytes);
+      archive.addFile(manifestFile);
+
+      // Encode and compress the archive
+      final zipEncoder = ZipEncoder();
+      final zipBytes = zipEncoder.encode(archive);
+      if (zipBytes == null) {
+        throw DatabaseException(
+          'Gagal membuat kompresi ZIP',
+          operation: 'createZipBackup',
+        );
+      }
+
+      // Write ZIP file
+      final zipFile = File(outputPath);
+      await zipFile.writeAsBytes(zipBytes);
+
+      // Verify file was created
+      if (!await zipFile.exists()) {
+        throw DatabaseException(
+          'File ZIP tidak berhasil dibuat',
+          operation: 'createZipBackup',
+        );
+      }
+
+      final fileSize = await zipFile.length();
+      AppLogger.info(
+        'ZIP backup created successfully: ${outputPath.split('/').last} (${fileSize} bytes)',
+        tag: 'BackupLocalDataSource',
+      );
+
+      return outputPath;
+    } catch (e, stackTrace) {
+      AppLogger.error(
+        'Failed to create ZIP backup',
+        error: e,
+        stackTrace: stackTrace,
+        tag: 'BackupLocalDataSource',
+      );
+      throw DatabaseException(
+        'Gagal membuat file ZIP backup',
+        operation: 'createZipBackup',
+        originalError: e,
+        stackTrace: stackTrace,
+      );
+    }
   }
 
   /// Extract a ZIP backup file
-  /// TODO: Implement in Task 12
+  /// Extracts ZIP and returns BackupData with database and images
   Future<BackupData> extractZipBackup(String zipPath) async {
-    throw UnimplementedError('ZIP extraction will be implemented in Task 12');
+    try {
+      AppLogger.info('Extracting ZIP backup: $zipPath', tag: 'BackupLocalDataSource');
+
+      // Read ZIP file
+      final zipFile = File(zipPath);
+      if (!await zipFile.exists()) {
+        throw NotFoundException(
+          'File backup tidak ditemukan',
+          resourceType: 'Backup',
+          resourceId: zipPath,
+        );
+      }
+
+      final zipBytes = await zipFile.readAsBytes();
+
+      // Decode ZIP archive
+      final archive = ZipDecoder().decodeBytes(zipBytes);
+
+      // Verify manifest if present
+      Map<String, dynamic>? manifest;
+      ArchiveFile? manifestFile;
+      for (final file in archive) {
+        if (file.name == 'manifest.json') {
+          manifestFile = file;
+          break;
+        }
+      }
+
+      if (manifestFile != null) {
+        final manifestBytes = manifestFile.content as List<int>;
+        final manifestJson = String.fromCharCodes(manifestBytes);
+        manifest = _parseJsonSafely(manifestJson);
+
+        if (manifest != null) {
+          AppLogger.database('Manifest found, will verify file integrity', details: 'BackupLocalDataSource');
+        }
+      }
+
+      // Get temp directory for extraction
+      final tempDir = await tempBackupDir;
+
+      // Extract files
+      File? databaseFile;
+      final List<File> imageFiles = [];
+      final Map<String, String> actualChecksums = {};
+
+      for (final file in archive) {
+        final filePath = '${tempDir.path}/${file.name}';
+
+        if (file.isFile) {
+          // Create directory structure
+          final outputFile = File(filePath);
+          await outputFile.create(recursive: true);
+          await outputFile.writeAsBytes(file.content as List<int>);
+
+          // Calculate checksum for verification
+          final fileBytes = file.content as List<int>;
+          final digest = sha256.convert(fileBytes);
+          actualChecksums[file.name] = digest.toString();
+
+          // Track database file
+          if (file.name == 'database/simple_pos.db') {
+            databaseFile = outputFile;
+          }
+
+          // Track image files
+          if (file.name.startsWith('images/')) {
+            imageFiles.add(outputFile);
+          }
+        }
+      }
+
+      // Verify checksums if manifest is present
+      if (manifest != null && manifest!['files'] != null) {
+        final expectedChecksums = manifest!['files'] as Map<String, dynamic>;
+        bool verificationFailed = false;
+
+        for (final entry in expectedChecksums.entries) {
+          final fileName = entry.key;
+          final expectedChecksum = entry.value as String;
+          final actualChecksum = actualChecksums[fileName];
+
+          if (actualChecksum == null) {
+            AppLogger.warning(
+              'File missing from archive: $fileName',
+            );
+            verificationFailed = true;
+          } else if (actualChecksum != expectedChecksum) {
+            AppLogger.error(
+              'Checksum mismatch for $fileName',
+              error: Exception('Expected: $expectedChecksum, Got: $actualChecksum'),
+            );
+            verificationFailed = true;
+          }
+        }
+
+        if (verificationFailed) {
+          throw ValidationException(
+            'File integrity verification failed. Backup may be corrupted.',
+          );
+        }
+
+        AppLogger.info('All file checksums verified successfully');
+      }
+
+      // Read metadata if present
+      Map<String, dynamic>? metadata;
+      ArchiveFile? metadataFile;
+      for (final file in archive) {
+        if (file.name == 'metadata.json') {
+          metadataFile = file;
+          break;
+        }
+      }
+
+      if (metadataFile != null) {
+        final metadataBytes = metadataFile.content as List<int>;
+        final metadataJson = String.fromCharCodes(metadataBytes);
+        metadata = _parseJsonSafely(metadataJson);
+      }
+
+      AppLogger.info(
+        'ZIP backup extracted successfully (database: ${databaseFile != null}, images: ${imageFiles.length})',
+        tag: 'BackupLocalDataSource',
+      );
+
+      return BackupData(
+        databaseFile: databaseFile,
+        imageFiles: imageFiles,
+        baseBackupId: metadata?['baseBackupId'] as String?,
+      );
+    } on NotFoundException catch (_) {
+      rethrow;
+    } on ValidationException catch (_) {
+      rethrow;
+    } catch (e, stackTrace) {
+      AppLogger.error(
+        'Failed to extract ZIP backup',
+        error: e,
+        stackTrace: stackTrace,
+        tag: 'BackupLocalDataSource',
+      );
+      throw DatabaseException(
+        'Gagal mengekstrak file ZIP backup',
+        operation: 'extractZipBackup',
+        originalError: e,
+        stackTrace: stackTrace,
+      );
+    }
+  }
+
+  /// Parse JSON safely, returning null on failure
+  Map<String, dynamic>? _parseJsonSafely(String jsonString) {
+    try {
+      final parsed = jsonDecode(jsonString) as Map<String, dynamic>;
+      return parsed;
+    } catch (e) {
+      AppLogger.warning('Failed to parse JSON safely: $e');
+      return null;
+    }
   }
 }
