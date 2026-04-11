@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
-import 'package:csv/csv.dart';
+import 'package:csv/csv.dart' as csv;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import '../exceptions/app_exceptions.dart';
@@ -94,11 +94,8 @@ class CsvImportHelper {
     AppLogger.info('Parsing CSV file', tag: 'CsvImport');
 
     try {
-      final input = File(filePath).openRead();
-      final fields = await input
-          .transform(utf8.decoder)
-          .transform(const CsvToListConverter())
-          .toList();
+      final input = await File(filePath).readAsString();
+      final fields = const csv.CsvToListConverter().convert(input);
 
       if (fields.isEmpty) {
         throw ValidationException('File CSV kosong', field: 'File');
@@ -243,11 +240,11 @@ class CsvImportHelper {
       price: price,
       costPrice: costPrice,
       stock: stock,
-      barcode: barcode.isEmpty ? null : barcode,
-      sku: sku.isEmpty ? null : sku,
-      categoryName: categoryName.isEmpty ? null : categoryName,
-      supplierName: supplierName.isEmpty ? null : supplierName,
-      description: description.isEmpty ? null : description,
+      barcode: barcode?.isEmpty ?? true ? null : barcode,
+      sku: sku?.isEmpty ?? true ? null : sku,
+      categoryName: categoryName?.isEmpty ?? true ? null : categoryName,
+      supplierName: supplierName?.isEmpty ?? true ? null : supplierName,
+      description: description?.isEmpty ?? true ? null : description,
       rowNumber: rowNumber,
     );
   }
@@ -293,7 +290,7 @@ class CsvImportHelper {
       ],
     ];
 
-    return const ListToCsvConverter().convert(rows);
+    return ListToCsvConverter().convert(rows);
   }
 
   /// Download CSV template

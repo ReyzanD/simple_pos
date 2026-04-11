@@ -322,9 +322,9 @@ class GetSalesAnalyticsUseCase {
           date: forecastDate,
           revenue: (lastData.revenue + dailyRevenueChange * i).clamp(0, double.infinity),
           profit: (lastData.profit + dailyProfitChange * i).clamp(0, double.infinity),
-          transactions: forecastTransactions.clamp(0, double.infinity),
+          transactions: (forecastTransactions.clamp(0, double.infinity)).toInt(),
           averageTransactionValue: lastData.averageTransactionValue,
-          itemsSold: forecastItemsSold.clamp(0, double.infinity),
+          itemsSold: (forecastItemsSold.clamp(0, double.infinity)).toInt(),
         ));
       }
     }
@@ -383,7 +383,7 @@ class GetSalesAnalyticsUseCase {
 
     // Convert to ProductPerformance and sort by revenue
     final performanceList = productStats.values.map((stats) {
-      final profitMargin = stats.revenue > 0 ? (stats.profit / stats.revenue * 100) : 0;
+      final profitMargin = stats.revenue > 0 ? (stats.profit / stats.revenue * 100).toDouble() : 0.0;
 
       PerformanceRating rating;
       if (profitMargin >= 30) {
