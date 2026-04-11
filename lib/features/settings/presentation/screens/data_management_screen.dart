@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/services/export_service.dart';
-import '../../../../core/services/backup_service.dart';
+import '../../../../features/backup/domain/entities/backup_metadata.dart';
+import '../../../../features/backup/domain/entities/backup_config.dart';
+import '../../../../core/constants/backup_constants.dart';
+import '../../../../features/backup/presentation/controllers/backup_controller.dart';
 import '../../../../services/database/database_helper.dart';
 
 /// Screen for data management (export, backup, restore)
@@ -14,27 +18,18 @@ class DataManagementScreen extends StatefulWidget {
 
 class _DataManagementScreenState extends State<DataManagementScreen> {
   final ExportService _exportService = ExportService(databaseHelper: DatabaseHelper.instance);
-  final BackupService _backupService = BackupService(databaseHelper: DatabaseHelper.instance);
 
   bool _isExporting = false;
-  bool _isBackingUp = false;
-  List<BackupInfo> _backups = [];
-  bool _isLoadingBackups = true;
+
+  List<BackupMetadata> get _backups => context.watch<BackupController>().backups;
+  bool get _isLoadingBackups => context.watch<BackupController>().isLoading;
 
   @override
   void initState() {
     super.initState();
-    _loadBackups();
-  }
-
-  Future<void> _loadBackups() async {
-    setState(() => _isLoadingBackups = true);
-    try {
-      _backups = await _backupService.getAvailableBackups();
-    } catch (e) {
-      // Handle error silently
-    }
-    setState(() => _isLoadingBackups = false);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<BackupController>().loadBackups();
+    });
   }
 
   Future<void> _exportTransactions() async {
@@ -119,39 +114,31 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
   }
 
   Future<void> _createBackup() async {
-    setState(() => _isBackingUp = true);
-    try {
-      final path = await _backupService.createBackup();
-      await _loadBackups();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Backup dibuat: ${path.split('/').last}'),
-            backgroundColor: AppTheme.successColor,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Gagal membuat backup: $e'),
-            backgroundColor: AppTheme.errorColor,
-          ),
-        );
-      }
-    } finally {
-      setState(() => _isBackingUp = false);
+    final controller = context.read<BackupController>();
+    final config = BackupConfig(
+      type: BackupType.full,
+      dataTypes: [BackupDataType.all],
+      location: StorageLocation.local,
+    );
+
+    final success = await controller.createManualBackup(config);
+    if (success && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Backup berhasil dibuat'),
+          backgroundColor: AppTheme.successColor,
+        ),
+      );
     }
   }
 
-  Future<void> _deleteBackup(BackupInfo backup) async {
+  Future<void> _deleteBackup(BackupMetadata backup) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text('Hapus Backup'),
-        content: Text('Apakah Anda yakin ingin menghapus backup ${backup.fileName}?'),
+        content: Text('Apakah Anda yakin ingin menghapus backup ini?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -169,18 +156,17 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
     );
 
     if (confirmed == true) {
-      final success = await _backupService.deleteBackup(backup.path);
-      if (success) {
-        await _loadBackups();
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Backup dihapus'),
-              backgroundColor: AppTheme.successColor,
-            ),
-          );
-        }
-      }
+      final controller = context.read<BackupController>();
+      controller.selectBackup(backup);
+      await controller.deleteBackup();
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Backup dihapus'),
+          backgroundColor: AppTheme.successColor,
+        ),
+      );
     }
   }
 
@@ -196,28 +182,27 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
           // Export Section
           _buildSectionHeader('Ekspor Data', Icons.ios_share_rounded),
           const SizedBox(height: 12),
-          _buildExportCard('Transaksi', Icons.receipt_long_rounded, _exportTransactions),
+          _buildExportCard('Transaksi', Icons.receipt_long_rounded, _exportTransactions, _isExporting),
           const SizedBox(height: 8),
-          _buildExportCard('Produk', Icons.inventory_2_rounded, _exportProducts),
+          _buildExportCard('Produk', Icons.inventory_2_rounded, _exportProducts, _isExporting),
           const SizedBox(height: 8),
-          _buildExportCard('Pengeluaran', Icons.payments_rounded, _exportExpenses),
+          _buildExportCard('Pengeluaran', Icons.payments_rounded, _exportExpenses, _isExporting),
 
           const SizedBox(height: 24),
 
           // Backup Section
           _buildSectionHeader('Backup & Restore', Icons.backup_rounded),
           const SizedBox(height: 12),
-          _buildBackupCard(),
-
-          const SizedBox(height: 16),
-
-          // Backups List
+          _buildBackupCreateCard(),
+          if (_backups.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            ..._backups.map((backup) => _buildBackupCard(backup)),
+          ],
           if (_isLoadingBackups)
-            Center(child: CircularProgressIndicator())
-          else if (_backups.isEmpty)
-            _buildEmptyBackups()
-          else
-            _buildBackupsList(),
+            const Padding(
+              padding: EdgeInsets.all(16),
+              child: Center(child: CircularProgressIndicator()),
+            ),
         ],
       ),
     );
@@ -226,196 +211,80 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
   Widget _buildSectionHeader(String title, IconData icon) {
     return Row(
       children: [
-        Icon(icon, color: AppTheme.primaryColor, size: 20),
-        const SizedBox(width: 8),
+        Icon(icon, color: AppTheme.primaryColor, size: 24),
+        const SizedBox(width: 12),
         Text(
           title,
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: AppTheme.getTextPrimaryColor(context),
+            color: AppTheme.textPrimary,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildExportCard(String title, IconData icon, VoidCallback onTap) {
+  Widget _buildExportCard(String title, IconData icon, VoidCallback onTap, bool isLoading) {
     return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: AppTheme.getBorderColor(context)),
-      ),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ListTile(
-        leading: Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: AppTheme.primaryColor.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(icon, color: AppTheme.primaryColor),
-        ),
-        title: Text('Ekspor $title'),
-        trailing: _isExporting
-            ? SizedBox(
+        leading: Icon(icon, color: AppTheme.primaryColor),
+        title: Text(title),
+        trailing: isLoading
+            ? const SizedBox(
                 width: 20,
                 height: 20,
                 child: CircularProgressIndicator(strokeWidth: 2),
               )
-            : Icon(Icons.chevron_right),
-        onTap: _isExporting ? null : onTap,
+            : Icon(Icons.chevron_right, color: AppTheme.textSecondary),
+        onTap: isLoading ? null : onTap,
       ),
     );
   }
 
-  Widget _buildBackupCard() {
+  Widget _buildBackupCreateCard() {
+    final controller = context.watch<BackupController>();
+    final isCreating = controller.isProcessing;
+
     return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: AppTheme.secondaryColor.withValues(alpha: 0.3)),
-      ),
-      child: Padding(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: AppTheme.secondaryColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(Icons.backup_rounded, color: AppTheme.secondaryColor),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Buat Backup Database',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          color: AppTheme.getTextPrimaryColor(context),
-                        ),
-                      ),
-                      Text(
-                        'Simpan backup lengkap database',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: AppTheme.getTextSecondaryColor(context),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton.icon(
-              onPressed: _isBackingUp ? null : _createBackup,
-              icon: _isBackingUp
-                  ? SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
-                    )
-                  : Icon(Icons.save),
-              label: Text(_isBackingUp ? 'Membuat Backup...' : 'Buat Backup'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.secondaryColor,
-                foregroundColor: Colors.white,
-                padding: EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEmptyBackups() {
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: AppTheme.getBorderColor(context)),
-      ),
-      child: Padding(
-        padding: EdgeInsets.all(32),
-        child: Column(
-          children: [
-            Icon(
-              Icons.backup_outlined,
-              size: 48,
-              color: AppTheme.textTertiary,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Belum ada backup',
-              style: TextStyle(
-                color: AppTheme.getTextSecondaryColor(context),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBackupsList() {
-    return Column(
-      children: _backups.map((backup) => _buildBackupItem(backup)).toList(),
-    );
-  }
-
-  Widget _buildBackupItem(BackupInfo backup) {
-    return Card(
-      margin: EdgeInsets.only(bottom: 8),
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: AppTheme.getBorderColor(context)),
-      ),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ListTile(
-        leading: Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: AppTheme.infoColor.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Icon(Icons.storage_rounded, color: AppTheme.infoColor, size: 20),
+        leading: Icon(Icons.add_circle_outline, color: AppTheme.successColor),
+        title: Text('Buat Backup Baru'),
+        subtitle: Text('Backup lengkap semua data'),
+        trailing: isCreating
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : Icon(Icons.chevron_right, color: AppTheme.textSecondary),
+        onTap: isCreating ? null : _createBackup,
+      ),
+    );
+  }
+
+  Widget _buildBackupCard(BackupMetadata backup) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: ListTile(
+        leading: Icon(
+          backup.type == BackupType.full ? Icons.backup : Icons.description,
+          color: AppTheme.infoColor,
         ),
         title: Text(
-          backup.fileName,
-          style: TextStyle(
-            fontWeight: FontWeight.w500,
-            fontSize: 13,
-            color: AppTheme.getTextPrimaryColor(context),
-          ),
+          backup.type == BackupType.full ? 'Full Backup' : 'Incremental',
+          style: TextStyle(fontWeight: FontWeight.w500),
         ),
         subtitle: Text(
-          '${backup.dateFormatted} • ${backup.sizeFormatted}',
-          style: TextStyle(
-            fontSize: 11,
-            color: AppTheme.getTextSecondaryColor(context),
-          ),
+          '${backup.createdAt.day}/${backup.createdAt.month}/${backup.createdAt.year} ${backup.createdAt.hour}:${backup.createdAt.minute.toString().padLeft(2, '0')} - ${backup.sizeFormatted}',
         ),
         trailing: IconButton(
-          icon: Icon(Icons.delete_outline_rounded, color: AppTheme.errorColor),
+          icon: Icon(Icons.delete_outline, color: AppTheme.errorColor),
           onPressed: () => _deleteBackup(backup),
         ),
       ),

@@ -119,6 +119,7 @@ import 'features/backup/data/datasources/backup_local_datasource.dart';
 import 'features/backup/data/datasources/backup_drive_datasource.dart';
 import 'features/backup/data/repositories/backup_repository_impl.dart';
 import 'core/services/backup_service.dart';
+import 'core/services/backup_data_collector.dart';
 import 'features/backup/presentation/controllers/backup_controller.dart';
 
 // Features - Expenses
@@ -923,9 +924,18 @@ class POSApp extends StatelessWidget {
           ),
         ),
 
+        // Backup - Data Collector
+        ProxyProvider<DatabaseHelper, BackupDataCollector>(
+          update: (_, db, _) => BackupDataCollector(databaseHelper: db),
+        ),
+
         // Backup - Service Layer
-        ProxyProvider<BackupRepositoryImpl, BackupService>(
-          update: (_, repo, _) => BackupService(backupRepository: repo),
+        ProxyProvider3<BackupRepositoryImpl, BackupDataCollector, DatabaseHelper, BackupService>(
+          update: (_, repo, collector, db, _) => BackupService(
+            backupRepository: repo,
+            dataCollector: collector,
+            databaseHelper: db,
+          ),
         ),
 
         // Backup - Presentation Layer (Controller)
