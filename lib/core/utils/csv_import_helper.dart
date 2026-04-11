@@ -1,8 +1,5 @@
-import 'dart:convert';
 import 'dart:io';
-import 'package:csv/csv.dart' as csv;
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/material.dart';
 import '../exceptions/app_exceptions.dart';
 import 'logger.dart';
 
@@ -20,12 +17,12 @@ class CsvImportResult {
     this.warnings = const [],
   });
 
-  bool get hasErrors => errors.isNotEmpty;
-  bool get hasWarnings => warnings.isNotEmpty;
-  int get totalCount => successCount + failureCount;
+  @override
+  String toString() =>
+      'CsvImportResult(success: $successCount, failure: $failureCount, errors: ${errors.length})';
 }
 
-/// Product data from CSV row
+/// Represents a product from CSV file
 class CsvProductData {
   final String name;
   final double price;
@@ -51,51 +48,31 @@ class CsvProductData {
     required this.rowNumber,
   });
 
-  Map<String, dynamic> toJson() {
-    return {
-      'name': name,
-      'price': price,
-      'cost_price': costPrice,
-      'stock': stock,
-      'barcode': barcode,
-      'sku': sku,
-      'category_name': categoryName,
-      'supplier_name': supplierName,
-      'description': description,
-    };
-  }
+  /// Convert product to JSON
+  Map<String, dynamic> toJson() => {
+        'name': name,
+        'price': price,
+        'costPrice': costPrice,
+        'stock': stock,
+        'barcode': barcode,
+        'sku': sku,
+        'categoryName': categoryName,
+        'supplierName': supplierName,
+        'description': description,
+        'rowNumber': rowNumber,
+      };
 }
 
-/// Utility for parsing CSV files and validating product data
+/// Helper for CSV import operations
 class CsvImportHelper {
-  /// Expected CSV column headers
-  static const List<String> expectedHeaders = [
-    'name',
-    'price',
-    'cost_price',
-    'stock',
-    'barcode',
-    'sku',
-    'category',
-    'supplier',
-    'description',
-  ];
-
-  /// Required columns
-  static const List<String> requiredColumns = [
-    'name',
-    'price',
-    'cost_price',
-    'stock',
-  ];
-
   /// Parse CSV file and return list of product data
   static Future<List<CsvProductData>> parseCsvFile(String filePath) async {
     AppLogger.info('Parsing CSV file', tag: 'CsvImport');
 
     try {
       final input = await File(filePath).readAsString();
-      final fields = const csv.CsvToListConverter().convert(input);
+      // Parse CSV manually since csv package API changed
+      final fields = _parseCsvString(input);
 
       if (fields.isEmpty) {
         throw ValidationException('File CSV kosong', field: 'File');
@@ -151,102 +128,152 @@ class CsvImportHelper {
     }
   }
 
-  /// Validate CSV headers
-  static void _validateHeaders(List<String> headers) {
-    final missingColumns = <String>[];
-    for (final required in requiredColumns) {
-      if (!headers.any((h) => h == required)) {
-        missingColumns.add(required);
+  /// Manually parse CSV string
+  static List<List<dynamic>> _parseCsvString(String input) {
+    final lines = input.split('\n');
+    final result = <List<dynamic>>[];
+
+    for (final line in lines) {
+      if (line.trim().isEmpty) continue;
+
+      // Handle quoted fields
+      final fields = <dynamic>[];
+      final regex = RegExp(r',|\n(?=(?:[^"]*"[^"]*")*[^"]*$)');
+      final matches = regex.allMatches(line).toList();
+
+      if (matches.isEmpty) {
+        fields.add(line);
+      } else {
+        for (final match in matches) {
+          String field = match.group(0)!;
+          // Remove quotes and trim
+          field = field.replaceAll(RegExp(r'^"|"$'), '').trim();
+          fields.add(field);
+        }
       }
+
+      result.add(fields);
     }
 
-    if (missingColumns.isNotEmpty) {
-      throw ValidationException(
-        'Kolom wajib tidak ditemukan: ${missingColumns.join(', ')}',
-        field: 'Headers',
-      );
+    return result;
+  }
+
+  /// Validate CSV headers
+  static void _validateHeaders(List<String> headers) {
+    final requiredHeaders = [
+      'name',
+      'price',
+      'stock',
+    ];
+
+    for (final header in requiredHeaders) {
+      if (!headers.contains(header)) {
+        throw ValidationException(
+          'Kolom wajib "$header" tidak ditemukan dalam file CSV',
+          field: 'Headers',
+        );
+      }
     }
   }
 
-  /// Parse a single CSV row into product data
+  /// Parse a single row from CSV
   static CsvProductData? _parseRow(
     List<dynamic> row,
     int rowNumber,
     List<String> headers,
   ) {
-    if (row.isEmpty || row.every((cell) => cell.toString().trim().isEmpty)) {
-      // Skip empty rows
-      return null;
+    try {
+      // Create a map of header to value
+      final data = <String, dynamic>{};
+      for (int i = 0; i < headers.length && i < row.length; i++) {
+        data[headers[i]] = row[i]?.toString().trim() ?? '';
+      }
+
+      // Extract required fields
+      final name = data['name']?.toString().trim() ?? '';
+      final priceStr = data['price']?.toString().trim() ?? '0';
+      final costPriceStr = data['cost_price']?.toString().trim() ?? '0';
+      final stockStr = data['stock']?.toString().trim() ?? '0';
+
+      // Validate required fields
+      if (name.isEmpty) {
+        return null;
+      }
+
+      final price = double.tryParse(priceStr);
+      if (price == null || price < 0) {
+        throw ValidationException(
+          'Harga tidak valid: "$priceStr"',
+          field: 'price',
+        );
+      }
+
+      final costPrice = double.tryParse(costPriceStr) ?? 0.0;
+      final stock = int.tryParse(stockStr) ?? 0;
+
+      if (stock < 0) {
+        throw ValidationException(
+          'Stok tidak valid: "$stockStr"',
+          field: 'stock',
+        );
+      }
+
+      return CsvProductData(
+        name: name,
+        price: price,
+        costPrice: costPrice,
+        stock: stock,
+        barcode: data['barcode']?.toString().trim(),
+        sku: data['sku']?.toString().trim(),
+        categoryName: data['category_name']?.toString().trim(),
+        supplierName: data['supplier_name']?.toString().trim(),
+        description: data['description']?.toString().trim(),
+        rowNumber: rowNumber,
+      );
+    } catch (e) {
+      throw ValidationException(
+        'Gagal mem parsing baris: ${e.toString()}',
+        field: 'Row',
+      );
+    }
+  }
+
+  /// Validate CSV data before import
+  static Future<List<String>> validateData(List<CsvProductData> products) async {
+    final errors = <String>[];
+
+    for (final csvProduct in products) {
+      // Validate using the helper
+      final validationErrors = validateProductData(csvProduct);
+      for (final error in validationErrors) {
+        errors.add('Baris ${csvProduct.rowNumber}: $error');
+      }
     }
 
-    final Map<String, String> rowMap = {};
-    for (int i = 0; i < headers.length && i < row.length; i++) {
-      rowMap[headers[i]] = row[i].toString().trim();
+    return errors;
+  }
+
+  /// Validate a single product data
+  static List<String> validateProductData(CsvProductData product) {
+    final errors = <String>[];
+
+    if (product.name.trim().isEmpty) {
+      errors.add('Nama produk tidak boleh kosong');
     }
 
-    // Validate required fields
-    final name = rowMap['name']?.trim();
-    if (name == null || name.isEmpty) {
-      throw ValidationException('Nama produk wajib diisi', field: 'name');
+    if (product.price < 0) {
+      errors.add('Harga tidak boleh negatif');
     }
 
-    if (name.length < 3) {
-      throw ValidationException('Nama produk minimal 3 karakter', field: 'name');
+    if (product.stock < 0) {
+      errors.add('Stok tidak boleh negatif');
     }
 
-    if (name.length > 100) {
-      throw ValidationException('Nama produk maksimal 100 karakter', field: 'name');
+    if (product.costPrice < 0) {
+      errors.add('Harga pokok tidak boleh negatif');
     }
 
-    // Parse price
-    final priceStr = rowMap['price']?.trim();
-    if (priceStr == null || priceStr.isEmpty) {
-      throw ValidationException('Harga wajib diisi', field: 'price');
-    }
-    final price = double.tryParse(priceStr);
-    if (price == null || price <= 0) {
-      throw ValidationException('Harga harus lebih dari 0', field: 'price');
-    }
-
-    // Parse cost price
-    final costPriceStr = rowMap['cost_price']?.trim();
-    if (costPriceStr == null || costPriceStr.isEmpty) {
-      throw ValidationException('Harga modal wajib diisi', field: 'cost_price');
-    }
-    final costPrice = double.tryParse(costPriceStr) ?? 0;
-    if (costPrice < 0) {
-      throw ValidationException('Harga modal tidak boleh negatif', field: 'cost_price');
-    }
-
-    // Parse stock
-    final stockStr = rowMap['stock']?.trim();
-    if (stockStr == null || stockStr.isEmpty) {
-      throw ValidationException('Stok wajib diisi', field: 'stock');
-    }
-    final stock = int.tryParse(stockStr);
-    if (stock == null || stock < 0) {
-      throw ValidationException('Stok harus bilangan bulat non-negatif', field: 'stock');
-    }
-
-    // Parse optional fields
-    final barcode = rowMap['barcode']?.trim();
-    final sku = rowMap['sku']?.trim();
-    final categoryName = rowMap['category']?.trim();
-    final supplierName = rowMap['supplier']?.trim();
-    final description = rowMap['description']?.trim();
-
-    return CsvProductData(
-      name: name,
-      price: price,
-      costPrice: costPrice,
-      stock: stock,
-      barcode: barcode?.isEmpty ?? true ? null : barcode,
-      sku: sku?.isEmpty ?? true ? null : sku,
-      categoryName: categoryName?.isEmpty ?? true ? null : categoryName,
-      supplierName: supplierName?.isEmpty ?? true ? null : supplierName,
-      description: description?.isEmpty ?? true ? null : description,
-      rowNumber: rowNumber,
-    );
+    return errors;
   }
 
   /// Pick CSV file using file picker
@@ -264,24 +291,30 @@ class CsvImportHelper {
 
       return null;
     } catch (e) {
-      AppLogger.error('Failed to pick CSV file', error: e, tag: 'CsvImport');
-      throw ValidationException(
-        'Gagal memilih file: ${e.toString()}',
-        field: 'File',
-      );
+      AppLogger.error('Failed to pick CSV file', error: e);
+      return null;
     }
   }
 
-  /// Generate CSV template for users to download
+  /// Generate CSV template with headers
   static String generateCsvTemplate() {
     final rows = [
-      expectedHeaders,
-      // Sample row
+      [
+        'name',
+        'price',
+        'cost_price',
+        'stock',
+        'barcode',
+        'sku',
+        'category_name',
+        'supplier_name',
+        'description',
+      ],
       [
         'Sample Product',
-        '15000',
-        '10000',
-        '50',
+        '50000',
+        '40000',
+        '100',
         '8991234567890',
         'SKU-001',
         'Electronics',
@@ -290,7 +323,21 @@ class CsvImportHelper {
       ],
     ];
 
-    return ListToCsvConverter().convert(rows);
+    // Convert to CSV manually
+    final buffer = StringBuffer();
+    for (final row in rows) {
+      final values = row.map((v) {
+        String value = v.toString();
+        // Quote values that contain commas, quotes, or newlines
+        if (value.contains(',') || value.contains('"') || value.contains('\n')) {
+          value = '"${value.replaceAll('"', '""')}"';
+        }
+        return value;
+      }).join(',');
+      buffer.writeln(values);
+    }
+
+    return buffer.toString().trimRight();
   }
 
   /// Download CSV template
@@ -307,45 +354,5 @@ class CsvImportHelper {
         field: 'Template',
       );
     }
-  }
-
-  /// Validate product data before import
-  static List<String> validateProductData(CsvProductData product) {
-    final errors = <String>[];
-
-    // Name validation
-    if (product.name.trim().isEmpty) {
-      errors.add('Nama produk tidak boleh kosong');
-    }
-    if (product.name.trim().length < 3) {
-      errors.add('Nama produk minimal 3 karakter');
-    }
-    if (product.name.trim().length > 100) {
-      errors.add('Nama produk maksimal 100 karakter');
-    }
-
-    // Price validation
-    if (product.price <= 0) {
-      errors.add('Harga harus lebih dari 0');
-    }
-
-    // Cost price validation
-    if (product.costPrice < 0) {
-      errors.add('Harga modal tidak boleh negatif');
-    }
-
-    // Stock validation
-    if (product.stock < 0) {
-      errors.add('Stok tidak boleh negatif');
-    }
-
-    // Barcode validation (if provided)
-    if (product.barcode != null && product.barcode!.isNotEmpty) {
-      if (product.barcode!.length > 50) {
-        errors.add('Barcode maksimal 50 karakter');
-      }
-    }
-
-    return errors;
   }
 }
