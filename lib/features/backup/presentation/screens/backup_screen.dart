@@ -328,107 +328,176 @@ class _BackupScreenState extends State<BackupScreen>
 }
 
 /// Storage Status Widget
-class _StorageStatusWidget extends StatelessWidget {
+class _StorageStatusWidget extends StatefulWidget {
   final BackupController controller;
 
   const _StorageStatusWidget({required this.controller});
 
   @override
+  State<_StorageStatusWidget> createState() => _StorageStatusWidgetState();
+}
+
+class _StorageStatusWidgetState extends State<_StorageStatusWidget> {
+  @override
   Widget build(BuildContext context) {
-    // Calculate total backup size
-    final totalSize = controller.backups.fold<int>(
-      0,
-      (sum, backup) => sum + backup.size,
-    );
+    // Calculate storage metrics
+    final localBackups = widget.controller.backups
+        .where((b) => b.location == StorageLocation.local)
+        .toList();
+    final driveBackups = widget.controller.backups
+        .where((b) => b.location == StorageLocation.drive)
+        .toList();
 
-    final fullBackups = controller.backups
-        .where((b) => b.type == BackupType.full)
-        .length;
-    final incrementalBackups = controller.backups
-        .where((b) => b.type == BackupType.incremental)
-        .length;
+    final localSize = localBackups.fold<int>(0, (sum, b) => sum + b.size);
+    final driveSize = driveBackups.fold<int>(0, (sum, b) => sum + b.size);
+    final totalSize = localSize + driveSize;
 
-    return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            AppTheme.primaryColor.withValues(alpha: 0.08),
-            AppTheme.secondaryColor.withValues(alpha: 0.05),
-          ],
+    // Calculate usage percentages (assume 5GB limit for demo)
+    const maxStorage = 5 * 1024 * 1024 * 1024; // 5GB
+    final localUsage = localSize / maxStorage;
+    final driveUsage = driveSize / maxStorage;
+
+    // Determine status colors
+    final localStatusColor = _getStatusColor(localUsage);
+    final driveStatusColor = _getStatusColor(driveUsage);
+
+    return GestureDetector(
+      onTap: () => _showStorageDetailsDialog(context, localSize, driveSize, maxStorage),
+      child: Container(
+        margin: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              AppTheme.primaryColor.withValues(alpha: 0.08),
+              AppTheme.secondaryColor.withValues(alpha: 0.05),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: AppTheme.primaryColor.withValues(alpha: 0.1),
+            width: 1,
+          ),
         ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: AppTheme.primaryColor.withValues(alpha: 0.1),
-          width: 1,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.storage,
-                size: 20,
-                color: AppTheme.primaryColor,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'Storage Status',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header with refresh button
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.storage,
+                      size: 20,
+                      color: AppTheme.primaryColor,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Storage Status',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.getTextSecondaryColor(context),
+                      ),
+                    ),
+                  ],
+                ),
+                IconButton(
+                  icon: const Icon(Icons.refresh, size: 18),
+                  onPressed: () => widget.controller.loadBackups(),
+                  tooltip: 'Refresh storage info',
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
                   color: AppTheme.getTextSecondaryColor(context),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: _StorageStat(
-                  label: 'Total Size',
-                  value: _formatBytes(totalSize),
-                  icon: Icons.folder,
-                  color: AppTheme.primaryColor,
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // Progress bars
+            _StorageProgressBar(
+              label: 'Local Storage',
+              used: localSize,
+              total: maxStorage,
+              color: localStatusColor,
+              icon: Icons.smartphone,
+            ),
+            const SizedBox(height: 12),
+            _StorageProgressBar(
+              label: 'Google Drive',
+              used: driveSize,
+              total: maxStorage,
+              color: driveStatusColor,
+              icon: Icons.cloud,
+            ),
+            const SizedBox(height: 16),
+
+            // Quick stats
+            Row(
+              children: [
+                Expanded(
+                  child: _StorageStat(
+                    label: 'Total Size',
+                    value: _formatBytes(totalSize),
+                    icon: Icons.folder,
+                    color: AppTheme.primaryColor,
+                  ),
+                ),
+                Container(
+                  width: 1,
+                  height: 40,
+                  color: AppTheme.getBorderColor(context),
+                ),
+                Expanded(
+                  child: _StorageStat(
+                    label: 'Local',
+                    value: localBackups.length.toString(),
+                    icon: Icons.backup,
+                    color: AppTheme.infoColor,
+                  ),
+                ),
+                Container(
+                  width: 1,
+                  height: 40,
+                  color: AppTheme.getBorderColor(context),
+                ),
+                Expanded(
+                  child: _StorageStat(
+                    label: 'Drive',
+                    value: driveBackups.length.toString(),
+                    icon: Icons.cloud,
+                    color: AppTheme.successColor,
+                  ),
+                ),
+              ],
+            ),
+
+            // Tap hint
+            const SizedBox(height: 8),
+            Center(
+              child: Text(
+                'Tap for detailed breakdown',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: AppTheme.textTertiary,
+                  fontStyle: FontStyle.italic,
                 ),
               ),
-              Container(
-                width: 1,
-                height: 40,
-                color: AppTheme.getBorderColor(context),
-              ),
-              Expanded(
-                child: _StorageStat(
-                  label: 'Full Backups',
-                  value: fullBackups.toString(),
-                  icon: Icons.backup,
-                  color: AppTheme.infoColor,
-                ),
-              ),
-              Container(
-                width: 1,
-                height: 40,
-                color: AppTheme.getBorderColor(context),
-              ),
-              Expanded(
-                child: _StorageStat(
-                  label: 'Incremental',
-                  value: incrementalBackups.toString(),
-                  icon: Icons.update,
-                  color: AppTheme.successColor,
-                ),
-              ),
-            ],
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
+  }
+
+  Color _getStatusColor(double usage) {
+    if (usage < 0.5) return AppTheme.successColor;
+    if (usage < 0.8) return AppTheme.warningColor;
+    return AppTheme.errorColor;
   }
 
   String _formatBytes(int bytes) {
@@ -438,6 +507,291 @@ class _StorageStatusWidget extends StatelessWidget {
       return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
     }
     return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
+  }
+
+  void _showStorageDetailsDialog(
+    BuildContext context,
+    int localSize,
+    int driveSize,
+    int maxStorage,
+  ) {
+    showDialog(
+      context: context,
+      builder: (context) => _StorageDetailsDialog(
+        localSize: localSize,
+        driveSize: driveSize,
+        maxStorage: maxStorage,
+      ),
+    );
+  }
+}
+
+/// Storage Progress Bar
+class _StorageProgressBar extends StatelessWidget {
+  final String label;
+  final int used;
+  final int total;
+  final Color color;
+  final IconData icon;
+
+  const _StorageProgressBar({
+    required this.label,
+    required this.used,
+    required this.total,
+    required this.color,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final percentage = (used / total).clamp(0.0, 1.0);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                Icon(icon, size: 14, color: color),
+                const SizedBox(width: 6),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: AppTheme.getTextSecondaryColor(context),
+                  ),
+                ),
+              ],
+            ),
+            Text(
+              '${_formatBytes(used)} / ${_formatBytes(total)}',
+              style: TextStyle(
+                fontSize: 11,
+                color: AppTheme.getTextSecondaryColor(context),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(6),
+          child: Stack(
+            children: [
+              Container(
+                height: 8,
+                decoration: BoxDecoration(
+                  color: AppTheme.getBorderColor(context).withValues(alpha: 0.3),
+                ),
+              ),
+              FractionallySizedBox(
+                widthFactor: percentage,
+                child: Container(
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: color,
+                    gradient: LinearGradient(
+                      colors: [color.withValues(alpha: 0.8), color],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          '${(percentage * 100).toStringAsFixed(1)}% used',
+          style: TextStyle(
+            fontSize: 10,
+            color: color,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _formatBytes(int bytes) {
+    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(0)} MB';
+    if (bytes < 1024 * 1024 * 1024) {
+      return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+    }
+    return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(2)} GB';
+  }
+}
+
+/// Storage Details Dialog
+class _StorageDetailsDialog extends StatelessWidget {
+  final int localSize;
+  final int driveSize;
+  final int maxStorage;
+
+  const _StorageDetailsDialog({
+    required this.localSize,
+    required this.driveSize,
+    required this.maxStorage,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final totalUsed = localSize + driveSize;
+    final available = maxStorage - totalUsed;
+
+    return Dialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 400),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            Row(
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.storage,
+                    color: AppTheme.primaryColor,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Storage Details',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.getTextPrimaryColor(context),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Detailed breakdown of backup storage',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: AppTheme.getTextSecondaryColor(context),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            // Storage breakdown
+            _DetailRow(
+              icon: Icons.smartphone,
+              label: 'Local Storage',
+              value: _formatBytes(localSize),
+              color: AppTheme.infoColor,
+            ),
+            const SizedBox(height: 12),
+            _DetailRow(
+              icon: Icons.cloud,
+              label: 'Google Drive',
+              value: _formatBytes(driveSize),
+              color: AppTheme.successColor,
+            ),
+            const SizedBox(height: 12),
+            const Divider(height: 1),
+            const SizedBox(height: 12),
+            _DetailRow(
+              icon: Icons.folder,
+              label: 'Total Used',
+              value: _formatBytes(totalUsed),
+              color: AppTheme.primaryColor,
+              isBold: true,
+            ),
+            const SizedBox(height: 12),
+            _DetailRow(
+              icon: Icons.check_circle,
+              label: 'Available Space',
+              value: _formatBytes(available),
+              color: AppTheme.successColor,
+            ),
+            const SizedBox(height: 24),
+
+            // Close button
+            SizedBox(
+              width: double.infinity,
+              child: ModernButton(
+                text: 'Close',
+                onPressed: () => Navigator.pop(context),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _formatBytes(int bytes) {
+    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(0)} MB';
+    if (bytes < 1024 * 1024 * 1024) {
+      return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+    }
+    return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(2)} GB';
+  }
+}
+
+/// Detail row for storage dialog
+class _DetailRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color color;
+  final bool isBold;
+
+  const _DetailRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.color,
+    this.isBold = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, size: 20, color: color),
+        const SizedBox(width: 12),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: isBold ? FontWeight.w600 : FontWeight.normal,
+            color: AppTheme.getTextSecondaryColor(context),
+          ),
+        ),
+        const Spacer(),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
+            color: AppTheme.getTextPrimaryColor(context),
+          ),
+        ),
+      ],
+    );
   }
 }
 
@@ -1443,44 +1797,320 @@ class _RestoreDialogState extends State<_RestoreDialog> {
 }
 
 /// Delete Backup Dialog
-class _DeleteBackupDialog extends StatelessWidget {
+class _DeleteBackupDialog extends StatefulWidget {
   final BackupMetadata backup;
 
   const _DeleteBackupDialog({required this.backup});
 
   @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Delete Backup'),
-      content: Text(
-        'Are you sure you want to delete backup from ${_formatDate(backup.createdAt)}?\n\nThis action cannot be undone.',
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
-        ),
-        ElevatedButton(
-          onPressed: () async {
-            final controller = context.read<BackupController>();
-            final success = await controller.deleteBackup();
+  State<_DeleteBackupDialog> createState() => _DeleteBackupDialogState();
+}
 
-            if (context.mounted) {
-              Navigator.pop(context);
-              if (success) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Backup deleted successfully'),
-                    backgroundColor: AppTheme.successColor,
+class _DeleteBackupDialogState extends State<_DeleteBackupDialog> {
+  bool _confirmationChecked = false;
+  bool _isDeleting = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 450),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            Row(
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: AppTheme.errorColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                );
-              }
-            }
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppTheme.errorColor,
+                  child: Icon(
+                    Icons.delete_forever,
+                    color: AppTheme.errorColor,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Delete Backup',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.getTextPrimaryColor(context),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'This action cannot be undone',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: AppTheme.errorColor,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            // Backup Details Card
+            ModernCard(
+              padding: const EdgeInsets.all(16),
+              backgroundColor: AppTheme.errorColor.withValues(alpha: 0.05),
+              child: Column(
+                children: [
+                  _buildDetailRow(
+                    context,
+                    icon: Icons.calendar_today,
+                    label: 'Date',
+                    value: _formatDate(widget.backup.createdAt),
+                  ),
+                  const Divider(height: 20),
+                  _buildDetailRow(
+                    context,
+                    icon: Icons.access_time,
+                    label: 'Time',
+                    value: _formatTime(widget.backup.createdAt),
+                  ),
+                  const Divider(height: 20),
+                  _buildDetailRow(
+                    context,
+                    icon: Icons.storage,
+                    label: 'Size',
+                    value: widget.backup.sizeFormatted,
+                    valueColor: AppTheme.errorColor,
+                  ),
+                  const Divider(height: 20),
+                  _buildDetailRow(
+                    context,
+                    icon: widget.backup.type == BackupType.full
+                        ? Icons.backup
+                        : Icons.update,
+                    label: 'Type',
+                    value: widget.backup.type == BackupType.full ? 'Full' : 'Incremental',
+                  ),
+                  const Divider(height: 20),
+                  _buildDetailRow(
+                    context,
+                    icon: widget.backup.location == StorageLocation.local
+                        ? Icons.smartphone
+                        : Icons.cloud,
+                    label: 'Location',
+                    value: widget.backup.location.name.toUpperCase(),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Warning if last full backup
+            if (widget.backup.type == BackupType.full) ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppTheme.warningColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: AppTheme.warningColor.withValues(alpha: 0.3),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.warning_amber,
+                      color: AppTheme.warningColor,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'This is a full backup. Deleting it may affect incremental backups that depend on it.',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppTheme.warningColor,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+
+            // Space to be freed
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppTheme.successColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: AppTheme.successColor.withValues(alpha: 0.3),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.check_circle,
+                    color: AppTheme.successColor,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'This will free up ${widget.backup.sizeFormatted} of storage space',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: AppTheme.successColor,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Confirmation checkbox
+            Row(
+              children: [
+                Checkbox(
+                  value: _confirmationChecked,
+                  onChanged: (value) {
+                    setState(() {
+                      _confirmationChecked = value ?? false;
+                    });
+                  },
+                  fillColor: WidgetStateProperty.resolveWith((states) {
+                    if (states.contains(WidgetState.selected)) {
+                      return AppTheme.errorColor;
+                    }
+                    return null;
+                  }),
+                ),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _confirmationChecked = !_confirmationChecked;
+                      });
+                    },
+                    child: Text(
+                      'I understand this action cannot be undone',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: AppTheme.getTextSecondaryColor(context),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            // Actions
+            Row(
+              children: [
+                Expanded(
+                  child: ModernSecondaryButton(
+                    text: 'Cancel',
+                    onPressed: _isDeleting ? null : () => Navigator.pop(context),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ModernButton(
+                    text: 'Delete',
+                    icon: Icons.delete_forever,
+                    backgroundColor: AppTheme.errorColor,
+                    onPressed: _isDeleting || !_confirmationChecked
+                        ? null
+                        : () async {
+                            if (!mounted) return;
+
+                            final navigator = Navigator.of(context);
+                            final scaffoldMessenger = ScaffoldMessenger.of(context);
+
+                            setState(() {
+                              _isDeleting = true;
+                            });
+
+                            final controller = context.read<BackupController>();
+                            final success = await controller.deleteBackup();
+
+                            if (!mounted) return;
+
+                            navigator.pop();
+                            if (success) {
+                              scaffoldMessenger.showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    'Backup deleted successfully\n${widget.backup.sizeFormatted} freed',
+                                  ),
+                                  backgroundColor: AppTheme.successColor,
+                                  behavior: SnackBarBehavior.floating,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                              );
+                            }
+                          },
+                    isLoading: _isDeleting,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required String value,
+    Color? valueColor,
+  }) {
+    return Row(
+      children: [
+        Icon(
+          icon,
+          size: 18,
+          color: AppTheme.getTextSecondaryColor(context),
+        ),
+        const SizedBox(width: 12),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 13,
+            color: AppTheme.getTextSecondaryColor(context),
           ),
-          child: const Text('Delete'),
+        ),
+        const Spacer(),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: valueColor ?? AppTheme.getTextPrimaryColor(context),
+          ),
         ),
       ],
     );
@@ -1488,6 +2118,10 @@ class _DeleteBackupDialog extends StatelessWidget {
 
   String _formatDate(DateTime date) {
     return '${date.day}/${date.month}/${date.year}';
+  }
+
+  String _formatTime(DateTime date) {
+    return '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
   }
 }
 
