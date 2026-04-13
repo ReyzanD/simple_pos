@@ -572,6 +572,7 @@ class ModernActionButton extends StatefulWidget {
   final IconData icon;
   final VoidCallback? onPressed;
   final Color? backgroundColor;
+  final Object? heroTag;
 
   const ModernActionButton({
     super.key,
@@ -579,6 +580,7 @@ class ModernActionButton extends StatefulWidget {
     required this.icon,
     this.onPressed,
     this.backgroundColor,
+    this.heroTag,
   });
 
   @override
@@ -639,6 +641,7 @@ class _ModernActionButtonState extends State<ModernActionButton>
           return Transform.scale(
             scale: _scaleAnimation.value,
             child: FloatingActionButton.extended(
+              heroTag: widget.heroTag, // ✅ Unique hero tag
               onPressed: null, // Handled by GestureDetector
               backgroundColor: widget.backgroundColor ?? AppTheme.primaryColor,
               icon: Icon(widget.icon, color: Colors.white),

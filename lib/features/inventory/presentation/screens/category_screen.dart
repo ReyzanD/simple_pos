@@ -22,6 +22,7 @@ class CategoryScreen extends StatelessWidget {
                   ? _buildEmptyState(context)
                   : _buildCategoryList(controller),
           floatingActionButton: FloatingActionButton(
+            heroTag: 'category_fab', // ✅ Unique hero tag
             onPressed: () => _showAddEditDialog(context, controller),
             tooltip: 'Tambah Kategori',
             child: const Icon(Icons.add),

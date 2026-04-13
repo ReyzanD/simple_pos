@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/neo_brutal_theme.dart';
 import '../../../../core/widgets/validated_text_field.dart';
 import '../../../../core/widgets/modern_button.dart';
 import '../../../../core/services/success_toast_service.dart';
@@ -64,27 +65,19 @@ class _ExpenseFormDialogState extends State<ExpenseFormDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Dialog(
       backgroundColor: Colors.transparent,
       child: Container(
         width: MediaQuery.of(context).size.width * 0.9,
         constraints: const BoxConstraints(maxWidth: 500, maxHeight: 700),
         decoration: BoxDecoration(
-          color: AppTheme.getCardColor(context),
-          borderRadius: BorderRadius.circular(24),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusLarge),
           border: Border.all(
-            color: AppTheme.getBorderColor(context),
-            width: 1,
+            color: Colors.black,
+            width: 5, // ✅ Extra bold border
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.15),
-              blurRadius: 30,
-              offset: const Offset(0, 10),
-            ),
-          ],
+          boxShadow: NeoBrutalTheme.chunkyShadow,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,

@@ -9,6 +9,8 @@ import '../../domain/entities/payment_method.dart';
 import '../controllers/sales_report_controller.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/neo_brutal_theme.dart';
+import '../../../../core/utils/responsive_helper.dart';
 import '../../../shared/presentation/main_navigation.dart';
 import '../widgets/summary_stat_card.dart';
 
@@ -18,10 +20,10 @@ class SalesReportScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Consumer<SalesReportController>(
       builder: (context, controller, _) {
         return Scaffold(
+          backgroundColor: NeoBrutalTheme.background, // ✅ Brutal background
           appBar: AppBar(
             leading: IconButton(
               icon: const Icon(Icons.menu),
@@ -33,26 +35,36 @@ class SalesReportScreen extends StatelessWidget {
             ),
             title: const Text('Laporan Penjualan'),
             actions: [
-              IconButton(
-                icon: const Icon(Icons.date_range),
-                onPressed: () => _selectDateRange(context, controller),
-              ),
-              IconButton(
-                icon: const Icon(Icons.refresh),
-                onPressed: controller.refresh,
+              Padding(
+                padding: EdgeInsets.only(right: NeoBrutalTheme.spaceXS),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: NeoBrutalTheme.secondary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
+                    border: Border.all(
+                      color: Colors.black,
+                      width: 4, // ✅ Bold 4px border
+                    ),
+                  ),
+                  child: IconButton(
+                    icon: Icon(
+                      Icons.date_range,
+                      color: NeoBrutalTheme.secondary,
+                    ),
+                    tooltip: 'Date Range',
+                    onPressed: () => _selectDateRange(context, controller),
+                  ),
+                ),
               ),
             ],
             flexibleSpace: Container(
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: isDark
-                      ? [
-                          AppTheme.darkSurface,
-                          AppTheme.darkSurface.withValues(alpha: 0.95),
-                        ]
-                      : [AppTheme.primaryColor, AppTheme.primaryLight],
+                color: NeoBrutalTheme.blockYellow, // ✅ Bold yellow background
+                border: Border(
+                  bottom: BorderSide(
+                    color: Colors.black,
+                    width: 6, // ✅ Extra thick bottom border
+                  ),
                 ),
               ),
             ),
@@ -63,9 +75,10 @@ class SalesReportScreen extends StatelessWidget {
               ? _buildEmptyState()
               : RefreshIndicator(
                   onRefresh: controller.refresh,
-                  color: AppTheme.primaryColor,
+                  color: NeoBrutalTheme.primary, // ✅ Brutal primary color
+                  backgroundColor: NeoBrutalTheme.blockYellow.withValues(alpha: 0.3),
                   displacement: 80,
-                  strokeWidth: 3,
+                  strokeWidth: 4, // ✅ Thicker indicator
                   child: SingleChildScrollView(
                     physics:
                         const AlwaysScrollableScrollPhysics(), // Enable pull-to-refresh even when content is small
@@ -153,9 +166,17 @@ class SalesReportScreen extends StatelessWidget {
                                   : 'Ekspor Laporan',
                             ),
                             style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              backgroundColor: AppTheme.primaryColor,
+                              padding: EdgeInsets.symmetric(vertical: NeoBrutalTheme.spaceMD),
+                              backgroundColor: NeoBrutalTheme.primary,
                               foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium),
+                                side: BorderSide(
+                                  color: Colors.black,
+                                  width: 4, // ✅ Bold border
+                                ),
+                              ),
+                              elevation: 6,
                             ),
                           ),
                         ),
@@ -210,10 +231,15 @@ class SalesReportScreen extends StatelessWidget {
     SalesReportController controller,
   ) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(NeoBrutalTheme.spaceMD),
       decoration: BoxDecoration(
-        color: AppTheme.primaryColor.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
+        color: NeoBrutalTheme.blockBlue, // ✅ Bold blue background
+        borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium),
+        border: Border.all(
+          color: Colors.black,
+          width: 4, // ✅ Bold border
+        ),
+        boxShadow: NeoBrutalTheme.chunkyShadow, // ✅ Chunky shadow
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -221,24 +247,40 @@ class SalesReportScreen extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'Periode Laporan',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.primaryColor,
+                style: NeoBrutalTheme.headlineSmall.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
               const SizedBox(height: 8),
               Text(
                 '${_formatDate(controller.dateRange.start)} - ${_formatDate(controller.dateRange.end)}',
-                style: const TextStyle(fontSize: 16),
+                style: NeoBrutalTheme.bodyMedium.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ],
           ),
-          IconButton(
-            icon: const Icon(Icons.edit_calendar),
-            onPressed: () => _selectDateRange(context, controller),
-            tooltip: 'Ubah Periode',
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
+              border: Border.all(
+                color: Colors.black,
+                width: 3,
+              ),
+            ),
+            child: IconButton(
+              icon: Icon(
+                Icons.edit_calendar,
+                color: NeoBrutalTheme.primary,
+              ),
+              onPressed: () => _selectDateRange(context, controller),
+              tooltip: 'Ubah Periode',
+            ),
           ),
         ],
       ),
@@ -253,113 +295,121 @@ class SalesReportScreen extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4),
+          padding: EdgeInsets.symmetric(horizontal: NeoBrutalTheme.spaceXS),
           child: Text(
             'Ringkasan',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: AppTheme.getTextPrimaryColor(context),
+            style: NeoBrutalTheme.headlineLarge.copyWith(
+              fontWeight: FontWeight.w900,
             ),
           ),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: NeoBrutalTheme.spaceMD),
         // 2x3 grid of summary cards with staggered animation
-        Row(
-          children: [
-            Expanded(
-              child:
-                  SummaryStatCard(
-                        title: 'Total Transaksi',
-                        value: '${report.totalTransactions}',
-                        icon: Icons.receipt_long_rounded,
-                        color: AppTheme.infoColor,
-                      )
-                      .animate()
-                      .fadeIn(duration: 300.ms)
-                      .slideY(begin: 0.1, end: 0, duration: 300.ms),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child:
-                  SummaryStatCard(
-                        title: 'Total Pendapatan',
-                        value: CurrencyFormatter.format(report.totalRevenue),
-                        icon: Icons.payments_outlined,
-                        color: AppTheme.successColor,
-                      )
-                      .animate(delay: 100.ms)
-                      .fadeIn(duration: 300.ms)
-                      .slideY(begin: 0.1, end: 0, duration: 300.ms),
-            ),
-          ],
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch, // ✅ Make all cards same height
+            children: [
+              Expanded(
+                child:
+                    SummaryStatCard(
+                          title: 'Total Transaksi',
+                          value: '${report.totalTransactions}',
+                          icon: Icons.receipt_long_rounded,
+                          color: AppTheme.infoColor,
+                        )
+                        .animate()
+                        .fadeIn(duration: 300.ms)
+                        .slideY(begin: 0.1, end: 0, duration: 300.ms),
+              ),
+              SizedBox(width: NeoBrutalTheme.spaceMD),
+              Expanded(
+                child:
+                    SummaryStatCard(
+                          title: 'Total Pendapatan',
+                          value: CurrencyFormatter.format(report.totalRevenue),
+                          icon: Icons.payments_outlined,
+                          color: AppTheme.successColor,
+                        )
+                        .animate(delay: 100.ms)
+                        .fadeIn(duration: 300.ms)
+                        .slideY(begin: 0.1, end: 0, duration: 300.ms),
+              ),
+            ],
+          ),
         ),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child:
-                  SummaryStatCard(
-                        title: 'Laba Kotor',
-                        value: CurrencyFormatter.format(report.totalProfit),
-                        icon: Icons.trending_up_rounded,
-                        color: AppTheme.warningColor,
-                        subtitle: 'Sebelum pengeluaran',
-                      )
-                      .animate(delay: 200.ms)
-                      .fadeIn(duration: 300.ms)
-                      .slideY(begin: 0.1, end: 0, duration: 300.ms),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child:
-                  SummaryStatCard(
-                        title: 'Pengeluaran',
-                        value: CurrencyFormatter.format(report.totalExpenses),
-                        icon: Icons.shopping_cart_outlined,
-                        color: AppTheme.errorColor,
-                        subtitle: hasExpenseData
-                            ? '${report.expenseRatio.toStringAsFixed(1)}% dari pendapatan'
-                            : null,
-                      )
-                      .animate(delay: 300.ms)
-                      .fadeIn(duration: 300.ms)
-                      .slideY(begin: 0.1, end: 0, duration: 300.ms),
-            ),
-          ],
+        SizedBox(height: NeoBrutalTheme.spaceMD),
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch, // ✅ Make all cards same height
+            children: [
+              Expanded(
+                child:
+                    SummaryStatCard(
+                          title: 'Laba Kotor',
+                          value: CurrencyFormatter.format(report.totalProfit),
+                          icon: Icons.trending_up_rounded,
+                          color: AppTheme.warningColor,
+                          subtitle: 'Sebelum pengeluaran',
+                        )
+                        .animate(delay: 200.ms)
+                        .fadeIn(duration: 300.ms)
+                        .slideY(begin: 0.1, end: 0, duration: 300.ms),
+              ),
+              SizedBox(width: NeoBrutalTheme.spaceMD),
+              Expanded(
+                child:
+                    SummaryStatCard(
+                          title: 'Pengeluaran',
+                          value: CurrencyFormatter.format(report.totalExpenses),
+                          icon: Icons.shopping_cart_outlined,
+                          color: AppTheme.errorColor,
+                          subtitle: hasExpenseData
+                              ? '${report.expenseRatio.toStringAsFixed(1)}% dari pendapatan'
+                              : null,
+                        )
+                        .animate(delay: 300.ms)
+                        .fadeIn(duration: 300.ms)
+                        .slideY(begin: 0.1, end: 0, duration: 300.ms),
+              ),
+            ],
+          ),
         ),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child:
-                  SummaryStatCard(
-                        title: 'Laba Bersih',
-                        value: CurrencyFormatter.format(report.netProfit),
-                        icon: Icons.account_balance_wallet_outlined,
-                        color: AppTheme.successColor,
-                        subtitle: showNetProfit ? 'Setelah pengeluaran' : null,
-                      )
-                      .animate(delay: 400.ms)
-                      .fadeIn(duration: 300.ms)
-                      .slideY(begin: 0.1, end: 0, duration: 300.ms),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child:
-                  SummaryStatCard(
-                        title: 'Margin Bersih',
-                        value: '${report.netProfitMargin.toStringAsFixed(1)}%',
-                        icon: Icons.show_chart,
-                        color: AppTheme.primaryColor,
-                        subtitle: showNetProfit
-                            ? 'Margin bersih'
-                            : 'Margin kotor',
-                      )
-                      .animate(delay: 500.ms)
-                      .fadeIn(duration: 300.ms)
-                      .slideY(begin: 0.1, end: 0, duration: 300.ms),
-            ),
-          ],
+        SizedBox(height: NeoBrutalTheme.spaceMD),
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch, // ✅ Make all cards same height
+            children: [
+              Expanded(
+                child:
+                    SummaryStatCard(
+                          title: 'Laba Bersih',
+                          value: CurrencyFormatter.format(report.netProfit),
+                          icon: Icons.account_balance_wallet_outlined,
+                          color: AppTheme.successColor,
+                          subtitle: showNetProfit ? 'Setelah pengeluaran' : null,
+                        )
+                        .animate(delay: 400.ms)
+                        .fadeIn(duration: 300.ms)
+                        .slideY(begin: 0.1, end: 0, duration: 300.ms),
+              ),
+              SizedBox(width: NeoBrutalTheme.spaceMD),
+              Expanded(
+                child:
+                    SummaryStatCard(
+                          title: 'Margin Bersih',
+                          value: '${report.netProfitMargin.toStringAsFixed(1)}%',
+                          icon: Icons.show_chart,
+                          color: AppTheme.primaryColor,
+                          subtitle: showNetProfit
+                              ? 'Margin bersih'
+                              : 'Margin kotor',
+                        )
+                        .animate(delay: 500.ms)
+                        .fadeIn(duration: 300.ms)
+                        .slideY(begin: 0.1, end: 0, duration: 300.ms),
+              ),
+            ],
+          ),
         ),
       ],
     );
@@ -397,18 +447,16 @@ class SalesReportScreen extends StatelessWidget {
 
             // Chart
             Container(
-              height: 250,
-              padding: const EdgeInsets.all(16),
+              height: ResponsiveHelper.getChartHeight(context),
+              padding: EdgeInsets.all(NeoBrutalTheme.spaceMD),
               decoration: BoxDecoration(
                 color: AppTheme.getCardColor(context),
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium), // ✅ Brutal 8px radius
                 border: Border.all(
-                  color: AppTheme.getBorderColor(
-                    context,
-                  ).withValues(alpha: 0.5),
-                  width: 0.5,
+                  color: Colors.black, // ✅ Bold black border
+                  width: 4, // ✅ Bold 4px border
                 ),
-                boxShadow: AppShadows.shadowSm,
+                boxShadow: NeoBrutalTheme.chunkyShadow, // ✅ Chunky brutal shadow
               ),
               child: _buildChart(context, controller, dailyData),
             ),
@@ -427,27 +475,39 @@ class SalesReportScreen extends StatelessWidget {
     SalesReportController controller,
   ) {
     return Wrap(
-      spacing: 8,
+      spacing: NeoBrutalTheme.spaceSM,
       children: ChartType.values.map((type) {
         final isSelected = controller.chartType == type;
-        return FilterChip(
-          label: Text(_getChartTypeLabel(type)),
-          selected: isSelected,
-          onSelected: (selected) {
-            if (selected) {
-              controller.setChartType(type);
-            }
-          },
-          selectedColor: AppTheme.primaryColor.withValues(alpha: 0.2),
-          checkmarkColor: AppTheme.primaryColor,
-          labelStyle: TextStyle(
-            color: isSelected ? AppTheme.primaryColor : AppTheme.textSecondary,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-            side: BorderSide(
-              color: isSelected ? AppTheme.primaryColor : AppTheme.borderColor,
+        return GestureDetector(
+          onTap: () => controller.setChartType(type),
+          child: Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: NeoBrutalTheme.spaceMD,
+              vertical: NeoBrutalTheme.spaceSM,
+            ),
+            decoration: BoxDecoration(
+              color: isSelected ? NeoBrutalTheme.primary : Colors.white,
+              borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
+              border: Border.all(
+                color: Colors.black,
+                width: isSelected ? 3 : 2, // ✅ Bold border
+              ),
+              boxShadow: isSelected
+                  ? NeoBrutalTheme.chunkyShadow
+                  : [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.1),
+                        offset: Offset(2, 2),
+                        blurRadius: 0,
+                      ),
+                    ],
+            ),
+            child: Text(
+              _getChartTypeLabel(type),
+              style: NeoBrutalTheme.labelMedium.copyWith(
+                color: isSelected ? Colors.white : Colors.black,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
         );
@@ -460,31 +520,39 @@ class SalesReportScreen extends StatelessWidget {
     SalesReportController controller,
   ) {
     return Wrap(
-      spacing: 8,
+      spacing: NeoBrutalTheme.spaceSM,
       children: ChartMetric.values.map((metric) {
         final isSelected = controller.chartMetric == metric;
-        return FilterChip(
-          label: Text(_getMetricLabel(metric)),
-          selected: isSelected,
-          onSelected: (selected) {
-            if (selected) {
-              controller.setChartMetric(metric);
-            }
-          },
-          selectedColor: AppTheme.secondaryColor.withValues(alpha: 0.2),
-          checkmarkColor: AppTheme.secondaryColor,
-          labelStyle: TextStyle(
-            color: isSelected
-                ? AppTheme.secondaryColor
-                : AppTheme.textSecondary,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-            side: BorderSide(
-              color: isSelected
-                  ? AppTheme.secondaryColor
-                  : AppTheme.borderColor,
+        return GestureDetector(
+          onTap: () => controller.setChartMetric(metric),
+          child: Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: NeoBrutalTheme.spaceMD,
+              vertical: NeoBrutalTheme.spaceSM,
+            ),
+            decoration: BoxDecoration(
+              color: isSelected ? NeoBrutalTheme.secondary : Colors.white,
+              borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
+              border: Border.all(
+                color: Colors.black,
+                width: isSelected ? 3 : 2, // ✅ Bold border
+              ),
+              boxShadow: isSelected
+                  ? NeoBrutalTheme.chunkyShadow
+                  : [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.1),
+                        offset: Offset(2, 2),
+                        blurRadius: 0,
+                      ),
+                    ],
+            ),
+            child: Text(
+              _getMetricLabel(metric),
+              style: NeoBrutalTheme.labelMedium.copyWith(
+                color: isSelected ? Colors.white : Colors.black,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
         );
@@ -630,18 +698,18 @@ class SalesReportScreen extends StatelessWidget {
             context,
           ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: NeoBrutalTheme.spaceMD),
         Container(
-          height: 220,
-          padding: const EdgeInsets.all(16),
+          height: ResponsiveHelper.isMobile(context) ? 280 : 220,
+          padding: EdgeInsets.all(NeoBrutalTheme.spaceMD),
           decoration: BoxDecoration(
             color: AppTheme.getCardColor(context),
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium), // ✅ Brutal 8px radius
             border: Border.all(
-              color: AppTheme.getBorderColor(context).withValues(alpha: 0.5),
-              width: 0.5,
+              color: Colors.black, // ✅ Bold black border
+              width: 4, // ✅ Bold 4px border
             ),
-            boxShadow: AppShadows.shadowSm,
+            boxShadow: NeoBrutalTheme.chunkyShadow, // ✅ Chunky brutal shadow
           ),
           child: Row(
             children: [
@@ -686,20 +754,40 @@ class SalesReportScreen extends StatelessWidget {
     final color = _getPaymentColor(data.paymentMethod);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: EdgeInsets.symmetric(
+        horizontal: NeoBrutalTheme.spaceSM,
+        vertical: NeoBrutalTheme.spaceXS,
+      ),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withValues(alpha: 0.2), width: 1),
+        color: color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall), // ✅ Brutal radius
+        border: Border.all(
+          color: color, // ✅ Colored border
+          width: 2, // ✅ Bold 2px border
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            offset: Offset(2, 2),
+            blurRadius: 0,
+          ),
+        ],
       ),
       child: Row(
         children: [
           Container(
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+            width: 10,
+            height: 10,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: Colors.black,
+                width: 1.5,
+              ),
+            ),
           ),
-          const SizedBox(width: 6),
+          SizedBox(width: NeoBrutalTheme.spaceXS),
           Expanded(
             child: Text(
               data.paymentMethod.displayNameId,
@@ -731,31 +819,37 @@ class SalesReportScreen extends StatelessWidget {
       children: [
         Text(
           'Produk Terlaris',
-          style: Theme.of(
-            context,
-          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+          style: NeoBrutalTheme.headlineMedium.copyWith(
+            fontWeight: FontWeight.w800,
+          ),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: NeoBrutalTheme.spaceMD),
         Container(
           decoration: BoxDecoration(
             color: AppTheme.getCardColor(context),
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium), // ✅ Brutal 8px radius
             border: Border.all(
-              color: AppTheme.getBorderColor(context).withValues(alpha: 0.5),
-              width: 0.5,
+              color: Colors.black, // ✅ Bold black border
+              width: 4, // ✅ Bold 4px border
             ),
-            boxShadow: AppShadows.shadowSm,
+            boxShadow: NeoBrutalTheme.chunkyShadow, // ✅ Chunky brutal shadow
           ),
           child: Column(
             children: [
               // Header
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.all(NeoBrutalTheme.spaceMD),
                 decoration: BoxDecoration(
-                  color: AppTheme.getSurfaceColor(context),
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(20),
-                    topRight: Radius.circular(20),
+                  color: NeoBrutalTheme.blockCoral, // ✅ Bold coral background
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(NeoBrutalTheme.radiusSmall),
+                    topRight: Radius.circular(NeoBrutalTheme.radiusSmall),
+                  ),
+                  border: Border(
+                    bottom: BorderSide(
+                      color: Colors.black,
+                      width: 4, // ✅ Bold bottom border
+                    ),
                   ),
                 ),
                 child: Row(
@@ -787,7 +881,7 @@ class SalesReportScreen extends StatelessWidget {
                 ),
               ),
 
-              // Rows
+              // Rows with horizontal scroll on mobile
               ...topProducts.asMap().entries.map((entry) {
                 final index = entry.key;
                 final product = entry.value;
@@ -810,38 +904,76 @@ class SalesReportScreen extends StatelessWidget {
                       ),
                     ),
                   ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        flex: 3,
-                        child: Text(
-                          '${index + 1}. ${product.productName}',
-                          style: const TextStyle(fontSize: 12),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      Expanded(
-                        flex: 2,
-                        child: Text(
-                          '${product.quantitySold}',
-                          style: const TextStyle(fontSize: 12),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                      Expanded(
-                        flex: 3,
-                        child: Text(
-                          CurrencyFormatter.format(product.revenue),
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
+                  child: ResponsiveHelper.isMobile(context)
+                      ? SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: [
+                              SizedBox(
+                                width: 150,
+                                child: Text(
+                                  '${index + 1}. ${product.productName}',
+                                  style: const TextStyle(fontSize: 12),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              const SizedBox(width: 20),
+                              SizedBox(
+                                width: 50,
+                                child: Text(
+                                  '${product.quantitySold}',
+                                  style: const TextStyle(fontSize: 12),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                              const SizedBox(width: 20),
+                              SizedBox(
+                                width: 80,
+                                child: Text(
+                                  CurrencyFormatter.format(product.revenue),
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  textAlign: TextAlign.right,
+                                ),
+                              ),
+                            ],
                           ),
-                          textAlign: TextAlign.right,
+                        )
+                      : Row(
+                          children: [
+                            Expanded(
+                              flex: 3,
+                              child: Text(
+                                '${index + 1}. ${product.productName}',
+                                style: const TextStyle(fontSize: 12),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            Expanded(
+                              flex: 2,
+                              child: Text(
+                                '${product.quantitySold}',
+                                style: const TextStyle(fontSize: 12),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                            Expanded(
+                              flex: 3,
+                              child: Text(
+                                CurrencyFormatter.format(product.revenue),
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                textAlign: TextAlign.right,
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                    ],
-                  ),
                 );
               }),
             ],
@@ -862,31 +994,37 @@ class SalesReportScreen extends StatelessWidget {
       children: [
         Text(
           'Performa Kategori',
-          style: Theme.of(
-            context,
-          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+          style: NeoBrutalTheme.headlineMedium.copyWith(
+            fontWeight: FontWeight.w800,
+          ),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: NeoBrutalTheme.spaceMD),
         Container(
           decoration: BoxDecoration(
             color: AppTheme.getCardColor(context),
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium), // ✅ Brutal 8px
             border: Border.all(
-              color: AppTheme.getBorderColor(context).withValues(alpha: 0.5),
-              width: 0.5,
+              color: Colors.black, // ✅ Bold black border
+              width: 4, // ✅ Bold 4px border
             ),
-            boxShadow: AppShadows.shadowSm,
+            boxShadow: NeoBrutalTheme.chunkyShadow, // ✅ Chunky brutal shadow
           ),
           child: Column(
             children: [
               // Header
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.all(NeoBrutalTheme.spaceMD),
                 decoration: BoxDecoration(
-                  color: AppTheme.getSurfaceColor(context),
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(20),
-                    topRight: Radius.circular(20),
+                  color: NeoBrutalTheme.blockCoral, // ✅ Bold coral background
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(NeoBrutalTheme.radiusSmall),
+                    topRight: Radius.circular(NeoBrutalTheme.radiusSmall),
+                  ),
+                  border: Border(
+                    bottom: BorderSide(
+                      color: Colors.black,
+                      width: 4, // ✅ Bold bottom border
+                    ),
                   ),
                 ),
                 child: Row(
@@ -955,50 +1093,101 @@ class SalesReportScreen extends StatelessWidget {
                       ),
                     ),
                   ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        flex: 3,
-                        child: Text(
-                          category.categoryName,
-                          style: const TextStyle(fontSize: 12),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      Expanded(
-                        flex: 2,
-                        child: Text(
-                          '${category.quantitySold}',
-                          style: const TextStyle(fontSize: 12),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                      Expanded(
-                        flex: 3,
-                        child: Text(
-                          CurrencyFormatter.format(category.revenue),
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
+                  child: ResponsiveHelper.isMobile(context)
+                      ? SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: [
+                              SizedBox(
+                                width: 120,
+                                child: Text(
+                                  category.categoryName,
+                                  style: const TextStyle(fontSize: 12),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              SizedBox(
+                                width: 50,
+                                child: Text(
+                                  '${category.quantitySold}',
+                                  style: const TextStyle(fontSize: 12),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              SizedBox(
+                                width: 80,
+                                child: Text(
+                                  CurrencyFormatter.format(category.revenue),
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  textAlign: TextAlign.right,
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              SizedBox(
+                                width: 60,
+                                child: Text(
+                                  '${category.profitMargin.toStringAsFixed(1)}%',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: marginColor,
+                                  ),
+                                  textAlign: TextAlign.right,
+                                ),
+                              ),
+                            ],
                           ),
-                          textAlign: TextAlign.right,
+                        )
+                      : Row(
+                          children: [
+                            Expanded(
+                              flex: 3,
+                              child: Text(
+                                category.categoryName,
+                                style: const TextStyle(fontSize: 12),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            Expanded(
+                              flex: 2,
+                              child: Text(
+                                '${category.quantitySold}',
+                                style: const TextStyle(fontSize: 12),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                            Expanded(
+                              flex: 3,
+                              child: Text(
+                                CurrencyFormatter.format(category.revenue),
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                textAlign: TextAlign.right,
+                              ),
+                            ),
+                            Expanded(
+                              flex: 2,
+                              child: Text(
+                                '${category.profitMargin.toStringAsFixed(1)}%',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: marginColor,
+                                ),
+                                textAlign: TextAlign.right,
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                      Expanded(
-                        flex: 2,
-                        child: Text(
-                          '${category.profitMargin.toStringAsFixed(1)}%',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: marginColor,
-                          ),
-                          textAlign: TextAlign.right,
-                        ),
-                      ),
-                    ],
-                  ),
                 );
               }),
             ],
@@ -1021,19 +1210,21 @@ class SalesReportScreen extends StatelessWidget {
         children: [
           Text(
             'Perbandingan Periode',
-            style: Theme.of(
-              context,
-            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+            style: NeoBrutalTheme.headlineMedium.copyWith(
+              fontWeight: FontWeight.w800,
+            ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: NeoBrutalTheme.spaceMD),
           Container(
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.all(NeoBrutalTheme.spaceLG),
             decoration: BoxDecoration(
               color: AppTheme.getCardColor(context),
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium), // ✅ Brutal 8px
               border: Border.all(
-                color: AppTheme.getBorderColor(context).withValues(alpha: 0.5),
+                color: Colors.black, // ✅ Bold black border
+                width: 4, // ✅ Bold 4px border
               ),
+              boxShadow: NeoBrutalTheme.chunkyShadow, // ✅ Chunky brutal shadow
             ),
             child: Center(
               child: Column(
@@ -1043,19 +1234,18 @@ class SalesReportScreen extends StatelessWidget {
                     size: 48,
                     color: AppTheme.textTertiary,
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: NeoBrutalTheme.spaceSM),
                   Text(
                     'Tidak ada data periode sebelumnya',
-                    style: TextStyle(
-                      fontSize: 14,
+                    style: NeoBrutalTheme.bodyMedium.copyWith(
                       color: AppTheme.textSecondary,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(height: NeoBrutalTheme.spaceXS),
                   Text(
                     'Pilih periode yang memiliki data bulan/tahun lalu',
-                    style: TextStyle(
-                      fontSize: 12,
+                    style: NeoBrutalTheme.bodySmall.copyWith(
                       color: AppTheme.textTertiary,
                     ),
                   ),
@@ -1109,22 +1299,22 @@ class SalesReportScreen extends StatelessWidget {
     PeriodComparison comparison,
   ) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(NeoBrutalTheme.spaceMD),
       decoration: BoxDecoration(
         color: AppTheme.getCardColor(context),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium), // ✅ Brutal 8px
         border: Border.all(
-          color: AppTheme.getBorderColor(context).withValues(alpha: 0.5),
-          width: 0.5,
+          color: Colors.black, // ✅ Bold black border
+          width: 4, // ✅ Bold 4px border
         ),
-        boxShadow: AppShadows.shadowSm,
+        boxShadow: NeoBrutalTheme.chunkyShadow, // ✅ Chunky brutal shadow
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             title,
-            style: TextStyle(
+            style: NeoBrutalTheme.labelLarge.copyWith(
               fontSize: 14,
               fontWeight: FontWeight.w600,
               color: AppTheme.getTextSecondaryColor(context),
@@ -1218,19 +1408,21 @@ class SalesReportScreen extends StatelessWidget {
         children: [
           Text(
             'Jam Sibuk',
-            style: Theme.of(
-              context,
-            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+            style: NeoBrutalTheme.headlineMedium.copyWith(
+              fontWeight: FontWeight.w800,
+            ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: NeoBrutalTheme.spaceMD),
           Container(
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.all(NeoBrutalTheme.spaceLG),
             decoration: BoxDecoration(
               color: AppTheme.getCardColor(context),
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium), // ✅ Brutal 8px
               border: Border.all(
-                color: AppTheme.getBorderColor(context).withValues(alpha: 0.5),
+                color: Colors.black, // ✅ Bold black border
+                width: 4, // ✅ Bold 4px border
               ),
+              boxShadow: NeoBrutalTheme.chunkyShadow, // ✅ Chunky brutal shadow
             ),
             child: Center(
               child: Column(
@@ -1240,15 +1432,15 @@ class SalesReportScreen extends StatelessWidget {
                     size: 48,
                     color: AppTheme.textTertiary,
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: NeoBrutalTheme.spaceSM),
                   Text(
                     'Belum ada data transaksi',
-                    style: TextStyle(
-                      fontSize: 14,
+                    style: NeoBrutalTheme.bodyMedium.copyWith(
                       color: AppTheme.textSecondary,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(height: NeoBrutalTheme.spaceXS),
                   Text(
                     'Data jam sibuk akan muncul setelah ada transaksi',
                     style: TextStyle(
@@ -1269,21 +1461,21 @@ class SalesReportScreen extends StatelessWidget {
       children: [
         Text(
           'Jam Sibuk',
-          style: Theme.of(
-            context,
-          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+          style: NeoBrutalTheme.headlineMedium.copyWith(
+            fontWeight: FontWeight.w800,
+          ),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: NeoBrutalTheme.spaceMD),
         Container(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(NeoBrutalTheme.spaceMD),
           decoration: BoxDecoration(
             color: AppTheme.getCardColor(context),
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium), // ✅ Brutal 8px
             border: Border.all(
-              color: AppTheme.getBorderColor(context).withValues(alpha: 0.5),
-              width: 0.5,
+              color: Colors.black, // ✅ Bold black border
+              width: 4, // ✅ Bold 4px border
             ),
-            boxShadow: AppShadows.shadowSm,
+            boxShadow: NeoBrutalTheme.chunkyShadow, // ✅ Chunky brutal shadow
           ),
           child: Column(
             children: [
@@ -1305,39 +1497,40 @@ class SalesReportScreen extends StatelessWidget {
                         children: [
                           Text(
                             hour.formattedHour,
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
+                            style: NeoBrutalTheme.bodySmall.copyWith(
+                              fontWeight: FontWeight.w700,
                               color: AppTheme.getTextPrimaryColor(context),
                             ),
                           ),
                           Row(
                             children: [
                               Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: NeoBrutalTheme.spaceSM,
                                   vertical: 2,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: AppTheme.primaryColor.withValues(
-                                    alpha: 0.1,
+                                  color: NeoBrutalTheme.primary.withValues(
+                                    alpha: 0.2,
                                   ),
-                                  borderRadius: BorderRadius.circular(6),
+                                  borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
+                                  border: Border.all(
+                                    color: NeoBrutalTheme.primary,
+                                    width: 2, // ✅ Bold border
+                                  ),
                                 ),
                                 child: Text(
                                   '${hour.transactionCount} trans',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppTheme.primaryColor,
+                                  style: NeoBrutalTheme.labelSmall.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                    color: NeoBrutalTheme.primary,
                                   ),
                                 ),
                               ),
-                              const SizedBox(width: 8),
+                              SizedBox(width: NeoBrutalTheme.spaceXS),
                               Text(
                                 'Avg: ${CurrencyFormatter.format(hour.averageTransactionValue)}',
-                                style: TextStyle(
-                                  fontSize: 11,
+                                style: NeoBrutalTheme.labelSmall.copyWith(
                                   fontWeight: FontWeight.w600,
                                   color: AppTheme.secondaryColor,
                                 ),
@@ -1346,43 +1539,46 @@ class SalesReportScreen extends StatelessWidget {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 6),
+                      SizedBox(height: NeoBrutalTheme.spaceXS),
                       Stack(
                         children: [
                           Container(
-                            height: 8,
+                            height: 10, // ✅ Slightly taller for brutal look
                             decoration: BoxDecoration(
                               color: AppTheme.getBorderColor(
                                 context,
                               ).withValues(alpha: 0.3),
-                              borderRadius: BorderRadius.circular(4),
+                              borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
                             ),
                           ),
                           FractionallySizedBox(
                             widthFactor: barWidth,
                             child: Container(
-                              height: 8,
+                              height: 10, // ✅ Match container height
                               decoration: BoxDecoration(
                                 gradient: LinearGradient(
                                   colors: [
-                                    AppTheme.primaryColor,
-                                    AppTheme.secondaryColor,
+                                    NeoBrutalTheme.primary,
+                                    NeoBrutalTheme.secondary,
                                   ],
                                 ),
-                                borderRadius: BorderRadius.circular(4),
+                                borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
+                                border: Border.all(
+                                  color: Colors.black.withValues(alpha: 0.2),
+                                  width: 1,
+                                ),
                               ),
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 4),
+                      SizedBox(height: NeoBrutalTheme.spaceXS),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
                             hour.periodOfDay,
-                            style: TextStyle(
-                              fontSize: 11,
+                            style: NeoBrutalTheme.labelSmall.copyWith(
                               color: AppTheme.textTertiary,
                             ),
                           ),
@@ -1791,29 +1987,43 @@ class SalesReportScreen extends StatelessWidget {
     final isPositive = percentageChange >= 0;
 
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: EdgeInsets.all(NeoBrutalTheme.spaceSM),
       decoration: BoxDecoration(
         color: (isPositive ? AppTheme.successColor : AppTheme.errorColor)
-            .withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
+            .withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium), // ✅ Brutal 8px
         border: Border.all(
-          color: (isPositive ? AppTheme.successColor : AppTheme.errorColor)
-              .withValues(alpha: 0.3),
+          color: isPositive ? AppTheme.successColor : AppTheme.errorColor, // ✅ Bold colored border
+          width: 3, // ✅ Bold 3px border
         ),
+        boxShadow: NeoBrutalTheme.chunkyShadow, // ✅ Chunky brutal shadow
       ),
       child: Row(
         children: [
-          Icon(
-            isPositive ? Icons.trending_up : Icons.trending_down,
-            color: isPositive ? AppTheme.successColor : AppTheme.errorColor,
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: isPositive ? AppTheme.successColor : AppTheme.errorColor,
+              borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
+              border: Border.all(
+                color: Colors.black,
+                width: 2, // ✅ Bold icon border
+              ),
+            ),
+            child: Icon(
+              isPositive ? Icons.trending_up : Icons.trending_down,
+              color: Colors.white,
+              size: 20,
+            ),
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: NeoBrutalTheme.spaceSM),
           Expanded(
             child: Text(
               '${isPositive ? 'Naik' : 'Turun'} ${percentageChange.abs().toStringAsFixed(1)}% dari minggu lalu',
-              style: TextStyle(
+              style: NeoBrutalTheme.bodyMedium.copyWith(
                 color: isPositive ? AppTheme.successColor : AppTheme.errorColor,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w800,
               ),
             ),
           ),
@@ -1896,22 +2106,21 @@ class SalesReportScreen extends StatelessWidget {
       children: [
         Text(
           'Analisis Pengeluaran',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: AppTheme.getTextPrimaryColor(context),
+          style: NeoBrutalTheme.headlineMedium.copyWith(
+            fontWeight: FontWeight.w800,
           ),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: NeoBrutalTheme.spaceMD),
         Container(
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.all(NeoBrutalTheme.spaceMD),
           decoration: BoxDecoration(
             color: AppTheme.getCardColor(context),
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium), // ✅ Brutal 8px
             border: Border.all(
-              color: AppTheme.getBorderColor(context).withValues(alpha: 0.5),
-              width: 0.5,
+              color: Colors.black, // ✅ Bold black border
+              width: 4, // ✅ Bold 4px border
             ),
-            boxShadow: AppShadows.shadowSm,
+            boxShadow: NeoBrutalTheme.chunkyShadow, // ✅ Chunky brutal shadow
           ),
           child: Column(
             children: [
@@ -1919,13 +2128,20 @@ class SalesReportScreen extends StatelessWidget {
               Row(
                 children: [
                   Container(
-                    width: 48,
-                    height: 48,
+                    width: 52,
+                    height: 52,
                     decoration: BoxDecoration(
                       color: netProfitIsPositive
-                          ? AppTheme.successColor.withValues(alpha: 0.1)
-                          : AppTheme.errorColor.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
+                          ? AppTheme.successColor.withValues(alpha: 0.2)
+                          : AppTheme.errorColor.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium), // ✅ Brutal 8px
+                      border: Border.all(
+                        color: netProfitIsPositive
+                            ? AppTheme.successColor
+                            : AppTheme.errorColor,
+                        width: 3, // ✅ Bold border
+                      ),
+                      boxShadow: NeoBrutalTheme.chunkyShadow,
                     ),
                     child: Icon(
                       netProfitIsPositive
@@ -1934,9 +2150,10 @@ class SalesReportScreen extends StatelessWidget {
                       color: netProfitIsPositive
                           ? AppTheme.successColor
                           : AppTheme.errorColor,
+                      size: 28,
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  SizedBox(width: NeoBrutalTheme.spaceMD),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1945,7 +2162,7 @@ class SalesReportScreen extends StatelessWidget {
                           netProfitIsPositive
                               ? 'Keuntungan Bersih'
                               : 'Kerugian Bersih',
-                          style: TextStyle(
+                          style: NeoBrutalTheme.labelLarge.copyWith(
                             fontSize: 14,
                             color: AppTheme.getTextSecondaryColor(context),
                           ),
@@ -2027,37 +2244,39 @@ class SalesReportScreen extends StatelessWidget {
           children: [
             Text(
               label,
-              style: TextStyle(
-                fontSize: 13,
+              style: NeoBrutalTheme.bodySmall.copyWith(
                 color: AppTheme.getTextSecondaryColor(context),
+                fontWeight: FontWeight.w600,
               ),
             ),
             Row(
               children: [
                 Text(
                   CurrencyFormatter.format(value),
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
+                  style: NeoBrutalTheme.labelLarge.copyWith(
+                    fontWeight: FontWeight.w800,
                     color: color,
                   ),
                 ),
                 if (showPercentage) ...[
-                  const SizedBox(width: 8),
+                  SizedBox(width: NeoBrutalTheme.spaceXS),
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: NeoBrutalTheme.spaceSM,
                       vertical: 2,
                     ),
                     decoration: BoxDecoration(
-                      color: color.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(10),
+                      color: color.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
+                      border: Border.all(
+                        color: color,
+                        width: 2, // ✅ Bold border
+                      ),
                     ),
                     child: Text(
                       '${percentage.toStringAsFixed(1)}%',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
+                      style: NeoBrutalTheme.labelSmall.copyWith(
+                        fontWeight: FontWeight.w800,
                         color: color,
                       ),
                     ),
@@ -2067,27 +2286,31 @@ class SalesReportScreen extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 6),
+        SizedBox(height: NeoBrutalTheme.spaceXS),
         ClipRRect(
-          borderRadius: BorderRadius.circular(4),
+          borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
           child: Stack(
             children: [
               Container(
-                height: 8,
+                height: 10, // ✅ Slightly taller for brutal look
                 decoration: BoxDecoration(
                   color: AppTheme.getBorderColor(
                     context,
                   ).withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(4),
+                  borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
                 ),
               ),
               FractionallySizedBox(
                 widthFactor: barWidth,
                 child: Container(
-                  height: 8,
+                  height: 10, // ✅ Match container height
                   decoration: BoxDecoration(
                     color: color,
-                    borderRadius: BorderRadius.circular(4),
+                    borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
+                    border: Border.all(
+                      color: Colors.black.withValues(alpha: 0.2),
+                      width: 1,
+                    ),
                   ),
                 ),
               ),

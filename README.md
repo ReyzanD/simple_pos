@@ -80,9 +80,20 @@ A production-ready Point of Sale (POS) and inventory management system built wit
    ```
 
 4. **Run the app**
+
    ```bash
-   flutter run
+   # Use the provided script (recommended)
+   ./run.sh
+
+   # Or run manually with DDS disabled (fixes WebSocket connection issues)
+   flutter run --device-id=emulator-5554 --disable-dds
+
+   # Run on different devices
+   flutter run --device-id=chrome --disable-dds  # Web
+   flutter run --device-id=linux --disable-dds   # Linux Desktop
    ```
+
+   **Note:** If you encounter WebSocket connection errors when running `flutter run -v`, use the `--disable-dds` flag. This is a known issue with the Dart Development Service on some systems and doesn't affect app functionality.
 
 ## Running Tests
 
@@ -343,6 +354,44 @@ genhtml coverage/lcov.info -o coverage/html
 - [ ] Role-based access control
 - [ ] Multi-currency support
 - [ ] Offline mode sync
+
+## Troubleshooting
+
+### WebSocket Connection Error
+
+**Problem:** When running `flutter run -v`, you encounter:
+```
+Error connecting to the service protocol: failed to connect to http://127.0.0.1:XXXXX/
+HttpException: Connection closed before full header was received
+```
+
+**Solution:** Use the `--disable-dds` flag to disable the Dart Development Service:
+```bash
+flutter run --device-id=emulator-5554 --disable-dds
+```
+
+**Explanation:** This is a known issue with DDS on some Linux configurations. It doesn't affect app functionality, only the development tooling connection. The app runs normally with this flag.
+
+### Build Issues
+
+**Problem:** Build fails after pulling latest changes.
+
+**Solution:**
+```bash
+flutter clean
+flutter pub get
+flutter pub run build_runner build --delete-conflicting-outputs
+flutter run --device-id=emulator-5554 --disable-dds
+```
+
+### Database Migration Errors
+
+**Problem:** App crashes after database schema changes.
+
+**Solution:**
+1. Uninstall the app from the emulator/device
+2. Reinstall to trigger fresh database creation
+3. Or implement proper migration in `DatabaseHelper._onUpgrade()`
 
 ## License
 

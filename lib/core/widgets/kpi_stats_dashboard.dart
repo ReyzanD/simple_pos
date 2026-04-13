@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../utils/haptic_helper.dart';
+import '../utils/responsive_helper.dart';
 import 'animated_counter.dart';
 import 'shimmer_loading.dart';
 
@@ -192,6 +193,8 @@ class _KPIStatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = ResponsiveHelper.isMobile(context);
+
     return GestureDetector(
       onTap: () {
         if (onTap != null) {
@@ -200,7 +203,7 @@ class _KPIStatCard extends StatelessWidget {
         }
       },
       child: Container(
-        padding: const EdgeInsets.all(12),
+        padding: EdgeInsets.all(isMobile ? 10 : 12),
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
@@ -226,7 +229,7 @@ class _KPIStatCard extends StatelessWidget {
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(10),
+              padding: EdgeInsets.all(isMobile ? 8 : 10),
               decoration: BoxDecoration(
                 color: color.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(12),
@@ -234,10 +237,10 @@ class _KPIStatCard extends StatelessWidget {
               child: Icon(
                 icon,
                 color: color,
-                size: 20,
+                size: isMobile ? 18 : 20,
               ),
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: isMobile ? 10 : 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -245,19 +248,19 @@ class _KPIStatCard extends StatelessWidget {
                   Text(
                     title,
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: isMobile ? 11 : 12,
                       fontWeight: FontWeight.w500,
                       color: AppTheme.getTextSecondaryColor(context),
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(height: isMobile ? 3 : 4),
                   isCurrency
                       ? AnimatedCurrencyCounter(
                           value: value,
                           currencySymbol: 'Rp',
                           showDecimals: false,
                           style: TextStyle(
-                            fontSize: 18,
+                            fontSize: isMobile ? 16 : 18,
                             fontWeight: FontWeight.bold,
                             color: color,
                           ),
@@ -265,7 +268,7 @@ class _KPIStatCard extends StatelessWidget {
                       : AnimatedCounter(
                           value: value.toInt(),
                           style: TextStyle(
-                            fontSize: 18,
+                            fontSize: isMobile ? 16 : 18,
                             fontWeight: FontWeight.bold,
                             color: color,
                           ),

@@ -59,6 +59,7 @@ class _SupplierScreenState extends State<SupplierScreen> {
                       ],
                     ),
           floatingActionButton: FloatingActionButton(
+            heroTag: 'supplier_fab', // ✅ Unique hero tag
             onPressed: () => _showAddEditDialog(context, supplierController),
             tooltip: 'Tambah Pemasok',
             backgroundColor: AppTheme.primaryColor,

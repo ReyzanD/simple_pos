@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/neo_brutal_theme.dart';
 import '../../../core/utils/haptic_helper.dart';
 import '../../../core/widgets/category_icons.dart';
 import '../../inventory/presentation/controllers/inventory_controller.dart';
@@ -30,25 +31,52 @@ class DrawerSectionDivider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 16, 16, 8),
+    return Container(
+      margin: EdgeInsets.symmetric(
+        horizontal: NeoBrutalTheme.spaceMD,
+        vertical: NeoBrutalTheme.spaceSM,
+      ),
+      padding: EdgeInsets.all(NeoBrutalTheme.spaceSM),
+      decoration: BoxDecoration(
+        color: NeoBrutalTheme.blockBlue, // ✅ Bold blue background
+        borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium),
+        border: Border.all(
+          color: Colors.black,
+          width: 4, // ✅ Bold border
+        ),
+        boxShadow: NeoBrutalTheme.softShadow,
+      ),
       child: Row(
         children: [
           if (icon != null) ...[
-            Icon(
-              icon,
-              size: 16,
-              color: AppTheme.getTextSecondaryColor(context),
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
+                border: Border.all(
+                  color: Colors.black,
+                  width: 2,
+                ),
+              ),
+              child: Icon(
+                icon,
+                size: 18,
+                color: Colors.black,
+              ),
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: NeoBrutalTheme.spaceSM),
           ],
-          Text(
-            title.toUpperCase(),
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: AppTheme.getTextSecondaryColor(context),
-              letterSpacing: 1.0,
+          Expanded(
+            child: Text(
+              title.toUpperCase(),
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+                color: Colors.black,
+                letterSpacing: 1.5,
+              ),
             ),
           ),
         ],
@@ -139,34 +167,40 @@ class _CategoryChip extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        padding: EdgeInsets.symmetric(horizontal: NeoBrutalTheme.spaceSM, vertical: NeoBrutalTheme.spaceXS),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.15),
-          borderRadius: BorderRadius.circular(20),
+          color: color.withValues(alpha: 0.2),
+          borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall), // ✅ Brutal radius
           border: Border.all(
-            color: color.withValues(alpha: 0.3),
-            width: 1,
+            color: color, // ✅ Bold colored border
+            width: 2, // ✅ Bold 2px border
           ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              offset: Offset(2, 2),
+              blurRadius: 0,
+            ),
+          ],
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(Icons.category, size: 16, color: color),
-            const SizedBox(width: 6),
+            SizedBox(width: NeoBrutalTheme.spaceXS),
             Text(
               'Category $categoryId',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
+              style: NeoBrutalTheme.labelSmall.copyWith(
+                fontWeight: FontWeight.w700,
                 color: color,
               ),
             ),
-            const SizedBox(width: 4),
+            SizedBox(width: NeoBrutalTheme.spaceXS),
             Text(
               '($productCount)',
-              style: TextStyle(
-                fontSize: 11,
+              style: NeoBrutalTheme.labelSmall.copyWith(
                 color: AppTheme.getTextSecondaryColor(context),
+                fontWeight: FontWeight.w600,
               ),
             ),
           ],
@@ -191,45 +225,50 @@ class DrawerStoreStats extends StatelessWidget {
               .length;
 
           return Container(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(NeoBrutalTheme.spaceMD),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  AppTheme.primaryColor.withValues(alpha: 0.08),
-                  AppTheme.secondaryColor.withValues(alpha: 0.05),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(16),
+              color: NeoBrutalTheme.blockCoral, // ✅ Bold coral background
+              borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium), // ✅ Brutal 8px
               border: Border.all(
-                color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                width: 1,
+                color: Colors.black, // ✅ Bold black border
+                width: 4, // ✅ Bold 4px border
               ),
+              boxShadow: NeoBrutalTheme.chunkyShadow, // ✅ Chunky brutal shadow
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
-                    Icon(
-                      Icons.storefront,
-                      size: 16,
-                      color: AppTheme.primaryColor,
+                    Container(
+                      width: 28,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
+                        border: Border.all(
+                          color: Colors.black,
+                          width: 2,
+                        ),
+                      ),
+                      child: Icon(
+                        Icons.storefront,
+                        size: 16,
+                        color: NeoBrutalTheme.primary,
+                      ),
                     ),
-                    const SizedBox(width: 6),
+                    SizedBox(width: NeoBrutalTheme.spaceXS),
                     Text(
                       'Store Stats',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AppTheme.getTextSecondaryColor(context),
-                        letterSpacing: 0.5,
+                      style: NeoBrutalTheme.labelSmall.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                        letterSpacing: 1,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: NeoBrutalTheme.spaceSM),
                 Row(
                   children: [
                     Expanded(
@@ -564,41 +603,51 @@ class DrawerLowStockItem extends StatelessWidget {
             .length;
 
         return ListTile(
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: NeoBrutalTheme.spaceMD,
+            vertical: NeoBrutalTheme.spaceXS,
+          ),
           leading: Container(
-            width: 40,
-            height: 40,
+            width: 48,
+            height: 48,
             decoration: BoxDecoration(
-              color: AppTheme.warningColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(10),
+              color: AppTheme.warningColor, // ✅ Solid bold color - no alpha
+              borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium), // ✅ Brutal 8px
+              border: Border.all(
+                color: Colors.black, // ✅ Bold black border for contrast
+                width: 4, // ✅ Bold 4px border
+              ),
+              boxShadow: NeoBrutalTheme.chunkyShadow, // ✅ Chunky brutal shadow
             ),
             child: Icon(
               Icons.warning_amber_rounded,
-              color: AppTheme.warningColor,
-              size: 20,
+              color: Colors.white, // ✅ White icons for contrast
+              size: 26,
             ),
           ),
           title: Text(
             'Low Stock Dashboard',
-            style: TextStyle(
-              fontSize: 14,
+            style: NeoBrutalTheme.bodyMedium.copyWith(
+              fontWeight: FontWeight.w700,
               color: AppTheme.getTextPrimaryColor(context),
             ),
           ),
           subtitle: Text(
             'View products with low stock',
-            style: TextStyle(
-              fontSize: 12,
+            style: NeoBrutalTheme.bodySmall.copyWith(
+              fontWeight: FontWeight.w600,
               color: AppTheme.getTextSecondaryColor(context),
             ),
           ),
           trailing: lowStockCount > 0
               ? Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: EdgeInsets.symmetric(horizontal: NeoBrutalTheme.spaceSM, vertical: 4),
                   decoration: BoxDecoration(
-                    color: AppTheme.warningColor.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(10),
+                    color: AppTheme.warningColor.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
                     border: Border.all(
-                      color: AppTheme.warningColor.withValues(alpha: 0.3),
+                      color: AppTheme.warningColor,
+                      width: 2, // ✅ Bold border
                     ),
                   ),
                   child: Text(
@@ -639,23 +688,32 @@ class DrawerDiscountItem extends StatelessWidget {
     return Consumer<DiscountController>(
       builder: (context, controller, _) {
         return ListTile(
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: NeoBrutalTheme.spaceMD,
+            vertical: NeoBrutalTheme.spaceXS,
+          ),
           leading: Container(
-            width: 40,
-            height: 40,
+            width: 48,
+            height: 48,
             decoration: BoxDecoration(
-              color: AppTheme.successColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(10),
+              color: AppTheme.successColor, // ✅ Solid bold color
+              borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium), // ✅ Brutal 8px
+              border: Border.all(
+                color: Colors.black, // ✅ Bold black border
+                width: 4, // ✅ Bold 4px border
+              ),
+              boxShadow: NeoBrutalTheme.chunkyShadow,
             ),
             child: Icon(
               Icons.discount_outlined,
-              color: AppTheme.successColor,
-              size: 20,
+              color: Colors.white, // ✅ White icon
+              size: 26,
             ),
           ),
           title: Text(
             'Discount Management',
-            style: TextStyle(
-              fontSize: 14,
+            style: NeoBrutalTheme.bodyMedium.copyWith(
+              fontWeight: FontWeight.w700,
               color: AppTheme.getTextPrimaryColor(context),
             ),
           ),
@@ -701,49 +759,58 @@ class DrawerBackupItem extends StatelessWidget {
         final backupCount = controller.backups.length;
 
         return ListTile(
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: NeoBrutalTheme.spaceMD,
+            vertical: NeoBrutalTheme.spaceXS,
+          ),
           leading: Container(
-            width: 40,
-            height: 40,
+            width: 48,
+            height: 48,
             decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(10),
+              color: AppTheme.primaryColor, // ✅ Solid bold color
+              borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium), // ✅ Brutal 8px
+              border: Border.all(
+                color: Colors.black, // ✅ Bold black border
+                width: 4, // ✅ Bold 4px border
+              ),
+              boxShadow: NeoBrutalTheme.chunkyShadow,
             ),
             child: Icon(
               Icons.backup_outlined,
-              color: AppTheme.primaryColor,
-              size: 20,
+              color: Colors.white, // ✅ White icon
+              size: 26,
             ),
           ),
           title: Text(
             'Backup & Restore',
-            style: TextStyle(
-              fontSize: 14,
+            style: NeoBrutalTheme.bodyMedium.copyWith(
+              fontWeight: FontWeight.w700,
               color: AppTheme.getTextPrimaryColor(context),
             ),
           ),
           subtitle: Text(
             'Kelola backup data',
-            style: TextStyle(
-              fontSize: 12,
+            style: NeoBrutalTheme.bodySmall.copyWith(
+              fontWeight: FontWeight.w600,
               color: AppTheme.getTextSecondaryColor(context),
             ),
           ),
           trailing: backupCount > 0
               ? Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: EdgeInsets.symmetric(horizontal: NeoBrutalTheme.spaceSM, vertical: 4),
                   decoration: BoxDecoration(
-                    color: AppTheme.primaryColor.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(10),
+                    color: AppTheme.primaryColor.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
                     border: Border.all(
-                      color: AppTheme.primaryColor.withValues(alpha: 0.3),
+                      color: AppTheme.primaryColor,
+                      width: 2, // ✅ Bold border
                     ),
                   ),
                   child: Text(
                     backupCount.toString(),
-                    style: TextStyle(
+                    style: NeoBrutalTheme.labelSmall.copyWith(
                       color: AppTheme.primaryColor,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
                 )
@@ -778,23 +845,32 @@ class DrawerExpensesItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
+      contentPadding: EdgeInsets.symmetric(
+        horizontal: NeoBrutalTheme.spaceMD,
+        vertical: NeoBrutalTheme.spaceXS,
+      ),
       leading: Container(
-        width: 40,
-        height: 40,
+        width: 48,
+        height: 48,
         decoration: BoxDecoration(
-          color: AppTheme.secondaryColor.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(10),
+          color: AppTheme.secondaryColor, // ✅ Solid bold color
+          borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium), // ✅ Brutal 8px
+          border: Border.all(
+            color: Colors.black, // ✅ Bold black border
+            width: 4, // ✅ Bold 4px border
+          ),
+          boxShadow: NeoBrutalTheme.chunkyShadow,
         ),
         child: Icon(
           Icons.receipt_long_outlined,
-          color: AppTheme.secondaryColor,
-          size: 20,
+          color: Colors.white, // ✅ White icon
+          size: 26,
         ),
       ),
       title: Text(
         'Pengeluaran',
-        style: TextStyle(
-          fontSize: 14,
+        style: NeoBrutalTheme.bodyMedium.copyWith(
+          fontWeight: FontWeight.w700,
           color: AppTheme.getTextPrimaryColor(context),
         ),
       ),
@@ -831,30 +907,39 @@ class DrawerShiftsItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
+      contentPadding: EdgeInsets.symmetric(
+        horizontal: NeoBrutalTheme.spaceMD,
+        vertical: NeoBrutalTheme.spaceXS,
+      ),
       leading: Container(
-        width: 40,
-        height: 40,
+        width: 48,
+        height: 48,
         decoration: BoxDecoration(
-          color: AppTheme.infoColor.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(10),
+          color: AppTheme.infoColor, // ✅ Solid bold color
+          borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium), // ✅ Brutal 8px
+          border: Border.all(
+            color: Colors.black, // ✅ Bold black border
+            width: 4, // ✅ Bold 4px border
+          ),
+          boxShadow: NeoBrutalTheme.chunkyShadow,
         ),
         child: Icon(
           Icons.schedule_outlined,
-          color: AppTheme.infoColor,
-          size: 20,
+          color: Colors.white, // ✅ White icon
+          size: 26,
         ),
       ),
       title: Text(
         'Shift',
-        style: TextStyle(
-          fontSize: 14,
+        style: NeoBrutalTheme.bodyMedium.copyWith(
+          fontWeight: FontWeight.w700,
           color: AppTheme.getTextPrimaryColor(context),
         ),
       ),
       subtitle: Text(
         'Kelola shift kasir',
-        style: TextStyle(
-          fontSize: 12,
+        style: NeoBrutalTheme.bodySmall.copyWith(
+          fontWeight: FontWeight.w600,
           color: AppTheme.getTextSecondaryColor(context),
         ),
       ),
@@ -884,30 +969,39 @@ class DrawerUsersItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
+      contentPadding: EdgeInsets.symmetric(
+        horizontal: NeoBrutalTheme.spaceMD,
+        vertical: NeoBrutalTheme.spaceXS,
+      ),
       leading: Container(
-        width: 40,
-        height: 40,
+        width: 48,
+        height: 48,
         decoration: BoxDecoration(
-          color: AppTheme.primaryColor.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(10),
+          color: AppTheme.primaryColor, // ✅ Solid bold color
+          borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium), // ✅ Brutal 8px
+          border: Border.all(
+            color: Colors.black, // ✅ Bold black border
+            width: 4, // ✅ Bold 4px border
+          ),
+          boxShadow: NeoBrutalTheme.chunkyShadow,
         ),
         child: Icon(
           Icons.people_outline,
-          color: AppTheme.primaryColor,
-          size: 20,
+          color: Colors.white, // ✅ White icon
+          size: 26,
         ),
       ),
       title: Text(
         'Pengguna',
-        style: TextStyle(
-          fontSize: 14,
+        style: NeoBrutalTheme.bodyMedium.copyWith(
+          fontWeight: FontWeight.w700,
           color: AppTheme.getTextPrimaryColor(context),
         ),
       ),
       subtitle: Text(
         'Kelola pengguna aplikasi',
-        style: TextStyle(
-          fontSize: 12,
+        style: NeoBrutalTheme.bodySmall.copyWith(
+          fontWeight: FontWeight.w600,
           color: AppTheme.getTextSecondaryColor(context),
         ),
       ),
@@ -937,28 +1031,37 @@ class DrawerAnalyticsItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
+      contentPadding: EdgeInsets.symmetric(
+        horizontal: NeoBrutalTheme.spaceMD,
+        vertical: NeoBrutalTheme.spaceXS,
+      ),
       leading: Container(
-        width: 40,
-        height: 40,
+        width: 48,
+        height: 48,
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              AppTheme.primaryColor.withValues(alpha: 0.15),
-              AppTheme.secondaryColor.withValues(alpha: 0.15),
+              NeoBrutalTheme.primary, // ✅ Solid bold gradient
+              NeoBrutalTheme.secondary,
             ],
           ),
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium), // ✅ Brutal 8px
+          border: Border.all(
+            color: Colors.black, // ✅ Bold black border
+            width: 4, // ✅ Bold 4px border
+          ),
+          boxShadow: NeoBrutalTheme.chunkyShadow,
         ),
         child: const Icon(
           Icons.analytics_outlined,
-          color: AppTheme.primaryColor,
-          size: 20,
+          color: Colors.white, // ✅ White icon
+          size: 26,
         ),
       ),
       title: Text(
         'Analitik Penjualan',
-        style: TextStyle(
-          fontSize: 14,
+        style: NeoBrutalTheme.bodyMedium.copyWith(
+          fontWeight: FontWeight.w700,
           color: AppTheme.getTextPrimaryColor(context),
         ),
       ),
@@ -997,23 +1100,41 @@ class DrawerThemeToggle extends StatelessWidget {
     return Consumer<ThemeController>(
       builder: (context, themeController, _) {
         return ListTile(
-          leading: Icon(
-            themeController.isDarkMode
-                ? Icons.light_mode_outlined
-                : Icons.dark_mode_outlined,
-            color: AppTheme.getTextSecondaryColor(context),
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: NeoBrutalTheme.spaceMD,
+            vertical: NeoBrutalTheme.spaceXS,
+          ),
+          leading: Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: AppTheme.getTextSecondaryColor(context), // ✅ Solid bold color
+              borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium), // ✅ Brutal 8px
+              border: Border.all(
+                color: Colors.black, // ✅ Bold black border
+                width: 4, // ✅ Bold 4px border
+              ),
+              boxShadow: NeoBrutalTheme.chunkyShadow,
+            ),
+            child: Icon(
+              themeController.isDarkMode
+                  ? Icons.light_mode_outlined
+                  : Icons.dark_mode_outlined,
+              color: Colors.white, // ✅ White icon
+              size: 26,
+            ),
           ),
           title: Text(
             themeController.isDarkMode ? 'Light Mode' : 'Dark Mode',
-            style: TextStyle(
-              fontSize: 14,
+            style: NeoBrutalTheme.bodyMedium.copyWith(
+              fontWeight: FontWeight.w700,
               color: AppTheme.getTextPrimaryColor(context),
             ),
           ),
           subtitle: Text(
             'Toggle app theme',
-            style: TextStyle(
-              fontSize: 12,
+            style: NeoBrutalTheme.bodySmall.copyWith(
+              fontWeight: FontWeight.w600,
               color: AppTheme.getTextSecondaryColor(context),
             ),
           ),

@@ -15,7 +15,13 @@
       "Bash(git commit -m ':*)",
       "Bash(git commit -m 'fix: resolve backup service instantiation errors:*)",
       "Bash(git commit -m 'fix: resolve sales analytics type casting errors:*)",
-      "Bash(git commit -m 'fix: rewrite CSV import helper to use manual parsing:*)"
+      "Bash(git commit -m 'fix: rewrite CSV import helper to use manual parsing:*)",
+      "Bash(lsof -ti:43371)",
+      "Bash(xargs kill:*)",
+      "Bash(timeout 30s flutter run -d emulator-5554 --verbose)",
+      "Bash(flutter run:*)",
+      "Bash(adb -s emulator-5554 shell \"ps | grep simple_pos\")",
+      "Bash(flutter devices:*)"
     ]
   }
 }

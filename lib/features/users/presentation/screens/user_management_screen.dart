@@ -4,8 +4,8 @@ import '../controllers/auth_controller.dart';
 import '../../domain/entities/user.dart';
 import '../../domain/entities/user_role.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../../../core/widgets/modern_card.dart';
-import '../../../../core/widgets/modern_button.dart';
+import '../../../../core/theme/neo_brutal_theme.dart';
+import '../../../../core/widgets/brutal_widgets.dart';
 
 /// Screen for managing application users
 class UserManagementScreen extends StatefulWidget {
@@ -86,17 +86,38 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.getBackgroundColor(context),
+      backgroundColor: NeoBrutalTheme.background, // ✅ Brutal white background
       appBar: AppBar(
         title: const Text('Manajemen Pengguna'),
-        backgroundColor: AppTheme.primaryColor,
-        foregroundColor: Colors.white,
-        elevation: 0,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            color: NeoBrutalTheme.blockYellow, // ✅ Bold yellow background
+            border: Border(
+              bottom: BorderSide(
+                color: Colors.black,
+                width: 6, // ✅ Extra thick bottom border
+              ),
+            ),
+          ),
+        ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: _showAddUserDialog,
-            tooltip: 'Tambah Pengguna',
+          Padding(
+            padding: EdgeInsets.only(right: NeoBrutalTheme.spaceXS),
+            child: Container(
+              decoration: BoxDecoration(
+                color: NeoBrutalTheme.primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
+                border: Border.all(
+                  color: Colors.black,
+                  width: 4, // ✅ Bold 4px border
+                ),
+              ),
+              child: IconButton(
+                icon: const Icon(Icons.add),
+                onPressed: _showAddUserDialog,
+                tooltip: 'Tambah Pengguna',
+              ),
+            ),
           ),
         ],
       ),
@@ -126,21 +147,35 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
               const SizedBox(height: 24),
 
               // Info about demo
-              ModernCard(
-                padding: const EdgeInsets.all(16),
+              BrutalCard(
+                padding: EdgeInsets.all(NeoBrutalTheme.spaceMD),
                 child: Row(
                   children: [
-                    Icon(
-                      Icons.info_outline,
-                      color: AppTheme.infoColor,
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: NeoBrutalTheme.primary, // ✅ Solid bold color
+                        borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
+                        border: Border.all(
+                          color: Colors.black,
+                          width: 3, // ✅ Bold 3px border
+                        ),
+                        boxShadow: NeoBrutalTheme.chunkyShadow,
+                      ),
+                      child: Icon(
+                        Icons.info_outline,
+                        color: Colors.white, // ✅ White icon
+                        size: 20,
+                      ),
                     ),
-                    const SizedBox(width: 12),
+                    SizedBox(width: NeoBrutalTheme.spaceSM),
                     Expanded(
                       child: Text(
                         'Gunakan login: admin / admin123',
-                        style: TextStyle(
-                          fontSize: 13,
+                        style: NeoBrutalTheme.bodySmall.copyWith(
                           color: AppTheme.getTextSecondaryColor(context),
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
@@ -166,8 +201,8 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
         : AppTheme.infoColor;
     final roleLabel = user.role == UserRole.admin ? 'Admin' : 'Kasir';
 
-    return ModernCard(
-      padding: const EdgeInsets.all(16),
+    return BrutalCard(
+      padding: EdgeInsets.all(NeoBrutalTheme.spaceMD),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -344,7 +379,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
           Row(
             children: [
               Expanded(
-                child: ModernSecondaryButton(
+                child: BrutalButton(
                   text: 'Edit',
                   icon: Icons.edit_outlined,
                   onPressed: onEdit,

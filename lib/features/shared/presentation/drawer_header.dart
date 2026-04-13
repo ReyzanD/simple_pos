@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/neo_brutal_theme.dart';
 import '../../../core/utils/haptic_helper.dart';
 
 /// Material 3 compatible user drawer header for NavigationDrawer
@@ -28,7 +29,17 @@ class UserDrawerHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      margin: EdgeInsets.all(NeoBrutalTheme.spaceMD),
+      padding: EdgeInsets.all(NeoBrutalTheme.spaceMD),
+      decoration: BoxDecoration(
+        color: NeoBrutalTheme.blockCoral, // ✅ Bold coral background
+        borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium),
+        border: Border.all(
+          color: Colors.black,
+          width: 4, // ✅ Bold border
+        ),
+        boxShadow: NeoBrutalTheme.chunkyShadow,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -44,35 +55,26 @@ class UserDrawerHeader extends StatelessWidget {
                 child: Stack(
                   children: [
                     Container(
-                      width: 56,
-                      height: 56,
+                      width: 64,
+                      height: 64,
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            AppTheme.primaryColor,
-                            AppTheme.secondaryColor,
-                          ],
+                        color: NeoBrutalTheme.primary,
+                        borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium),
+                        border: Border.all(
+                          color: Colors.black,
+                          width: 4, // ✅ Bold border
                         ),
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppTheme.primaryColor.withValues(alpha: 0.25),
-                            blurRadius: 10,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
+                        boxShadow: NeoBrutalTheme.chunkyShadow,
                       ),
                       child: Center(
                         child: Text(
                           userName.isNotEmpty
                               ? userName[0].toUpperCase()
                               : 'U',
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
+                          style: NeoBrutalTheme.displayLarge.copyWith(
+                            fontSize: 32,
                             color: Colors.white,
+                            fontWeight: FontWeight.w900,
                           ),
                         ),
                       ),
@@ -82,14 +84,14 @@ class UserDrawerHeader extends StatelessWidget {
                       bottom: 0,
                       right: 0,
                       child: Container(
-                        width: 14,
-                        height: 14,
+                        width: 18,
+                        height: 18,
                         decoration: BoxDecoration(
-                          color: AppTheme.successColor,
-                          borderRadius: BorderRadius.circular(7),
+                          color: NeoBrutalTheme.success,
+                          borderRadius: BorderRadius.circular(9),
                           border: Border.all(
-                            color: AppTheme.getCardColor(context),
-                            width: 2,
+                            color: Colors.black,
+                            width: 3, // ✅ Bold border
                           ),
                         ),
                       ),
@@ -98,7 +100,7 @@ class UserDrawerHeader extends StatelessWidget {
                 ),
               ),
 
-              const SizedBox(width: 12),
+              SizedBox(width: NeoBrutalTheme.spaceMD),
 
               // User info
               Expanded(
@@ -107,18 +109,19 @@ class UserDrawerHeader extends StatelessWidget {
                   children: [
                     Text(
                       userName,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.getTextPrimaryColor(context),
+                      style: NeoBrutalTheme.headlineSmall.copyWith(
+                        fontSize: 18,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    SizedBox(height: NeoBrutalTheme.spaceXS),
                     Text(
                       userRole,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppTheme.getTextSecondaryColor(context),
+                      style: NeoBrutalTheme.bodySmall.copyWith(
+                        fontSize: 14,
+                        color: Colors.white.withValues(alpha: 0.9),
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
@@ -127,60 +130,64 @@ class UserDrawerHeader extends StatelessWidget {
 
               // Settings button
               if (onSettingsTap != null)
-                Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: () {
-                      HapticHelper.lightImpact();
-                      onSettingsTap!();
-                    },
-                    customBorder: const CircleBorder(),
-                    child: Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: AppTheme.getCardColor(context),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: AppTheme.getBorderColor(context),
-                          width: 1,
-                        ),
+                GestureDetector(
+                  onTap: () {
+                    HapticHelper.lightImpact();
+                    onSettingsTap!();
+                  },
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
+                      border: Border.all(
+                        color: Colors.black,
+                        width: 3, // ✅ Bold border
                       ),
-                      child: Icon(
-                        Icons.settings_outlined,
-                        size: 18,
-                        color: AppTheme.getTextSecondaryColor(context),
-                      ),
+                    ),
+                    child: Icon(
+                      Icons.settings,
+                      size: 20,
+                      color: Colors.black,
                     ),
                   ),
                 ),
             ],
           ),
 
-          const SizedBox(height: 8),
+          SizedBox(height: NeoBrutalTheme.spaceSM),
 
           // Store name chip
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            padding: EdgeInsets.symmetric(
+              horizontal: NeoBrutalTheme.spaceMD,
+              vertical: NeoBrutalTheme.spaceSM,
+            ),
             decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(8),
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
+              border: Border.all(
+                color: Colors.black,
+                width: 3, // ✅ Bold border
+              ),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
                   Icons.storefront,
-                  size: 12,
-                  color: AppTheme.primaryColor,
+                  size: 16,
+                  color: Colors.black,
                 ),
-                const SizedBox(width: 6),
+                SizedBox(width: NeoBrutalTheme.spaceXS),
                 Text(
-                  storeName,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
-                    color: AppTheme.primaryColor,
+                  storeName.toUpperCase(),
+                  style: NeoBrutalTheme.labelSmall.copyWith(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.black,
+                    letterSpacing: 1,
                   ),
                 ),
               ],

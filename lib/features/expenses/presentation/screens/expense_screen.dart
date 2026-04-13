@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/neo_brutal_theme.dart';
 import '../controllers/expense_controller.dart';
 import '../widgets/expense_list_tab.dart';
 import '../widgets/expense_summary_tab.dart';
@@ -44,10 +44,29 @@ class _ExpenseScreenState extends State<ExpenseScreen>
     final controller = context.watch<ExpenseController>();
 
     return Scaffold(
+      backgroundColor: NeoBrutalTheme.background, // ✅ Brutal white background
       appBar: AppBar(
         title: const Text('Pengeluaran'),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            color: NeoBrutalTheme.blockYellow, // ✅ Bold yellow background
+            border: Border(
+              bottom: BorderSide(
+                color: Colors.black,
+                width: 6, // ✅ Extra thick bottom border
+              ),
+            ),
+          ),
+        ),
         bottom: TabBar(
           controller: _tabController,
+          indicatorColor: Colors.black,
+          labelColor: Colors.black,
+          unselectedLabelColor: Colors.black.withValues(alpha: 0.5),
+          indicatorWeight: 4, // ✅ Bold indicator
+          labelStyle: NeoBrutalTheme.labelLarge.copyWith(
+            fontWeight: FontWeight.w800,
+          ),
           tabs: const [
             Tab(text: 'Daftar', icon: Icon(Icons.list)),
             Tab(text: 'Ringkasan', icon: Icon(Icons.bar_chart)),
@@ -65,10 +84,20 @@ class _ExpenseScreenState extends State<ExpenseScreen>
       ),
       floatingActionButton: _currentTab == 0
           ? FloatingActionButton.extended(
+              heroTag: 'expense_fab', // ✅ Unique hero tag
               onPressed: () => _showAddDialog(context),
               icon: const Icon(Icons.add),
               label: const Text('Tambah'),
-              backgroundColor: AppTheme.primaryColor,
+              backgroundColor: NeoBrutalTheme.secondary, // ✅ Brutal secondary color
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium), // ✅ Brutal 8px
+                side: BorderSide(
+                  color: Colors.black,
+                  width: 4, // ✅ Bold 4px border
+                ),
+              ),
+              elevation: 6,
             )
           : null,
     );

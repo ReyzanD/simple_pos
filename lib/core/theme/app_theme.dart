@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'enhanced_theme.dart';
 
 /// Modern Material 3 Theme Configuration with Dark Mode Support
+/// Integrated with Enhanced Theme for professional yet friendly design
 class AppTheme {
   // Primary Colors - Indigo based
   static const Color primaryColor = Color(0xFF4F46E5);

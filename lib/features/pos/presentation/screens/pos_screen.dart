@@ -16,16 +16,20 @@ import '../widgets/variant_selector_dialog.dart';
 import 'held_orders_screen.dart';
 import 'scan_mode_screen.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/neo_brutal_theme.dart';
 import '../../../../core/widgets/success_animation.dart';
 import '../../../../core/widgets/modern_button.dart';
 import '../../../../core/widgets/shimmer_loading.dart';
 import '../../../../core/widgets/kpi_stats_dashboard.dart';
 import '../../../../core/widgets/category_icons.dart';
+import '../../../../core/widgets/brutal_widgets.dart';
+import '../../../../core/widgets/brutal_inputs.dart';
 import '../../../shared/widgets/empty_state_display.dart';
 import '../../../shared/widgets/error_display.dart';
 import '../../../shared/presentation/main_navigation.dart';
 import '../../../shifts/presentation/screens/shift_open_screen.dart';
 import '../../../../core/utils/audio_feedback_helper.dart';
+import '../../../../core/utils/responsive_helper.dart';
 
 /// Point of Sale screen with modern design
 class POSScreen extends StatefulWidget {
@@ -58,6 +62,10 @@ class POSScreenState extends State<POSScreen>
     // Load products when screen initializes
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkActiveShift();
+      // Auto-switch to list view on very small screens
+      if (mounted && ResponsiveHelper.isVerySmallScreen(context)) {
+        context.read<POSController>().setViewMode(ViewMode.list);
+      }
       context.read<POSController>().loadProducts();
       context.read<CategoryController>().loadCategories();
       _hasLoadedInitially = true;
@@ -213,8 +221,6 @@ class POSScreenState extends State<POSScreen>
       return const ScanModeScreen();
     }
 
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
@@ -250,28 +256,26 @@ class POSScreenState extends State<POSScreen>
         ],
         flexibleSpace: Container(
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: isDark
-                  ? [
-                      AppTheme.darkSurface,
-                      AppTheme.darkSurface.withValues(alpha: 0.95),
-                    ]
-                  : [AppTheme.primaryColor, AppTheme.primaryLight],
+            color: NeoBrutalTheme.blockYellow, // ✅ Bold yellow background
+            border: Border(
+              bottom: BorderSide(
+                color: Colors.black,
+                width: 6, // ✅ Extra thick bottom border
+              ),
             ),
           ),
         ),
       ),
       floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 105), // Above floating nav
+        padding: EdgeInsets.only(bottom: ResponsiveHelper.isVerySmallScreen(context) ? 80 : 90), // ✅ Updated for new navbar height
         child: Consumer<POSController>(
           builder: (context, controller, _) {
-            return _CartFloatingButton(
-              itemCount: controller.cartItemCount,
-              total: controller.cartTotal,
-              onTap: () => _openCartModal(context, controller),
-              key: _cartIconKey,
+            final itemCount = controller.cartItemCount;
+            return BrutalFab(
+              label: itemCount > 0 ? 'Cart ($itemCount)' : 'Cart',
+              icon: Icons.shopping_cart,
+              heroTag: 'pos_cart_fab', // ✅ Unique hero tag
+              onPressed: () => _openCartModal(context, controller),
             );
           },
         ),
@@ -282,12 +286,17 @@ class POSScreenState extends State<POSScreen>
           // Show shimmer loading grid
           if (posController.isLoading && posController.products.isEmpty) {
             return GridView.builder(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
+              padding: EdgeInsets.fromLTRB(
+                ResponsiveHelper.getCardSpacing(context),
+                0,
+                ResponsiveHelper.getCardSpacing(context),
+                ResponsiveHelper.isVerySmallScreen(context) ? 80 : 100,
+              ),
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: _getCrossAxisCount(context),
                 childAspectRatio: _getChildAspectRatio(context),
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
+                crossAxisSpacing: ResponsiveHelper.getCardSpacing(context),
+                mainAxisSpacing: ResponsiveHelper.getCardSpacing(context),
               ),
               itemCount: 6,
               itemBuilder: (context, index) => const ShimmerProductGridItem(),
@@ -350,16 +359,57 @@ class POSScreenState extends State<POSScreen>
                     // Product grid or empty state for no results
                     if (filteredProducts.isEmpty)
                       SliverFillRemaining(child: _buildNoResults(posController))
+                    else if (posController.viewMode == ViewMode.list)
+                      // List view for better mobile experience
+                      SliverPadding(
+                        padding: EdgeInsets.fromLTRB(
+                          ResponsiveHelper.getCardSpacing(context),
+                          0,
+                          ResponsiveHelper.getCardSpacing(context),
+                          ResponsiveHelper.isVerySmallScreen(context) ? 90 : 100,
+                        ),
+                        sliver: SliverList(
+                          delegate: SliverChildBuilderDelegate(
+                            (context, index) {
+                              final product = filteredProducts[index];
+                              final cartItem = posController.getCartItem(
+                                product,
+                              );
+
+                              return Padding(
+                                padding: EdgeInsets.only(
+                                  bottom: ResponsiveHelper.getCardSpacing(context),
+                                ),
+                                child: ProductGridItem(
+                                  product: product,
+                                  quantity: cartItem?.quantity ?? 0,
+                                  onTap: () => _handleAddToCart(context, product),
+                                  onAddAnimation: (position) =>
+                                      _showFlyingPlusOne(position),
+                                  index: index,
+                                ),
+                              );
+                            },
+                            childCount: filteredProducts.length,
+                            addAutomaticKeepAlives: true,
+                          ),
+                        ),
+                      )
                     else
                       SliverPadding(
-                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
+                        padding: EdgeInsets.fromLTRB(
+                          ResponsiveHelper.getCardSpacing(context),
+                          0,
+                          ResponsiveHelper.getCardSpacing(context),
+                          ResponsiveHelper.isVerySmallScreen(context) ? 90 : 100,
+                        ),
                         sliver: SliverGrid(
                           gridDelegate:
                               SliverGridDelegateWithFixedCrossAxisCount(
                                 crossAxisCount: _getCrossAxisCount(context),
                                 childAspectRatio: _getChildAspectRatio(context),
-                                crossAxisSpacing: 16,
-                                mainAxisSpacing: 16,
+                                crossAxisSpacing: ResponsiveHelper.getCardSpacing(context),
+                                mainAxisSpacing: ResponsiveHelper.getCardSpacing(context),
                               ),
                           delegate: SliverChildBuilderDelegate(
                             (context, index) {
@@ -424,101 +474,35 @@ class POSScreenState extends State<POSScreen>
   }
 
   Widget _buildSearchBar(POSController controller) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        decoration: BoxDecoration(
-          color: isDark ? AppTheme.darkSurfaceVariant : const Color(0xFFF1F5F9),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: controller.searchQuery.isNotEmpty
-                ? AppTheme.primaryColor.withValues(alpha: 0.5)
-                : Colors.transparent,
-            width: 2,
-          ),
-        ),
-        child: TextField(
-          controller: _searchController,
-          decoration: InputDecoration(
-            hintText: 'Cari produk...',
-            hintStyle: TextStyle(
-              color: AppTheme.getTextSecondaryColor(context),
-              fontSize: 15,
-            ),
-            prefixIcon: Icon(
-              Icons.search_rounded,
-              color: AppTheme.getTextSecondaryColor(context),
-            ),
-            suffixIcon: controller.searchQuery.isNotEmpty
-                ? IconButton(
-                    icon: Icon(
-                      Icons.clear_rounded,
-                      color: AppTheme.getTextSecondaryColor(context),
-                    ),
-                    onPressed: () {
-                      _searchController.clear();
-                      controller.clearSearch();
-                    },
-                  )
-                : null,
-            border: InputBorder.none,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 20,
-              vertical: 14,
-            ),
-          ),
-          onChanged: (value) {
-            // Search-as-you-type
-            controller.setSearchQuery(value);
-          },
-        ),
+      padding: EdgeInsets.fromLTRB(NeoBrutalTheme.spaceMD, NeoBrutalTheme.spaceSM, NeoBrutalTheme.spaceMD, NeoBrutalTheme.spaceSM),
+      child: BrutalSearchField(
+        hint: 'Cari produk...',
+        controller: _searchController,
+        onChanged: (value) {
+          controller.setSearchQuery(value);
+        },
+        backgroundColor: NeoBrutalTheme.surface,
       ),
     );
   }
 
   Widget _buildFilterControls(POSController controller) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      padding: EdgeInsets.fromLTRB(NeoBrutalTheme.spaceMD, NeoBrutalTheme.spaceSM, NeoBrutalTheme.spaceMD, NeoBrutalTheme.spaceSM),
       child: Row(
         children: [
           // Stock filter chip
-          FilterChip(
-            label: Text(
-              'Stok Tersedia',
-              style: TextStyle(
-                fontSize: 13,
-                color: controller.inStockOnly
-                    ? AppTheme.successColor
-                    : AppTheme.getTextSecondaryColor(context),
-              ),
-            ),
-            selected: controller.inStockOnly,
-            onSelected: (_) => controller.toggleInStockOnly(),
-            selectedColor: AppTheme.successColor.withValues(alpha: 0.2),
-            checkmarkColor: AppTheme.successColor,
-            side: BorderSide(
-              color: controller.inStockOnly
-                  ? AppTheme.successColor
-                  : AppTheme.getBorderColor(context),
-            ),
-            avatar: controller.inStockOnly
-                ? const Icon(
-                    Icons.check_circle,
-                    size: 16,
-                    color: AppTheme.successColor,
-                  )
-                : Icon(
-                    Icons.inventory_2_outlined,
-                    size: 16,
-                    color: AppTheme.getTextSecondaryColor(context),
-                  ),
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          BrutalActionChip(
+            label: 'Stok Tersedia',
+            icon: controller.inStockOnly ? Icons.check_circle : Icons.inventory_2_outlined,
+            onTap: () => controller.toggleInStockOnly(),
+            isSelected: controller.inStockOnly,
+            backgroundColor: controller.inStockOnly
+                ? NeoBrutalTheme.success
+                : NeoBrutalTheme.surface,
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: NeoBrutalTheme.spaceSM),
           // Sort dropdown
           _SortDropdown(
             selectedOption: controller.sortOption,
@@ -589,74 +573,13 @@ class POSScreenState extends State<POSScreen>
   }) {
     return Padding(
       padding: const EdgeInsets.only(right: 10),
-      child:
-          AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                curve: Curves.easeInOut,
-                decoration: BoxDecoration(
-                  gradient: isSelected
-                      ? LinearGradient(
-                          colors: [color, color.withValues(alpha: 0.8)],
-                        )
-                      : null,
-                  color: isSelected ? null : AppTheme.getCardColor(context),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: isSelected
-                        ? Colors.transparent
-                        : color.withValues(alpha: 0.3),
-                    width: 1,
-                  ),
-                  boxShadow: isSelected
-                      ? [
-                          BoxShadow(
-                            color: color.withValues(alpha: 0.3),
-                            blurRadius: 8,
-                            offset: const Offset(0, 4),
-                          ),
-                        ]
-                      : AppShadows.shadowSm,
-                ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: onTap,
-                    borderRadius: BorderRadius.circular(16),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 10,
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            icon,
-                            size: 18,
-                            color: isSelected ? Colors.white : color,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            label,
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: isSelected
-                                  ? FontWeight.w600
-                                  : FontWeight.w500,
-                              color: isSelected
-                                  ? Colors.white
-                                  : AppTheme.getTextSecondaryColor(context),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              )
-              .animate()
-              .fadeIn(duration: 200.ms)
-              .slideX(begin: 0.1, end: 0, duration: 200.ms),
+      child: BrutalActionChip(
+        label: label,
+        icon: icon,
+        onTap: onTap,
+        isSelected: isSelected,
+        backgroundColor: isSelected ? color : NeoBrutalTheme.surface,
+      ),
     );
   }
 
@@ -812,18 +735,12 @@ class POSScreenState extends State<POSScreen>
 
   /// Get responsive cross axis count based on screen width
   int _getCrossAxisCount(BuildContext context) {
-    final width = MediaQuery.sizeOf(context).width;
-    if (width > 900) return 4;
-    if (width > 600) return 3;
-    return 2;
+    return ResponsiveHelper.getGridColumns(context);
   }
 
   /// Get responsive child aspect ratio based on screen width
   double _getChildAspectRatio(BuildContext context) {
-    final width = MediaQuery.sizeOf(context).width;
-    if (width > 900) return 0.85;
-    if (width > 600) return 0.82;
-    return 0.78;
+    return ResponsiveHelper.getGridChildAspectRatio(context);
   }
 
   void _showFlyingPlusOne(Offset position) {
@@ -1195,15 +1112,15 @@ class _SortDropdown extends StatelessWidget {
   String _getOptionLabel(SortOption option) {
     switch (option) {
       case SortOption.nameAsc:
-        return 'Nama A-Z';
+        return 'A-Z';
       case SortOption.nameDesc:
-        return 'Nama Z-A';
+        return 'Z-A';
       case SortOption.priceAsc:
-        return 'Harga Terendah';
+        return 'Termurah';
       case SortOption.priceDesc:
-        return 'Harga Tertinggi';
+        return 'Termahal';
       case SortOption.stockLevel:
-        return 'Stok Terbanyak';
+        return 'Stok';
     }
   }
 
@@ -1225,36 +1142,55 @@ class _SortDropdown extends StatelessWidget {
     return PopupMenuButton<SortOption>(
       initialValue: selectedOption,
       onSelected: onOptionChanged,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium),
+        side: BorderSide(
+          color: Colors.black,
+          width: 3, // ✅ Bold border
+        ),
+      ),
+      color: Colors.white,
+      elevation: 8,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: AppTheme.getCardColor(context),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppTheme.getBorderColor(context)),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
+          border: Border.all(
+            color: Colors.black,
+            width: 2, // ✅ Bold border
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              offset: const Offset(3, 3),
+              blurRadius: 0,
+            ),
+          ],
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               _getOptionIcon(selectedOption),
-              size: 16,
-              color: AppTheme.getTextSecondaryColor(context),
-            ),
-            const SizedBox(width: 6),
-            Text(
-              _getOptionLabel(selectedOption),
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                color: AppTheme.getTextSecondaryColor(context),
-              ),
+              size: 14,
+              color: Colors.black,
             ),
             const SizedBox(width: 4),
+            Text(
+              _getOptionLabel(selectedOption),
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: Colors.black,
+                letterSpacing: 0.5,
+              ),
+            ),
+            const SizedBox(width: 2),
             Icon(
               Icons.keyboard_arrow_down,
-              size: 18,
-              color: AppTheme.getTextSecondaryColor(context),
+              size: 16,
+              color: Colors.black,
             ),
           ],
         ),
@@ -1263,31 +1199,31 @@ class _SortDropdown extends StatelessWidget {
         _buildMenuItem(
           context,
           SortOption.nameAsc,
-          'Nama A-Z',
+          'A-Z',
           Icons.sort_by_alpha,
         ),
         _buildMenuItem(
           context,
           SortOption.nameDesc,
-          'Nama Z-A',
+          'Z-A',
           Icons.sort_by_alpha,
         ),
         _buildMenuItem(
           context,
           SortOption.priceAsc,
-          'Harga Terendah',
+          'Termurah',
           Icons.attach_money,
         ),
         _buildMenuItem(
           context,
           SortOption.priceDesc,
-          'Harga Tertinggi',
+          'Termahal',
           Icons.attach_money,
         ),
         _buildMenuItem(
           context,
           SortOption.stockLevel,
-          'Stok Terbanyak',
+          'Stok',
           Icons.inventory,
         ),
       ],
@@ -1303,29 +1239,69 @@ class _SortDropdown extends StatelessWidget {
     final isSelected = selectedOption == option;
     return PopupMenuItem<SortOption>(
       value: option,
-      child: Row(
-        children: [
-          Icon(
-            icon,
-            size: 18,
-            color: isSelected
-                ? AppTheme.primaryColor
-                : AppTheme.getTextSecondaryColor(context),
-          ),
-          const SizedBox(width: 12),
-          Text(
-            label,
-            style: TextStyle(
-              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-              color: isSelected
-                  ? AppTheme.primaryColor
-                  : AppTheme.getTextPrimaryColor(context),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: isSelected
+            ? BoxDecoration(
+                color: NeoBrutalTheme.primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: NeoBrutalTheme.primary,
+                  width: 2,
+                ),
+              )
+            : null,
+        child: Row(
+          children: [
+            Container(
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? NeoBrutalTheme.primary
+                    : Colors.black.withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(
+                  color: isSelected ? NeoBrutalTheme.primary : Colors.black.withValues(alpha: 0.2),
+                  width: 2,
+                ),
+              ),
+              child: Icon(
+                icon,
+                size: 16,
+                color: isSelected ? Colors.white : Colors.black,
+              ),
             ),
-          ),
-          const Spacer(),
-          if (isSelected)
-            Icon(Icons.check, size: 18, color: AppTheme.primaryColor),
-        ],
+            const SizedBox(width: 10),
+            Text(
+              label,
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 13,
+                color: isSelected ? NeoBrutalTheme.primary : Colors.black,
+                letterSpacing: 0.5,
+              ),
+            ),
+            const Spacer(),
+            if (isSelected)
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: NeoBrutalTheme.primary,
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(
+                    color: Colors.black,
+                    width: 2,
+                  ),
+                ),
+                child: Icon(
+                  Icons.check,
+                  size: 14,
+                  color: Colors.white,
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -1343,11 +1319,21 @@ class _ViewModeToggle extends StatelessWidget {
     return GestureDetector(
       onTap: onToggle,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
         decoration: BoxDecoration(
-          color: AppTheme.getCardColor(context),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppTheme.getBorderColor(context)),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
+          border: Border.all(
+            color: Colors.black,
+            width: 2, // ✅ Bold border
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              offset: const Offset(3, 3),
+              blurRadius: 0,
+            ),
+          ],
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -1381,16 +1367,18 @@ class _ViewModeIcon extends StatelessWidget {
       padding: const EdgeInsets.all(6),
       decoration: BoxDecoration(
         color: isSelected
-            ? AppTheme.primaryColor.withValues(alpha: 0.1)
+            ? NeoBrutalTheme.primary
             : Colors.transparent,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(
+          color: isSelected ? NeoBrutalTheme.primary : Colors.black.withValues(alpha: 0.3),
+          width: 2,
+        ),
       ),
       child: Icon(
         mode == ViewMode.grid ? Icons.grid_view : Icons.view_list,
-        size: 18,
-        color: isSelected
-            ? AppTheme.primaryColor
-            : AppTheme.getTextSecondaryColor(context),
+        size: 16,
+        color: isSelected ? Colors.white : Colors.black,
       ),
     );
   }

@@ -5,6 +5,7 @@ import '../../domain/usecases/get_low_stock_products_usecase.dart';
 import '../controllers/inventory_controller.dart';
 import '../../../sales/presentation/widgets/summary_stat_card.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/neo_brutal_theme.dart';
 import '../widgets/low_stock_dashboard_card.dart';
 
 /// Screen displaying low stock and out of stock products
@@ -78,8 +79,24 @@ class _LowStockDashboardScreenState extends State<LowStockDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: NeoBrutalTheme.background, // ✅ Brutal white background
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
         title: const Text('Dashboard Stok Rendah'),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            color: NeoBrutalTheme.blockYellow, // ✅ Bold yellow background
+            border: Border(
+              bottom: BorderSide(
+                color: Colors.black,
+                width: 6, // ✅ Extra thick bottom border
+              ),
+            ),
+          ),
+        ),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -96,27 +113,60 @@ class _LowStockDashboardScreenState extends State<LowStockDashboardScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.error_outline,
-            size: 64,
-            color: AppTheme.errorColor,
+          Container(
+            width: 100,
+            height: 100,
+            decoration: BoxDecoration(
+              color: AppTheme.errorColor,
+              borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium),
+              border: Border.all(
+                color: Colors.black,
+                width: 4, // ✅ Bold border
+              ),
+              boxShadow: NeoBrutalTheme.chunkyShadow,
+            ),
+            child: Icon(
+              Icons.error_outline,
+              size: 50,
+              color: Colors.white,
+            ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: NeoBrutalTheme.spaceMD),
           Text(
             'Terjadi Kesalahan',
-            style: Theme.of(context).textTheme.titleLarge,
+            style: NeoBrutalTheme.headlineLarge.copyWith(
+              fontWeight: FontWeight.w900,
+            ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: NeoBrutalTheme.spaceSM),
           Text(
             _errorMessage ?? 'Unknown error',
-            style: Theme.of(context).textTheme.bodyMedium,
+            style: NeoBrutalTheme.bodyMedium.copyWith(
+              color: AppTheme.textSecondary,
+            ),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 24),
+          SizedBox(height: NeoBrutalTheme.spaceLG),
           ElevatedButton.icon(
             onPressed: _loadLowStockData,
             icon: const Icon(Icons.refresh),
             label: const Text('Coba Lagi'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: NeoBrutalTheme.primary,
+              foregroundColor: Colors.white,
+              padding: EdgeInsets.symmetric(
+                horizontal: NeoBrutalTheme.spaceLG,
+                vertical: NeoBrutalTheme.spaceMD,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium),
+                side: BorderSide(
+                  color: Colors.black,
+                  width: 4, // ✅ Bold border
+                ),
+              ),
+              elevation: 6,
+            ),
           ),
         ],
       ),
@@ -132,28 +182,34 @@ class _LowStockDashboardScreenState extends State<LowStockDashboardScreen> {
             width: 120,
             height: 120,
             decoration: BoxDecoration(
-              color: AppTheme.successColor.withValues(alpha: 0.1),
+              color: NeoBrutalTheme.success, // ✅ Solid bold green
               shape: BoxShape.circle,
+              border: Border.all(
+                color: Colors.black,
+                width: 4, // ✅ Bold border
+              ),
+              boxShadow: NeoBrutalTheme.chunkyShadow,
             ),
             child: Icon(
               Icons.check_circle_outline,
-              size: 64,
-              color: AppTheme.successColor.withValues(alpha: 0.5),
+              size: 70,
+              color: Colors.white,
             ),
           ),
-          const SizedBox(height: 24),
+          SizedBox(height: NeoBrutalTheme.spaceLG),
           Text(
             'Semua Stok Aman',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+            style: NeoBrutalTheme.headlineLarge.copyWith(
+              fontWeight: FontWeight.w900,
+            ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: NeoBrutalTheme.spaceSM),
           Text(
             'Tidak ada produk dengan stok rendah',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppTheme.textSecondary,
-                ),
+            style: NeoBrutalTheme.bodyMedium.copyWith(
+              color: AppTheme.textSecondary,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
       ),
@@ -165,14 +221,17 @@ class _LowStockDashboardScreenState extends State<LowStockDashboardScreen> {
 
     return RefreshIndicator(
       onRefresh: _loadLowStockData,
+      color: NeoBrutalTheme.primary, // ✅ Brutal primary color
+      backgroundColor: NeoBrutalTheme.blockYellow.withValues(alpha: 0.3),
+      strokeWidth: 4, // ✅ Thicker indicator
       child: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(NeoBrutalTheme.spaceMD),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Summary Cards
             _buildSummaryCards(result),
-            const SizedBox(height: 24),
+            SizedBox(height: NeoBrutalTheme.spaceLG),
 
             // Out of Stock Section
             if (result.outOfStockProducts.isNotEmpty) ...[
@@ -182,7 +241,7 @@ class _LowStockDashboardScreenState extends State<LowStockDashboardScreen> {
                 AppTheme.errorColor,
                 result.outOfStockProducts.length,
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: NeoBrutalTheme.spaceMD),
               ...result.outOfStockProducts.map((product) =>
                   LowStockDashboardCard(
                     product: product,
@@ -190,7 +249,7 @@ class _LowStockDashboardScreenState extends State<LowStockDashboardScreen> {
                     onEditPressed: () => _editProduct(product),
                   ),
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: NeoBrutalTheme.spaceLG),
             ],
 
             // Low Stock Section
@@ -249,39 +308,51 @@ class _LowStockDashboardScreenState extends State<LowStockDashboardScreen> {
     return Row(
       children: [
         Container(
-          padding: const EdgeInsets.all(8),
+          padding: EdgeInsets.all(NeoBrutalTheme.spaceSM),
           decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(8),
+            color: color, // ✅ Solid bold color
+            borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium), // ✅ Brutal 8px
+            border: Border.all(
+              color: Colors.black, // ✅ Bold black border
+              width: 3, // ✅ Bold 3px border
+            ),
+            boxShadow: NeoBrutalTheme.chunkyShadow,
           ),
           child: Icon(
             icon,
-            color: color,
-            size: 20,
+            color: Colors.white, // ✅ White icon for contrast
+            size: 24,
           ),
         ),
-        const SizedBox(width: 12),
+        SizedBox(width: NeoBrutalTheme.spaceMD),
         Expanded(
           child: Text(
             title,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: color,
-                ),
+            style: NeoBrutalTheme.headlineMedium.copyWith(
+              fontWeight: FontWeight.w900,
+              color: color,
+            ),
           ),
         ),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          padding: EdgeInsets.symmetric(
+            horizontal: NeoBrutalTheme.spaceMD,
+            vertical: NeoBrutalTheme.spaceSM,
+          ),
           decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(12),
+            color: color, // ✅ Solid bold color
+            borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium), // ✅ Brutal 8px
+            border: Border.all(
+              color: Colors.black, // ✅ Bold black border
+              width: 3, // ✅ Bold 3px border
+            ),
+            boxShadow: NeoBrutalTheme.chunkyShadow,
           ),
           child: Text(
             '$count produk',
-            style: TextStyle(
-              color: color,
-              fontWeight: FontWeight.bold,
-              fontSize: 12,
+            style: NeoBrutalTheme.labelMedium.copyWith(
+              color: Colors.white, // ✅ White text
+              fontWeight: FontWeight.w800,
             ),
           ),
         ),

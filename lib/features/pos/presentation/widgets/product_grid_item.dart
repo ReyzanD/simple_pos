@@ -8,8 +8,9 @@ import '../../../inventory/presentation/controllers/category_controller.dart';
 import '../../../sales/presentation/controllers/discount_controller.dart';
 
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/neo_brutal_theme.dart';
 import '../../../../core/utils/currency_formatter.dart';
-import '../../../../core/utils/discount_calculator.dart';
+import '../../../../core/utils/responsive_helper.dart';
 
 /// Modern grid item widget for displaying a product in POS screen
 ///
@@ -159,127 +160,113 @@ class _ProductGridItemState extends State<ProductGridItem> {
     double? promotionDiscount,
     double compoundPrice,
   ) {
+    final isMobile = ResponsiveHelper.isMobile(context);
+
     return Container(
       decoration: BoxDecoration(
         // Light grey background when out of stock
-        color: isOutOfStock ? const Color(0xFFF3F4F6) : AppTheme.getCardColor(context),
-        // Modern Material 3: 24px border radius
-        borderRadius: BorderRadius.circular(24),
-        // Subtle 0.5px border (Material 3 style)
+        color: isOutOfStock ? const Color(0xFFF3F4F6) : NeoBrutalTheme.surface,
+        // Neo-Brutalist: Bold borders and chunky shadows
+        borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium),
         border: Border.all(
-          color: hasQuantity ? AppTheme.primaryColor : AppTheme.getBorderColor(context),
-          width: hasQuantity ? 2 : 0.5,
+          color: hasQuantity ? NeoBrutalTheme.primary : Colors.black,
+          width: 4, // ✅ Bold 4px border
         ),
-        // No shadow - Material 3 emphasizes borders
-        boxShadow: const [],
+        // Chunky shadow for brutal aesthetic
+        boxShadow: hasQuantity ? NeoBrutalTheme.chunkyShadow : NeoBrutalTheme.softShadow,
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8), // Reduced vertical padding
+        padding: EdgeInsets.symmetric(
+          horizontal: isMobile ? 4 : 12,
+          vertical: isMobile ? 2 : 8,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            // Quantity badge at top-right
-            if (hasQuantity)
-              Align(
-                alignment: Alignment.topRight,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                  decoration: BoxDecoration(
-                    color: AppTheme.primaryColor,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    '${widget.quantity}',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 11,
-                    ),
-                  ),
-                ),
-              ),
-
-            const Spacer(),
-
-            // Product image or icon placeholder
-            Container(
-              width: double.infinity,
-              height: 50,
-              decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: widget.product.imagePath != null && widget.product.imagePath!.isNotEmpty
-                  ? ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: Image.file(
-                        File(widget.product.imagePath!),
-                        width: double.infinity,
-                        height: double.infinity,
-                        fit: BoxFit.cover,
-                      ),
-                    )
-                  : Icon(
-                      _getProductIcon(),
-                      size: 28,
-                      color: AppTheme.primaryColor.withValues(alpha: 0.6),
-                    ),
-            ),
-
-            const SizedBox(height: 6),
-
-            // Product name - LARGER and SEMI-BOLD with optional discount badge
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    widget.product.name,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w500, // Semi-bold (was w600)
-                          color: isOutOfStock ? AppTheme.textTertiary : AppTheme.textPrimary,
-                          fontSize: 15, // Increased from 13
-                          letterSpacing: 0.2, // Better readability
-                        ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                if (hasCompoundDiscount) ...[
-                  const SizedBox(width: 4),
-                  // Calculate effective discount percentage
+            // Product image with overlay quantity badge
+            SizedBox(
+              height: isMobile ? 26 : 50,
+              child: Stack(
+                children: [
+                  // Product image or icon
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    width: double.infinity,
+                    height: double.infinity,
                     decoration: BoxDecoration(
-                      color: AppTheme.warningColor.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(4),
-                      border: Border.all(
-                        color: AppTheme.warningColor.withValues(alpha: 0.5),
-                        width: 0.5,
-                      ),
+                      color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(isMobile ? 8 : 10),
                     ),
-                    child: Text(
-                      '-${DiscountCalculator.calculateEffectiveDiscountPercentage(
-                        basePrice: widget.product.price,
-                        productDiscount: widget.product.discountPercentage,
-                        categoryDiscount: categoryDiscount,
-                        promotionDiscount: promotionDiscount,
-                      ).toStringAsFixed(0)}%',
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                        color: AppTheme.warningColor,
-                      ),
-                    ),
+                    child: widget.product.imagePath != null && widget.product.imagePath!.isNotEmpty
+                        ? ClipRRect(
+                            borderRadius: BorderRadius.circular(isMobile ? 8 : 10),
+                            child: Image.file(
+                              File(widget.product.imagePath!),
+                              width: double.infinity,
+                              height: double.infinity,
+                              fit: BoxFit.cover,
+                            ),
+                          )
+                        : Icon(
+                            _getProductIcon(),
+                            size: isMobile ? 18 : 28,
+                            color: AppTheme.primaryColor.withValues(alpha: 0.6),
+                          ),
                   ),
+                  // Quantity badge overlay
+                  if (hasQuantity)
+                    Positioned(
+                      top: isMobile ? 0 : 2,
+                      right: isMobile ? 0 : 2,
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isMobile ? 2 : 4,
+                          vertical: 0,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryColor,
+                          borderRadius: BorderRadius.circular(isMobile ? 6 : 8),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.2),
+                              blurRadius: 2,
+                              offset: const Offset(0, 1),
+                            ),
+                          ],
+                        ),
+                        child: Text(
+                          '${widget.quantity}',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: isMobile ? 7 : 10,
+                            height: 1.0,
+                          ),
+                        ),
+                      ),
+                    ),
                 ],
-              ],
+              ),
             ),
 
-            const SizedBox(height: 4),
+            SizedBox(height: isMobile ? 1 : 6),
 
-            // Price (with discount display if applicable)
-            if (hasCompoundDiscount) ...[
-              // Original price (strikethrough)
+            // Product name (truncated on mobile)
+            Text(
+              widget.product.name,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: isOutOfStock ? AppTheme.textTertiary : AppTheme.textPrimary,
+                    fontSize: isMobile ? 10 : 15,
+                    letterSpacing: 0.0,
+                    height: 1.0,
+                  ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+
+            // Price only (hide discount badge on mobile)
+            if (hasCompoundDiscount && !isMobile) ...[
               Text(
                 CurrencyFormatter.format(widget.product.price),
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
@@ -288,46 +275,43 @@ class _ProductGridItemState extends State<ProductGridItem> {
                       fontSize: 11,
                       decoration: TextDecoration.lineThrough,
                       decorationColor: AppTheme.textTertiary,
+                      height: 1.0,
                     ),
-              ),
-              const SizedBox(height: 2),
-              // Compound price (green)
-              Text(
-                CurrencyFormatter.format(compoundPrice),
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      color: AppTheme.successColor,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
-                    ),
-              ),
-            ] else ...[
-              // Regular price
-              Text(
-                CurrencyFormatter.format(widget.product.price),
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      color: isOutOfStock ? AppTheme.textTertiary : AppTheme.primaryColor,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13, // Increased from 12
-                    ),
+                maxLines: 1,
               ),
             ],
+            Text(
+              hasCompoundDiscount
+                  ? CurrencyFormatter.format(compoundPrice)
+                  : CurrencyFormatter.format(widget.product.price),
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    color: hasCompoundDiscount
+                        ? AppTheme.successColor
+                        : (isOutOfStock ? AppTheme.textTertiary : AppTheme.primaryColor),
+                    fontWeight: FontWeight.bold,
+                    fontSize: isMobile ? 9 : 13,
+                    height: 1.0,
+                  ),
+              maxLines: 1,
+            ),
 
-            const SizedBox(height: 6),
+            SizedBox(height: isMobile ? 1 : 6),
 
-            // Stock status
-            _buildStockStatus(context, isOutOfStock),
+            // Action button only (hide stock status on mobile)
+            if (!isMobile)
+              _buildStockStatus(context, isOutOfStock, isMobile),
 
-            const SizedBox(height: 6),
+            SizedBox(height: isMobile ? 0 : 2),
 
-            // Dynamic action button at bottom
-            _buildActionButton(canAddMore, isOutOfStock),
+            // Action button
+            _buildActionButton(canAddMore, isOutOfStock, isMobile),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildStockStatus(BuildContext context, bool isOutOfStock) {
+  Widget _buildStockStatus(BuildContext context, bool isOutOfStock, bool isMobile) {
     Color bgColor;
     Color textColor;
     String text;
@@ -335,60 +319,70 @@ class _ProductGridItemState extends State<ProductGridItem> {
     if (isOutOfStock) {
       bgColor = Colors.red.shade50;
       textColor = Colors.red.shade700;
-      text = 'Stok Habis';
+      text = 'Habis';
     } else if (widget.product.isLowStock) {
       bgColor = AppTheme.warningColor.withValues(alpha: 0.1);
       textColor = AppTheme.warningColor;
-      text = 'Stok Rendah: ${widget.product.stock}';
+      text = isMobile ? '${widget.product.stock}' : 'Stok: ${widget.product.stock}';
     } else {
       bgColor = AppTheme.successColor.withValues(alpha: 0.1);
       textColor = AppTheme.successColor;
-      text = 'Stok: ${widget.product.stock}';
+      text = isMobile ? '${widget.product.stock}' : 'Stok: ${widget.product.stock}';
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+      padding: EdgeInsets.symmetric(
+        horizontal: isMobile ? 3 : 6,
+        vertical: 0,
+      ),
       decoration: BoxDecoration(
         color: bgColor,
-        borderRadius: BorderRadius.circular(5),
+        borderRadius: BorderRadius.circular(4),
       ),
       child: Text(
         text,
         style: TextStyle(
-          fontSize: 10,
+          fontSize: isMobile ? 7 : 10,
           fontWeight: FontWeight.w600,
           color: textColor,
+          height: 1.0,
         ),
+        maxLines: 1,
       ),
     );
   }
 
-  Widget _buildActionButton(bool canAddMore, bool isOutOfStock) {
+  Widget _buildActionButton(bool canAddMore, bool isOutOfStock, bool isMobile) {
     // Green "Tambah" button (default)
     if (canAddMore) {
       return Container(
         width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+        padding: EdgeInsets.symmetric(
+          horizontal: isMobile ? 0 : 8,
+          vertical: isMobile ? 1 : 5,
+        ),
         decoration: BoxDecoration(
           color: AppTheme.successColor.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(8), // Modern Material 3
+          borderRadius: BorderRadius.circular(isMobile ? 4 : 8),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.add,
-              size: 13, // Slightly larger
-              color: AppTheme.successColor,
-            ),
-            const SizedBox(width: 4),
+            if (!isMobile)
+              Icon(
+                Icons.add,
+                size: 13,
+                color: AppTheme.successColor,
+              ),
+            if (!isMobile) SizedBox(width: 4),
             Text(
-              'Tambah',
+              isMobile ? '+' : 'Tambah',
               style: TextStyle(
-                fontSize: 12, // Slightly larger
+                fontSize: isMobile ? 11 : 12,
                 fontWeight: FontWeight.w600,
                 color: AppTheme.successColor,
-                letterSpacing: 0.3,
+                height: 1.0,
               ),
             ),
           ],
@@ -400,27 +394,32 @@ class _ProductGridItemState extends State<ProductGridItem> {
     if (!isOutOfStock && widget.quantity >= widget.product.stock) {
       return Container(
         width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+        padding: EdgeInsets.symmetric(
+          horizontal: isMobile ? 0 : 8,
+          vertical: isMobile ? 1 : 5,
+        ),
         decoration: BoxDecoration(
           color: AppTheme.warningColor.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(8), // Modern Material 3
+          borderRadius: BorderRadius.circular(isMobile ? 4 : 8),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.check_circle,
-              size: 13,
-              color: AppTheme.warningColor,
-            ),
-            const SizedBox(width: 4),
+            if (!isMobile)
+              Icon(
+                Icons.check_circle,
+                size: 13,
+                color: AppTheme.warningColor,
+              ),
+            if (!isMobile) SizedBox(width: 4),
             Text(
-              'Max',
+              isMobile ? 'Max' : 'Max',
               style: TextStyle(
-                fontSize: 12,
+                fontSize: isMobile ? 11 : 12,
                 fontWeight: FontWeight.w600,
                 color: AppTheme.warningColor,
-                letterSpacing: 0.3,
+                height: 1.0,
               ),
             ),
           ],
@@ -428,30 +427,35 @@ class _ProductGridItemState extends State<ProductGridItem> {
       );
     }
 
-    // Ghosted "Stok Habis" button
+    // Ghosted "Habis" button
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+      padding: EdgeInsets.symmetric(
+        horizontal: isMobile ? 0 : 8,
+        vertical: isMobile ? 1 : 5,
+      ),
       decoration: BoxDecoration(
-        color: AppTheme.getErrorContainer(context), // Soft Red background
-        borderRadius: BorderRadius.circular(8), // Modern Material 3
+        color: AppTheme.getErrorContainer(context),
+        borderRadius: BorderRadius.circular(isMobile ? 4 : 8),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            Icons.block,
-            size: 13,
-            color: AppTheme.getErrorOnContainer(context), // Dark Red
-          ),
-          const SizedBox(width: 4),
+          if (!isMobile)
+            Icon(
+              Icons.block,
+              size: 13,
+              color: AppTheme.getErrorOnContainer(context),
+            ),
+          if (!isMobile) SizedBox(width: 4),
           Text(
-            'Stok Habis',
+            isMobile ? '✕' : 'Habis',
             style: TextStyle(
-              fontSize: 12,
+              fontSize: isMobile ? 11 : 12,
               fontWeight: FontWeight.w600,
-              color: AppTheme.getErrorOnContainer(context), // Dark Red
-              letterSpacing: 0.3,
+              color: AppTheme.getErrorOnContainer(context),
+              height: 1.0,
             ),
           ),
         ],

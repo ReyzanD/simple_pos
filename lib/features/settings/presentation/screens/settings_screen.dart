@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../controllers/settings_controller.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/neo_brutal_theme.dart';
 import '../../../../core/controllers/theme_controller.dart';
 import '../../../shared/presentation/main_navigation.dart';
 import 'printer_settings_screen.dart';
 import 'data_management_screen.dart';
+import '../../../../core/widgets/brutal_widgets.dart';
 
 /// Settings screen with 6 expandable sections using grouped card layout
 class SettingsScreen extends StatelessWidget {
@@ -27,10 +29,26 @@ class SettingsScreen extends StatelessWidget {
             ),
             title: const Text('Pengaturan'),
             actions: [
-              IconButton(
-                icon: const Icon(Icons.restore),
-                onPressed: () => _showResetDialog(context, controller),
-                tooltip: 'Reset ke Default',
+              Padding(
+                padding: EdgeInsets.only(right: NeoBrutalTheme.spaceSM),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: NeoBrutalTheme.warning.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
+                    border: Border.all(
+                      color: Colors.black,
+                      width: 2,
+                    ),
+                  ),
+                  child: IconButton(
+                    icon: Icon(
+                      Icons.restore,
+                      color: NeoBrutalTheme.warning,
+                    ),
+                    tooltip: 'Reset ke Default',
+                    onPressed: () => _showResetDialog(context, controller),
+                  ),
+                ),
               ),
             ],
             flexibleSpace: Container(
@@ -55,9 +73,9 @@ class SettingsScreen extends StatelessWidget {
               ? const Center(child: CircularProgressIndicator())
               : ListView(
                   padding: const EdgeInsets.only(
-                    left: 16,
-                    right: 16,
-                    top: 16,
+                    left: NeoBrutalTheme.spaceMD,
+                    right: NeoBrutalTheme.spaceMD,
+                    top: NeoBrutalTheme.spaceMD,
                     bottom: 100, // Space for floating nav
                   ),
                   children: [
@@ -82,7 +100,7 @@ class SettingsScreen extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: NeoBrutalTheme.spaceMD),
 
                     // 6 Expandable sections
                     _buildExpandableSection(
@@ -119,7 +137,7 @@ class SettingsScreen extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: NeoBrutalTheme.spaceMD),
 
                     _buildExpandableSection(
                       context,
@@ -135,7 +153,7 @@ class SettingsScreen extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: NeoBrutalTheme.spaceMD),
 
                     _buildExpandableSection(
                       context,
@@ -157,7 +175,7 @@ class SettingsScreen extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: NeoBrutalTheme.spaceMD),
 
                     _buildExpandableSection(
                       context,
@@ -187,7 +205,7 @@ class SettingsScreen extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: NeoBrutalTheme.spaceMD),
 
                     _buildExpandableSection(
                       context,
@@ -202,7 +220,7 @@ class SettingsScreen extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: NeoBrutalTheme.spaceMD),
 
                     _buildExpandableSection(
                       context,
@@ -255,12 +273,8 @@ class SettingsScreen extends StatelessWidget {
     required IconData icon,
     required List<Widget> children,
   }) {
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: AppTheme.borderColor, width: 1),
-      ),
+    return BrutalCard(
+      padding: EdgeInsets.all(0),
       child: Theme(
         data: Theme.of(context).copyWith(
           dividerColor: Colors.transparent,
@@ -268,26 +282,30 @@ class SettingsScreen extends StatelessWidget {
           highlightColor: AppTheme.primaryColor.withValues(alpha: 0.08),
         ),
         child: ExpansionTile(
-          tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          tilePadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           childrenPadding: EdgeInsets.zero,
           leading: Container(
-            width: 40,
-            height: 40,
+            width: 48,
+            height: 48,
             decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(10),
+              color: NeoBrutalTheme.primary,
+              borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
+              border: Border.all(
+                color: Colors.black,
+                width: 3,
+              ),
             ),
             child: Icon(
               icon,
-              color: AppTheme.primaryColor,
-              size: 20,
+              color: Colors.white,
+              size: 24,
             ),
           ),
           title: Text(
             title,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
+            style: NeoBrutalTheme.headlineSmall.copyWith(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
               color: AppTheme.textPrimary,
             ),
           ),
@@ -310,35 +328,63 @@ class SettingsScreen extends StatelessWidget {
     Color? iconColor,
     int maxLines = 1,
   }) {
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      leading: Icon(
-        icon,
-        color: iconColor ?? AppTheme.primaryColor,
-        size: 20,
-      ),
-      title: Text(
-        title,
-        style: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
+    final defaultIconColor = iconColor ?? NeoBrutalTheme.primary;
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: NeoBrutalTheme.spaceSM),
+      child: BrutalCard(
+        onTap: onTap,
+        padding: EdgeInsets.all(NeoBrutalTheme.spaceMD),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: defaultIconColor,
+                borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
+                border: Border.all(
+                  color: Colors.black,
+                  width: 3,
+                ),
+              ),
+              child: Icon(
+                icon,
+                color: Colors.white,
+                size: 24,
+              ),
+            ),
+            SizedBox(width: NeoBrutalTheme.spaceMD),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: NeoBrutalTheme.headlineSmall.copyWith(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  SizedBox(height: NeoBrutalTheme.spaceXS),
+                  Text(
+                    subtitle,
+                    style: NeoBrutalTheme.bodySmall.copyWith(
+                      color: AppTheme.textSecondary,
+                    ),
+                    maxLines: maxLines,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right,
+              color: AppTheme.textSecondary,
+              size: 24,
+            ),
+          ],
         ),
       ),
-      subtitle: Text(
-        subtitle,
-        maxLines: maxLines,
-        overflow: TextOverflow.ellipsis,
-        style: TextStyle(
-          fontSize: 13,
-          color: AppTheme.textSecondary,
-        ),
-      ),
-      trailing: Icon(
-        Icons.chevron_right,
-        color: AppTheme.textTertiary,
-        size: 20,
-      ),
-      onTap: onTap,
     );
   }
 

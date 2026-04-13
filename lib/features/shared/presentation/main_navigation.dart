@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -17,9 +16,11 @@ import '../../users/presentation/screens/login_screen.dart';
 import '../../users/domain/entities/user_role.dart';
 import '../../backup/presentation/screens/backup_screen.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/neo_brutal_theme.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/animations/animation_constants.dart';
 import '../../../../core/utils/haptic_helper.dart';
+import '../../../../core/utils/responsive_helper.dart';
 import 'drawer_header.dart';
 import 'drawer_sections.dart';
 
@@ -51,13 +52,9 @@ class MainNavigationState extends State<MainNavigation>
       duration: const Duration(milliseconds: 1500),
     )..repeat(reverse: true);
 
-    _scannerPulseAnimation = Tween<double>(
-      begin: 1.0,
-      end: 1.08,
-    ).animate(CurvedAnimation(
-      parent: _scannerPulseController,
-      curve: Curves.easeInOut,
-    ));
+    _scannerPulseAnimation = Tween<double>(begin: 1.0, end: 1.08).animate(
+      CurvedAnimation(parent: _scannerPulseController, curve: Curves.easeInOut),
+    );
 
     // Nav slide animation
     _navSlideController = AnimationController(
@@ -65,13 +62,13 @@ class MainNavigationState extends State<MainNavigation>
       duration: const Duration(milliseconds: 600),
     );
 
-    _navSlideAnimation = Tween<Offset>(
-      begin: const Offset(0, 1),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _navSlideController,
-      curve: AnimationCurves.easeOut,
-    ));
+    _navSlideAnimation =
+        Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _navSlideController,
+            curve: AnimationCurves.easeOut,
+          ),
+        );
 
     _navSlideController.forward();
   }
@@ -84,10 +81,7 @@ class MainNavigationState extends State<MainNavigation>
   }
 
   late final List<Widget> _screens = [
-    POSScreen(
-      key: _posScreenKey,
-      onCheckoutSuccess: _refreshAllScreens,
-    ),
+    POSScreen(key: _posScreenKey, onCheckoutSuccess: _refreshAllScreens),
     const InventoryScreen(),
     const SalesHistoryScreen(),
     const SalesReportScreen(),
@@ -304,10 +298,17 @@ class MainNavigationState extends State<MainNavigation>
   }
 
   Widget _buildFloatingBottomNav() {
+    final isVerySmall = ResponsiveHelper.isVerySmallScreen(context);
+
     return SlideTransition(
       position: _navSlideAnimation,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+        padding: EdgeInsets.fromLTRB(
+          isVerySmall ? 12 : 20,
+          0,
+          isVerySmall ? 12 : 20,
+          isVerySmall ? 0 : 20,
+        ),
         child: _GlassBottomNav(
           currentIndex: _currentIndex,
           onTap: (index) {
@@ -319,6 +320,7 @@ class MainNavigationState extends State<MainNavigation>
           },
           onScannerPressed: _handleQRScan,
           scannerAnimation: _scannerPulseAnimation,
+          isCompact: isVerySmall,
         ),
       ),
     );
@@ -381,10 +383,7 @@ class MainNavigationState extends State<MainNavigation>
 
             // Logout Button
             ListTile(
-              leading: Icon(
-                Icons.logout_rounded,
-                color: AppTheme.errorColor,
-              ),
+              leading: Icon(Icons.logout_rounded, color: AppTheme.errorColor),
               title: Text(
                 'Keluar',
                 style: TextStyle(
@@ -409,96 +408,80 @@ class _GlassBottomNav extends StatelessWidget {
   final Function(int) onTap;
   final VoidCallback onScannerPressed;
   final Animation<double> scannerAnimation;
+  final bool isCompact;
 
   const _GlassBottomNav({
     required this.currentIndex,
     required this.onTap,
     required this.onScannerPressed,
     required this.scannerAnimation,
+    required this.isCompact,
   });
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(28),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-        child: Container(
-          height: 72 + MediaQuery.of(context).padding.bottom,
-          decoration: BoxDecoration(
-            color: isDark
-                ? AppTheme.darkSurface.withValues(alpha: 0.85)
-                : Colors.white.withValues(alpha: 0.85),
-            borderRadius: BorderRadius.circular(28),
-            border: Border.all(
-              color: isDark
-                  ? AppTheme.darkBorderColor.withValues(alpha: 0.3)
-                  : Colors.white.withValues(alpha: 0.8),
-              width: 1.5,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: isDark
-                    ? Colors.black.withValues(alpha: 0.4)
-                    : Colors.black.withValues(alpha: 0.08),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              // Left side nav items
-              Expanded(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    _buildNavItem(
-                      context: context,
-                      icon: Icons.point_of_sale_rounded,
-                      label: 'POS',
-                      index: 0,
-                    ),
-                    _buildNavItem(
-                      context: context,
-                      icon: Icons.inventory_2_outlined,
-                      label: 'Inventory',
-                      index: 1,
-                    ),
-                  ],
-                ),
-              ),
-
-              // Center scanner button
-              _buildScannerButton(),
-
-              // Right side nav items
-              Expanded(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    _buildNavItem(
-                      context: context,
-                      icon: Icons.history_rounded,
-                      label: 'History',
-                      index: 2,
-                    ),
-                    _buildNavItem(
-                      context: context,
-                      icon: Icons.bar_chart_rounded,
-                      label: 'Reports',
-                      index: 3,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
+    return Container(
+      height: (isCompact ? 60 : 70) + MediaQuery.of(context).padding.bottom, // ✅ Proper touch targets (60/70px)
+      decoration: BoxDecoration(
+        color: NeoBrutalTheme.blockYellow, // ✅ Bold yellow background
+        borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium),
+        border: Border.all(
+          color: Colors.black,
+          width: 3, // ✅ Bold border
         ),
+        boxShadow: NeoBrutalTheme.chunkyShadow,
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // Left side nav items
+          Expanded(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                _buildNavItem(
+                  context: context,
+                  icon: Icons.point_of_sale_rounded,
+                  label: 'POS',
+                  index: 0,
+                ),
+                _buildNavItem(
+                  context: context,
+                  icon: Icons.inventory_2_outlined,
+                  label: 'Inventory',
+                  index: 1,
+                ),
+              ],
+            ),
+          ),
+
+          // Center scanner button
+          _buildScannerButton(),
+
+          // Right side nav items
+          Expanded(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                _buildNavItem(
+                  context: context,
+                  icon: Icons.history_rounded,
+                  label: 'History',
+                  index: 2,
+                ),
+                _buildNavItem(
+                  context: context,
+                  icon: Icons.bar_chart_rounded,
+                  label: 'Reports',
+                  index: 3,
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -512,82 +495,70 @@ class _GlassBottomNav extends StatelessWidget {
     final isSelected = currentIndex == index;
 
     return Expanded(
-      child: GestureDetector(
-        onTap: () {
-          HapticHelper.selection(); // Haptic feedback on nav change
-          onTap(index);
-        },
-        child: AnimatedContainer(
-          duration: AnimationDurations.fast,
-          curve: AnimationCurves.easeOut,
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Stack(
-                alignment: Alignment.center,
-                children: [
-                  // Glow effect for selected item
-                  if (isSelected)
-                    Positioned.fill(
-                      child: Container(
-                        margin: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: AppTheme.primaryColor.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(14),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppTheme.primaryColor.withValues(alpha: 0.4),
-                              blurRadius: 8,
-                              spreadRadius: 2,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  // Icon
-                  AnimatedScale(
-                    scale: isSelected ? 1.15 : 1.0,
-                    duration: AnimationDurations.fast,
-                    curve: AnimationCurves.easeOut,
-                    child: AnimatedContainer(
-                      duration: AnimationDurations.fast,
-                      padding: EdgeInsets.all(isSelected ? 10 : 8),
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? AppTheme.primaryColor.withValues(alpha: 0.15)
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Icon(
-                        icon,
-                        color: isSelected
-                            ? AppTheme.primaryColor
-                            : AppTheme.getTextSecondaryColor(context),
-                        size: 24,
-                      ),
+      child: Tooltip(
+        message: label,
+        waitDuration: const Duration(milliseconds: 500),
+        showDuration: const Duration(seconds: 2),
+        child: GestureDetector(
+          onTap: () {
+            HapticHelper.selection(); // Haptic feedback on nav change
+            onTap(index);
+          },
+          child: isCompact
+              ? SizedBox(
+                  height: 40, // ✅ Proper touch target (was 28)
+                  child: Center(
+                    child: Icon(
+                      icon,
+                      size: 22, // ✅ Proper icon size (was 18)
+                      color: isSelected
+                          ? NeoBrutalTheme.primary
+                          : Colors.black,
                     ),
                   ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              AnimatedDefaultTextStyle(
-                duration: AnimationDurations.fast,
-                curve: AnimationCurves.easeOut,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                  color: isSelected
-                      ? AppTheme.primaryColor
-                      : AppTheme.getTextSecondaryColor(context),
+                )
+              : LayoutBuilder(
+                  builder: (context, constraints) {
+                    // Proper sizing for good touch targets
+                    final maxHeight = constraints.maxHeight;
+                    final iconSize = (maxHeight * 0.35).clamp(20.0, 26.0); // ✅ Larger icons
+                    final textSize = (maxHeight * 0.18).clamp(11.0, 13.0); // ✅ Readable text
+                    final spacing = maxHeight * 0.08; // ✅ Proper spacing
+
+                    return Column(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // Icon with NO container - just the icon
+                        Icon(
+                          icon,
+                          size: iconSize,
+                          color: isSelected
+                              ? NeoBrutalTheme.primary
+                              : Colors.black,
+                        ),
+                        // Responsive label
+                        SizedBox(height: spacing),
+                        Text(
+                          label,
+                          style: TextStyle(
+                            fontSize: textSize,
+                            fontWeight: isSelected
+                                ? FontWeight.bold
+                                : FontWeight.w600,
+                            color: Colors.black,
+                            height: 1.0,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    );
+                  },
                 ),
-                child: Text(label),
-              ),
-            ],
           ),
         ),
-      ),
-    );
+      );
   }
 
   Widget _buildScannerButton() {
@@ -596,27 +567,30 @@ class _GlassBottomNav extends StatelessWidget {
       builder: (context, child) {
         return Transform.scale(
           scale: scannerAnimation.value,
-          child: GestureDetector(
-            onTap: onScannerPressed,
-            child: Container(
-              width: 58,
-              height: 58,
-              margin: const EdgeInsets.symmetric(horizontal: 8),
-              decoration: BoxDecoration(
-                gradient: AppGradients.ocean,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppTheme.infoColor.withValues(alpha: 0.4),
-                    blurRadius: 16,
-                    offset: const Offset(0, 6),
+          child: Tooltip(
+            message: 'Scan QR Code',
+            waitDuration: const Duration(milliseconds: 500),
+            showDuration: const Duration(seconds: 2),
+            child: GestureDetector(
+              onTap: onScannerPressed,
+              child: Container(
+                width: isCompact ? 40 : 56,  // ✅ Proper touch targets (was 28/48)
+                height: isCompact ? 40 : 56, // ✅ Proper touch targets (was 28/48)
+                margin: EdgeInsets.symmetric(horizontal: isCompact ? 4 : 8),
+                decoration: BoxDecoration(
+                  color: NeoBrutalTheme.secondary,
+                  borderRadius: BorderRadius.circular(isCompact ? 8 : NeoBrutalTheme.radiusMedium),
+                  border: Border.all(
+                    color: Colors.black,
+                    width: isCompact ? 3 : 4, // ✅ Bold borders
                   ),
-                ],
-              ),
-              child: const Icon(
-                Icons.qr_code_scanner_rounded,
-                color: Colors.white,
-                size: 28,
+                  boxShadow: isCompact ? [] : NeoBrutalTheme.chunkyShadow,
+                ),
+                child: Icon(
+                  Icons.qr_code_scanner_rounded,
+                  color: Colors.white,
+                  size: isCompact ? 20 : 26, // ✅ Proper icon sizes (was 12/20)
+                ),
               ),
             ),
           ),

@@ -18,6 +18,7 @@ class DiscountPresetsTabWidget extends StatelessWidget {
         // Wrap in Scaffold with FAB
         return Scaffold(
           floatingActionButton: FloatingActionButton.extended(
+            heroTag: 'discount_presets_fab', // ✅ Unique hero tag
             onPressed: controller.isLoading
                 ? null
                 : () => _showAddDialog(context, controller),

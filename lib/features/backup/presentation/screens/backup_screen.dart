@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/neo_brutal_theme.dart';
 import '../../../../core/constants/backup_constants.dart';
 import '../../../../core/widgets/modern_button.dart';
 import '../../../../core/widgets/modern_card.dart';
-import '../../../shared/presentation/main_navigation.dart';
 import '../controllers/backup_controller.dart';
 import '../../domain/entities/backup_metadata.dart';
 import '../../domain/entities/backup_config.dart';
@@ -40,50 +40,34 @@ class _BackupScreenState extends State<BackupScreen>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Scaffold(
+      backgroundColor: NeoBrutalTheme.background, // ✅ Brutal white background
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.menu),
-          onPressed: () {
-            final mainNavState =
-                context.findAncestorStateOfType<MainNavigationState>();
-            mainNavState?.openDrawer();
-          },
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
         ),
         title: const Text('Backup & Restore'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () {
-              context.read<BackupController>().loadBackups();
-            },
-            tooltip: 'Refresh',
-          ),
-        ],
         flexibleSpace: Container(
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: isDark
-                  ? [
-                      AppTheme.darkSurface,
-                      AppTheme.darkSurface.withValues(alpha: 0.95),
-                    ]
-                  : [
-                      AppTheme.primaryColor,
-                      AppTheme.primaryLight,
-                    ],
+            color: NeoBrutalTheme.blockYellow, // ✅ Bold yellow background
+            border: Border(
+              bottom: BorderSide(
+                color: Colors.black,
+                width: 6, // ✅ Extra thick bottom border
+              ),
             ),
           ),
         ),
         bottom: TabBar(
           controller: _tabController,
-          indicatorColor: Colors.white,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white70,
+          indicatorColor: Colors.black,
+          labelColor: Colors.black,
+          unselectedLabelColor: Colors.black.withValues(alpha: 0.5),
+          indicatorWeight: 4, // ✅ Bold indicator
+          labelStyle: NeoBrutalTheme.labelLarge.copyWith(
+            fontWeight: FontWeight.w800,
+          ),
           tabs: const [
             Tab(text: 'Full Backups'),
             Tab(text: 'Incremental'),
@@ -126,11 +110,20 @@ class _BackupScreenState extends State<BackupScreen>
           }
 
           return FloatingActionButton.extended(
+            heroTag: 'backup_fab', // ✅ Unique hero tag
             onPressed: () => _showBackupOptionsDialog(context, controller),
             icon: const Icon(Icons.add),
             label: const Text('Backup'),
-            backgroundColor: AppTheme.primaryColor,
+            backgroundColor: NeoBrutalTheme.primary, // ✅ Brutal primary color
             foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium), // ✅ Brutal 8px
+              side: BorderSide(
+                color: Colors.black,
+                width: 4, // ✅ Bold 4px border
+              ),
+            ),
+            elevation: 6,
           );
         },
       ),
@@ -143,21 +136,34 @@ class _BackupScreenState extends State<BackupScreen>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.error_outline,
-            size: 64,
-            color: AppTheme.errorColor,
+          Container(
+            width: 100,
+            height: 100,
+            decoration: BoxDecoration(
+              color: AppTheme.errorColor,
+              borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium),
+              border: Border.all(
+                color: Colors.black,
+                width: 4, // ✅ Bold border
+              ),
+              boxShadow: NeoBrutalTheme.chunkyShadow,
+            ),
+            child: Icon(
+              Icons.error_outline,
+              size: 50,
+              color: Colors.white,
+            ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: NeoBrutalTheme.spaceMD),
           Text(
             controller.error?.userMessage ?? 'Terjadi kesalahan',
-            style: TextStyle(
-              fontSize: 16,
+            style: NeoBrutalTheme.bodyLarge.copyWith(
+              fontWeight: FontWeight.w700,
               color: AppTheme.getTextSecondaryColor(context),
             ),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: NeoBrutalTheme.spaceLG),
           ElevatedButton.icon(
             onPressed: () {
               controller.clearError();
@@ -165,6 +171,22 @@ class _BackupScreenState extends State<BackupScreen>
             },
             icon: const Icon(Icons.refresh),
             label: const Text('Coba Lagi'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: NeoBrutalTheme.primary,
+              foregroundColor: Colors.white,
+              padding: EdgeInsets.symmetric(
+                horizontal: NeoBrutalTheme.spaceLG,
+                vertical: NeoBrutalTheme.spaceMD,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium),
+                side: BorderSide(
+                  color: Colors.black,
+                  width: 4, // ✅ Bold border
+                ),
+              ),
+              elevation: 6,
+            ),
           ),
         ],
       ),
@@ -184,6 +206,9 @@ class _BackupScreenState extends State<BackupScreen>
 
     return RefreshIndicator(
       onRefresh: () => controller.loadBackups(),
+      color: NeoBrutalTheme.primary, // ✅ Brutal primary color
+      backgroundColor: NeoBrutalTheme.blockYellow.withValues(alpha: 0.3),
+      strokeWidth: 4, // ✅ Thicker indicator
       child: ListView.builder(
         padding: const EdgeInsets.only(
           left: 16,
@@ -213,25 +238,38 @@ class _BackupScreenState extends State<BackupScreen>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.backup_outlined,
-            size: 64,
-            color: AppTheme.textTertiary,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Belum ada ${type == BackupType.full ? "backup penuh" : "backup inkremental"}',
-            style: TextStyle(
-              fontSize: 16,
-              color: AppTheme.getTextSecondaryColor(context),
+          Container(
+            width: 120,
+            height: 120,
+            decoration: BoxDecoration(
+              color: NeoBrutalTheme.blockCoral.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusLarge),
+              border: Border.all(
+                color: Colors.black,
+                width: 4, // ✅ Bold border
+              ),
+              boxShadow: NeoBrutalTheme.chunkyShadow,
+            ),
+            child: Icon(
+              Icons.backup_outlined,
+              size: 60,
+              color: NeoBrutalTheme.blockCoral,
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: NeoBrutalTheme.spaceLG),
+          Text(
+            'Belum ada ${type == BackupType.full ? "backup penuh" : "backup inkremental"}',
+            style: NeoBrutalTheme.headlineSmall.copyWith(
+              fontWeight: FontWeight.w800,
+              color: Colors.black,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(height: NeoBrutalTheme.spaceSM),
           Text(
             'Tap tombol + untuk membuat backup',
-            style: TextStyle(
-              fontSize: 14,
-              color: AppTheme.textTertiary,
+            style: NeoBrutalTheme.bodyMedium.copyWith(
+              color: AppTheme.getTextSecondaryColor(context),
             ),
           ),
         ],
@@ -364,22 +402,23 @@ class _StorageStatusWidgetState extends State<_StorageStatusWidget> {
     return GestureDetector(
       onTap: () => _showStorageDetailsDialog(context, localSize, driveSize, maxStorage),
       child: Container(
-        margin: const EdgeInsets.all(16),
-        padding: const EdgeInsets.all(16),
+        margin: EdgeInsets.all(NeoBrutalTheme.spaceMD),
+        padding: EdgeInsets.all(NeoBrutalTheme.spaceLG),
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              AppTheme.primaryColor.withValues(alpha: 0.08),
-              AppTheme.secondaryColor.withValues(alpha: 0.05),
+              NeoBrutalTheme.primary.withValues(alpha: 0.15),
+              NeoBrutalTheme.secondary.withValues(alpha: 0.1),
             ],
           ),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusLarge),
           border: Border.all(
-            color: AppTheme.primaryColor.withValues(alpha: 0.1),
-            width: 1,
+            color: Colors.black,
+            width: 4, // ✅ Bold border
           ),
+          boxShadow: NeoBrutalTheme.chunkyShadow,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -390,33 +429,57 @@ class _StorageStatusWidgetState extends State<_StorageStatusWidget> {
               children: [
                 Row(
                   children: [
-                    Icon(
-                      Icons.storage,
-                      size: 20,
-                      color: AppTheme.primaryColor,
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: NeoBrutalTheme.primary.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
+                        border: Border.all(
+                          color: Colors.black,
+                          width: 2,
+                        ),
+                      ),
+                      child: Icon(
+                        Icons.storage,
+                        size: 20,
+                        color: NeoBrutalTheme.primary,
+                      ),
                     ),
-                    const SizedBox(width: 8),
+                    SizedBox(width: NeoBrutalTheme.spaceSM),
                     Text(
-                      'Storage Status',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: AppTheme.getTextSecondaryColor(context),
+                      'STORAGE STATUS',
+                      style: NeoBrutalTheme.labelLarge.copyWith(
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 2,
+                        color: Colors.black,
                       ),
                     ),
                   ],
                 ),
-                IconButton(
-                  icon: const Icon(Icons.refresh, size: 18),
-                  onPressed: () => widget.controller.loadBackups(),
-                  tooltip: 'Refresh storage info',
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                  color: AppTheme.getTextSecondaryColor(context),
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
+                    border: Border.all(
+                      color: Colors.black,
+                      width: 2,
+                    ),
+                  ),
+                  child: IconButton(
+                    icon: const Icon(Icons.refresh, size: 16),
+                    onPressed: () => widget.controller.loadBackups(),
+                    tooltip: 'Refresh storage info',
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    color: NeoBrutalTheme.primary,
+                  ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: NeoBrutalTheme.spaceMD),
 
             // Progress bars
             _StorageProgressBar(
@@ -426,7 +489,7 @@ class _StorageStatusWidgetState extends State<_StorageStatusWidget> {
               color: localStatusColor,
               icon: Icons.smartphone,
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: NeoBrutalTheme.spaceMD),
             _StorageProgressBar(
               label: 'Google Drive',
               used: driveSize,
@@ -434,7 +497,7 @@ class _StorageStatusWidgetState extends State<_StorageStatusWidget> {
               color: driveStatusColor,
               icon: Icons.cloud,
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: NeoBrutalTheme.spaceMD),
 
             // Quick stats
             Row(
@@ -444,13 +507,13 @@ class _StorageStatusWidgetState extends State<_StorageStatusWidget> {
                     label: 'Total Size',
                     value: _formatBytes(totalSize),
                     icon: Icons.folder,
-                    color: AppTheme.primaryColor,
+                    color: NeoBrutalTheme.primary,
                   ),
                 ),
                 Container(
-                  width: 1,
+                  width: 2,
                   height: 40,
-                  color: AppTheme.getBorderColor(context),
+                  color: Colors.black.withValues(alpha: 0.2),
                 ),
                 Expanded(
                   child: _StorageStat(
@@ -461,9 +524,9 @@ class _StorageStatusWidgetState extends State<_StorageStatusWidget> {
                   ),
                 ),
                 Container(
-                  width: 1,
+                  width: 2,
                   height: 40,
-                  color: AppTheme.getBorderColor(context),
+                  color: Colors.black.withValues(alpha: 0.2),
                 ),
                 Expanded(
                   child: _StorageStat(
@@ -477,12 +540,11 @@ class _StorageStatusWidgetState extends State<_StorageStatusWidget> {
             ),
 
             // Tap hint
-            const SizedBox(height: 8),
+            SizedBox(height: NeoBrutalTheme.spaceSM),
             Center(
               child: Text(
                 'Tap for detailed breakdown',
-                style: TextStyle(
-                  fontSize: 11,
+                style: NeoBrutalTheme.bodySmall.copyWith(
                   color: AppTheme.textTertiary,
                   fontStyle: FontStyle.italic,
                 ),
@@ -554,46 +616,61 @@ class _StorageProgressBar extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(icon, size: 14, color: color),
-                const SizedBox(width: 6),
+                Container(
+                  width: 24,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(
+                      color: color,
+                      width: 2,
+                    ),
+                  ),
+                  child: Icon(icon, size: 12, color: color),
+                ),
+                SizedBox(width: NeoBrutalTheme.spaceXS),
                 Text(
                   label,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: AppTheme.getTextSecondaryColor(context),
+                  style: NeoBrutalTheme.labelMedium.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: Colors.black,
                   ),
                 ),
               ],
             ),
             Text(
               '${_formatBytes(used)} / ${_formatBytes(total)}',
-              style: TextStyle(
-                fontSize: 11,
+              style: NeoBrutalTheme.bodySmall.copyWith(
+                fontWeight: FontWeight.w600,
                 color: AppTheme.getTextSecondaryColor(context),
               ),
             ),
           ],
         ),
-        const SizedBox(height: 6),
+        SizedBox(height: NeoBrutalTheme.spaceXS),
         ClipRRect(
           borderRadius: BorderRadius.circular(6),
           child: Stack(
             children: [
               Container(
-                height: 8,
+                height: 12,
                 decoration: BoxDecoration(
-                  color: AppTheme.getBorderColor(context).withValues(alpha: 0.3),
+                  color: Colors.black.withValues(alpha: 0.1),
+                  border: Border.all(
+                    color: Colors.black,
+                    width: 2,
+                  ),
                 ),
               ),
               FractionallySizedBox(
                 widthFactor: percentage,
                 child: Container(
-                  height: 8,
+                  height: 12,
                   decoration: BoxDecoration(
                     color: color,
                     gradient: LinearGradient(
-                      colors: [color.withValues(alpha: 0.8), color],
+                      colors: [color.withValues(alpha: 0.9), color],
                     ),
                   ),
                 ),
@@ -601,13 +678,12 @@ class _StorageProgressBar extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: 4),
+        SizedBox(height: 4),
         Text(
           '${(percentage * 100).toStringAsFixed(1)}% used',
-          style: TextStyle(
-            fontSize: 10,
+          style: NeoBrutalTheme.labelSmall.copyWith(
             color: color,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w800,
           ),
         ),
       ],
@@ -852,19 +928,28 @@ class _BackupListItem extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
+        margin: EdgeInsets.only(bottom: NeoBrutalTheme.spaceMD),
+        padding: EdgeInsets.all(NeoBrutalTheme.spaceLG),
         decoration: BoxDecoration(
           color: isSelected
-              ? AppTheme.primaryColor.withValues(alpha: 0.1)
-              : AppTheme.getCardColor(context),
-          borderRadius: BorderRadius.circular(16),
+              ? NeoBrutalTheme.primary.withValues(alpha: 0.15)
+              : Colors.white,
+          borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium),
           border: Border.all(
             color: isSelected
-                ? AppTheme.primaryColor
-                : AppTheme.getBorderColor(context),
-            width: isSelected ? 2 : 1,
+                ? NeoBrutalTheme.primary
+                : Colors.black,
+            width: isSelected ? 4 : 3, // ✅ Bold border
           ),
+          boxShadow: isSelected
+              ? NeoBrutalTheme.chunkyShadow
+              : [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.1),
+                    offset: Offset(4, 4),
+                    blurRadius: 0,
+                  ),
+                ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -872,13 +957,19 @@ class _BackupListItem extends StatelessWidget {
             Row(
               children: [
                 Container(
-                  width: 40,
-                  height: 40,
+                  width: 48,
+                  height: 48,
                   decoration: BoxDecoration(
                     color: backup.type == BackupType.full
-                        ? AppTheme.infoColor.withValues(alpha: 0.1)
-                        : AppTheme.successColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(10),
+                        ? AppTheme.infoColor.withValues(alpha: 0.15)
+                        : AppTheme.successColor.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium),
+                    border: Border.all(
+                      color: backup.type == BackupType.full
+                          ? AppTheme.infoColor
+                          : AppTheme.successColor,
+                      width: 3,
+                    ),
                   ),
                   child: Icon(
                     backup.type == BackupType.full
@@ -887,27 +978,26 @@ class _BackupListItem extends StatelessWidget {
                     color: backup.type == BackupType.full
                         ? AppTheme.infoColor
                         : AppTheme.successColor,
-                    size: 20,
+                    size: 24,
                   ),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: NeoBrutalTheme.spaceMD),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         _formatDate(backup.createdAt),
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: AppTheme.getTextPrimaryColor(context),
+                        style: NeoBrutalTheme.headlineSmall.copyWith(
+                          fontWeight: FontWeight.w800,
+                          color: Colors.black,
+                          fontSize: 16,
                         ),
                       ),
-                      const SizedBox(height: 2),
+                      SizedBox(height: 2),
                       Text(
                         _formatTime(backup.createdAt),
-                        style: TextStyle(
-                          fontSize: 12,
+                        style: NeoBrutalTheme.bodyMedium.copyWith(
                           color: AppTheme.getTextSecondaryColor(context),
                         ),
                       ),
@@ -916,26 +1006,30 @@ class _BackupListItem extends StatelessWidget {
                 ),
                 if (isSelected)
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: NeoBrutalTheme.spaceSM,
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: AppTheme.primaryColor,
-                      borderRadius: BorderRadius.circular(10),
+                      color: NeoBrutalTheme.primary,
+                      borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
+                      border: Border.all(
+                        color: Colors.black,
+                        width: 2,
+                      ),
                     ),
                     child: Text(
-                      'Selected',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
+                      'SELECTED',
+                      style: NeoBrutalTheme.labelSmall.copyWith(
+                        fontWeight: FontWeight.w900,
                         color: Colors.white,
+                        letterSpacing: 1,
                       ),
                     ),
                   ),
               ],
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: NeoBrutalTheme.spaceMD),
             Row(
               children: [
                 _buildInfoChip(
@@ -944,16 +1038,16 @@ class _BackupListItem extends StatelessWidget {
                   label: backup.sizeFormatted,
                   color: AppTheme.infoColor,
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: NeoBrutalTheme.spaceSM),
                 _buildInfoChip(
                   context,
                   icon: backup.location == StorageLocation.local
                       ? Icons.smartphone
                       : Icons.cloud,
                   label: backup.location.name.toUpperCase(),
-                  color: AppTheme.secondaryColor,
+                  color: NeoBrutalTheme.secondary,
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: NeoBrutalTheme.spaceSM),
                 _buildInfoChip(
                   context,
                   icon: Icons.verified,
@@ -963,9 +1057,12 @@ class _BackupListItem extends StatelessWidget {
               ],
             ),
             if (isSelected) ...[
-              const SizedBox(height: 12),
-              const Divider(height: 1),
-              const SizedBox(height: 12),
+              SizedBox(height: NeoBrutalTheme.spaceMD),
+              Container(
+                height: 3,
+                color: Colors.black.withValues(alpha: 0.1),
+              ),
+              SizedBox(height: NeoBrutalTheme.spaceMD),
               Row(
                 children: [
                   Expanded(
@@ -977,7 +1074,7 @@ class _BackupListItem extends StatelessWidget {
                       onPressed: () => _showRestoreDialog(context),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  SizedBox(width: NeoBrutalTheme.spaceSM),
                   Expanded(
                     child: _buildActionButton(
                       context,
@@ -1003,26 +1100,26 @@ class _BackupListItem extends StatelessWidget {
     required Color color,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: EdgeInsets.symmetric(horizontal: NeoBrutalTheme.spaceSM, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
+        color: color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
         border: Border.all(
-          color: color.withValues(alpha: 0.3),
-          width: 1,
+          color: color,
+          width: 2, // ✅ Bold border
         ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 12, color: color),
-          const SizedBox(width: 4),
+          Icon(icon, size: 14, color: color),
+          SizedBox(width: 4),
           Text(
             label,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
+            style: NeoBrutalTheme.labelSmall.copyWith(
+              fontWeight: FontWeight.w700,
               color: color,
+              letterSpacing: 0.5,
             ),
           ),
         ],
@@ -1039,12 +1136,19 @@ class _BackupListItem extends StatelessWidget {
   }) {
     return OutlinedButton.icon(
       onPressed: onPressed,
-      icon: Icon(icon, size: 16),
+      icon: Icon(icon, size: 18),
       label: Text(label),
       style: OutlinedButton.styleFrom(
         foregroundColor: color,
-        side: BorderSide(color: color, width: 1.5),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        side: BorderSide(color: color, width: 3), // ✅ Bold border
+        padding: EdgeInsets.symmetric(horizontal: NeoBrutalTheme.spaceMD, vertical: 12),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium),
+        ),
+        textStyle: NeoBrutalTheme.labelMedium.copyWith(
+          fontWeight: FontWeight.w700,
+          letterSpacing: 1,
+        ),
       ),
     );
   }

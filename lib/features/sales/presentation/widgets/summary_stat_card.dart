@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/neo_brutal_theme.dart';
 
 /// Summary stat card for displaying key metrics in Sales Reports
 /// Features:
-/// - Matching colored icon and border
+/// - Matching colored icon and bold brutal border
 /// - Title, value, and optional subtitle
-/// - 16px border radius (Design System standard)
-/// - Subtle shadow
+/// - 8px brutal border radius (Neo-Brutalist)
+/// - Chunky shadow for bold appearance
 class SummaryStatCard extends StatelessWidget {
   final String title;
   final String value;
@@ -26,21 +27,15 @@ class SummaryStatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(NeoBrutalTheme.spaceMD),
       decoration: BoxDecoration(
         color: AppTheme.getCardColor(context),
-        borderRadius: BorderRadius.circular(16), // Design System standard
+        borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium), // ✅ Brutal 8px radius
         border: Border.all(
-          color: color.withValues(alpha: 0.3),
-          width: 1.5,
+          color: Colors.black, // ✅ Bold black border
+          width: 4, // ✅ Bold 4px border
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        boxShadow: NeoBrutalTheme.chunkyShadow, // ✅ Chunky brutal shadow
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -49,48 +44,51 @@ class SummaryStatCard extends StatelessWidget {
           Row(
             children: [
               Container(
-                width: 40,
-                height: 40,
+                width: 48,
+                height: 48,
                 decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
+                  color: color,
+                  borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
+                  border: Border.all(
+                    color: Colors.black,
+                    width: 3, // ✅ Bold 3px icon border
+                  ),
+                  boxShadow: NeoBrutalTheme.chunkyShadow,
                 ),
                 child: Icon(
                   icon,
-                  color: color,
-                  size: 20,
+                  color: Colors.white,
+                  size: 24,
                 ),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: NeoBrutalTheme.spaceSM),
               Expanded(
                 child: Text(
                   title,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: AppTheme.textSecondary,
+                  style: NeoBrutalTheme.bodyMedium.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: Colors.black,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: NeoBrutalTheme.spaceSM),
           // Value
           Text(
             value,
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
+            style: NeoBrutalTheme.headlineMedium.copyWith(
               color: color,
+              fontWeight: FontWeight.w900,
             ),
           ),
           if (subtitle != null) ...[
-            const SizedBox(height: 4),
+            SizedBox(height: NeoBrutalTheme.spaceXS),
             Text(
               subtitle!,
-              style: TextStyle(
-                fontSize: 12,
-                color: AppTheme.textTertiary,
+              style: NeoBrutalTheme.bodySmall.copyWith(
+                color: AppTheme.textSecondary,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ],

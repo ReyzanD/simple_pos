@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/neo_brutal_theme.dart';
 import '../../../../core/services/printer_service.dart';
 import '../../../../core/widgets/modern_button.dart';
 import '../../../../core/widgets/modern_card.dart';
@@ -297,12 +298,6 @@ class _PrinterSettingsScreenState extends State<PrinterSettingsScreen> {
                       height: 16,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  else
-                    IconButton(
-                      icon: const Icon(Icons.refresh),
-                      onPressed: _initializeAndDiscoverPrinters,
-                      tooltip: 'Scan Ulang',
-                    ),
                 ],
               ),
 
@@ -342,7 +337,7 @@ class _PrinterSettingsScreenState extends State<PrinterSettingsScreen> {
                             text: 'Scan Ulang',
                             icon: Icons.refresh,
                             onPressed: _initializeAndDiscoverPrinters,
-                            backgroundColor: AppTheme.primaryColor,
+                            backgroundColor: NeoBrutalTheme.primary, // ✅ Brutal primary color
                           ),
                         ],
                       ),

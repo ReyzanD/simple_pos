@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../../../core/widgets/modern_card.dart';
+import '../../../../core/theme/neo_brutal_theme.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../domain/entities/expense.dart';
 import '../../domain/entities/expense_payment_method.dart';
@@ -42,11 +42,32 @@ class ExpenseCard extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Hapus Pengeluaran'),
-        content: const Text('Yakin ingin menghapus pengeluaran ini?'),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusLarge),
+          side: BorderSide(
+            color: Colors.black,
+            width: 4,
+          ),
+        ),
+        title: Text(
+          'Hapus Pengeluaran',
+          style: NeoBrutalTheme.headlineSmall.copyWith(
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        content: Text(
+          'Yakin ingin menghapus pengeluaran ini?',
+          style: NeoBrutalTheme.bodyMedium,
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
+            style: TextButton.styleFrom(
+              foregroundColor: AppTheme.getTextSecondaryColor(context),
+              textStyle: NeoBrutalTheme.labelMedium.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
             child: const Text('Batal'),
           ),
           TextButton(
@@ -54,7 +75,12 @@ class ExpenseCard extends StatelessWidget {
               Navigator.pop(context);
               onDelete();
             },
-            style: TextButton.styleFrom(foregroundColor: AppTheme.errorColor),
+            style: TextButton.styleFrom(
+              foregroundColor: AppTheme.errorColor,
+              textStyle: NeoBrutalTheme.labelMedium.copyWith(
+                fontWeight: FontWeight.w800,
+              ),
+            ),
             child: const Text('Hapus'),
           ),
         ],
@@ -89,20 +115,39 @@ class ExpenseCard extends StatelessWidget {
           ),
         ],
       ),
-      child: ModernCard(
-        padding: const EdgeInsets.all(16),
+      child: Container(
+        padding: EdgeInsets.all(NeoBrutalTheme.spaceLG),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium),
+          border: Border.all(
+            color: Colors.black,
+            width: 3, // ✅ Bold border
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              offset: Offset(4, 4),
+              blurRadius: 0,
+            ),
+          ],
+        ),
         child: Row(
           children: [
-            // Category indicator
+            // Category indicator with brutal styling
             Container(
-              width: 4,
-              height: 48,
+              width: 6,
+              height: 56,
               decoration: BoxDecoration(
                 color: _getCategoryColor(expense.category),
-                borderRadius: BorderRadius.circular(4),
+                borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
+                border: Border.all(
+                  color: Colors.black,
+                  width: 2,
+                ),
               ),
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: NeoBrutalTheme.spaceMD),
             // Content
             Expanded(
               child: Column(
@@ -110,53 +155,82 @@ class ExpenseCard extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      Icon(
-                        _getCategoryIcon(expense.category),
-                        size: 16,
-                        color: _getCategoryColor(expense.category),
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        expense.category,
-                        style: TextStyle(
-                          fontSize: 12,
+                      Container(
+                        width: 24,
+                        height: 24,
+                        decoration: BoxDecoration(
+                          color: _getCategoryColor(expense.category).withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
+                          border: Border.all(
+                            color: _getCategoryColor(expense.category),
+                            width: 2,
+                          ),
+                        ),
+                        child: Icon(
+                          _getCategoryIcon(expense.category),
+                          size: 14,
                           color: _getCategoryColor(expense.category),
-                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      SizedBox(width: NeoBrutalTheme.spaceXS),
+                      Text(
+                        expense.category.toUpperCase(),
+                        style: NeoBrutalTheme.labelSmall.copyWith(
+                          color: _getCategoryColor(expense.category),
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(height: NeoBrutalTheme.spaceXS),
                   Text(
                     expense.description ?? '-',
-                    style: const TextStyle(fontSize: 14),
+                    style: NeoBrutalTheme.bodyMedium.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(height: NeoBrutalTheme.spaceXS),
                   Row(
                     children: [
                       Text(
                         CurrencyFormatter.format(expense.amount),
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
+                        style: NeoBrutalTheme.headlineSmall.copyWith(
+                          fontWeight: FontWeight.w900,
+                          color: Colors.black,
+                          fontSize: 18,
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      Text(
-                        _getPaymentMethodLabel(expense.paymentMethod),
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: AppTheme.textSecondary,
+                      SizedBox(width: NeoBrutalTheme.spaceMD),
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: NeoBrutalTheme.spaceSM,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppTheme.getTextSecondaryColor(context).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
+                          border: Border.all(
+                            color: Colors.black.withValues(alpha: 0.3),
+                            width: 1,
+                          ),
+                        ),
+                        child: Text(
+                          _getPaymentMethodLabel(expense.paymentMethod),
+                          style: NeoBrutalTheme.labelSmall.copyWith(
+                            color: AppTheme.getTextSecondaryColor(context),
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      SizedBox(width: NeoBrutalTheme.spaceSM),
                       Text(
                         '${expense.date.day}/${expense.date.month}/${expense.date.year}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: AppTheme.textSecondary,
+                        style: NeoBrutalTheme.labelSmall.copyWith(
+                          color: AppTheme.getTextSecondaryColor(context),
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ],
@@ -166,10 +240,26 @@ class ExpenseCard extends StatelessWidget {
             ),
             // Receipt indicator
             if (expense.receiptImagePath != null) ...[
-              const SizedBox(width: 12),
+              SizedBox(width: NeoBrutalTheme.spaceMD),
               GestureDetector(
                 onTap: onViewReceipt,
-                child: Icon(Icons.receipt_long, color: AppTheme.textSecondary),
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: AppTheme.infoColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
+                    border: Border.all(
+                      color: AppTheme.infoColor,
+                      width: 2,
+                    ),
+                  ),
+                  child: Icon(
+                    Icons.receipt_long,
+                    color: AppTheme.infoColor,
+                    size: 20,
+                  ),
+                ),
               ),
             ],
           ],

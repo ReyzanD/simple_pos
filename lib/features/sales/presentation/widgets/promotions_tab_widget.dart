@@ -18,6 +18,7 @@ class PromotionsTabWidget extends StatelessWidget {
         // Wrap in Scaffold with FAB
         return Scaffold(
           floatingActionButton: FloatingActionButton.extended(
+            heroTag: 'promotions_fab', // ✅ Unique hero tag
             onPressed: controller.isLoading
                 ? null
                 : () => _showAddDialog(context, controller),

@@ -7,8 +7,10 @@ import '../controllers/sales_history_controller.dart';
 import '../controllers/refund_controller.dart';
 import '../widgets/refund_confirmation_dialog.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/neo_brutal_theme.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../shared/presentation/main_navigation.dart';
+import '../../../../core/widgets/brutal_inputs.dart';
 
 /// Modern Material 3 screen showing sales history with filters
 class SalesHistoryScreen extends StatelessWidget {
@@ -16,7 +18,6 @@ class SalesHistoryScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Consumer<SalesHistoryController>(
       builder: (context, controller, _) {
         return Scaffold(
@@ -30,29 +31,36 @@ class SalesHistoryScreen extends StatelessWidget {
             ),
             title: const Text('Riwayat Penjualan'),
             actions: [
-              IconButton(
-                icon: const Icon(Icons.filter_list),
-                onPressed: () => _showFilterDialog(context, controller),
-              ),
-              IconButton(
-                icon: const Icon(Icons.refresh),
-                onPressed: controller.refresh,
+              Padding(
+                padding: EdgeInsets.only(right: NeoBrutalTheme.spaceXS),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: NeoBrutalTheme.secondary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
+                    border: Border.all(
+                      color: Colors.black,
+                      width: 2,
+                    ),
+                  ),
+                  child: IconButton(
+                    icon: Icon(
+                      Icons.filter_list,
+                      color: NeoBrutalTheme.secondary,
+                    ),
+                    tooltip: 'Filter',
+                    onPressed: () => _showFilterDialog(context, controller),
+                  ),
+                ),
               ),
             ],
             flexibleSpace: Container(
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: isDark
-                      ? [
-                          AppTheme.darkSurface,
-                          AppTheme.darkSurface.withValues(alpha: 0.95),
-                        ]
-                      : [
-                          AppTheme.primaryColor,
-                          AppTheme.primaryLight,
-                        ],
+                color: NeoBrutalTheme.blockYellow, // ✅ Bold yellow background
+                border: Border(
+                  bottom: BorderSide(
+                    color: Colors.black,
+                    width: 6, // ✅ Extra thick bottom border
+                  ),
                 ),
               ),
             ),
@@ -84,123 +92,106 @@ class SalesHistoryScreen extends StatelessWidget {
 
   Widget _buildSummaryCards(BuildContext context, SalesHistoryController controller) {
     return Container(
-      padding: const EdgeInsets.all(16),
-      color: AppTheme.getCardColor(context),
-      child: Wrap(
-        spacing: 12,
-        runSpacing: 12,
-        children: [
-          SizedBox(
-            width: 160,
-            child: _buildCompactSummaryCard(
-              context,
+      padding: EdgeInsets.all(NeoBrutalTheme.spaceMD),
+      color: NeoBrutalTheme.surface,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            _buildCompactStatCard(
               title: 'Total Transaksi',
               value: '${controller.transactionCount}',
               icon: Icons.receipt_long,
-              color: AppTheme.infoColor,
+              iconColor: NeoBrutalTheme.primary,
             ),
-          ),
-          SizedBox(
-            width: 160,
-            child: _buildCompactSummaryCard(
-              context,
+            SizedBox(width: NeoBrutalTheme.spaceMD),
+            _buildCompactStatCard(
               title: 'Total Pendapatan',
               value: CurrencyFormatter.format(controller.totalRevenue),
               icon: Icons.payments,
-              color: AppTheme.successColor,
+              iconColor: NeoBrutalTheme.success,
             ),
-          ),
-          SizedBox(
-            width: 160,
-            child: _buildCompactSummaryCard(
-              context,
+            SizedBox(width: NeoBrutalTheme.spaceMD),
+            _buildCompactStatCard(
               title: 'Total Profit',
               value: CurrencyFormatter.format(controller.totalProfit),
               icon: Icons.account_balance_wallet,
-              color: AppTheme.secondaryColor,
+              iconColor: NeoBrutalTheme.secondary,
             ),
-          ),
-          SizedBox(
-            width: 160,
-            child: _buildCompactSummaryCard(
-              context,
+            SizedBox(width: NeoBrutalTheme.spaceMD),
+            _buildCompactStatCard(
               title: 'Total Item Terjual',
               value: '${controller.totalItemsSold}',
               icon: Icons.inventory_2_outlined,
-              color: AppTheme.primaryColor,
+              iconColor: NeoBrutalTheme.warning,
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildCompactSummaryCard(
-    BuildContext context, {
+  Widget _buildCompactStatCard({
     required String title,
     required String value,
     required IconData icon,
-    required Color color,
+    required Color iconColor,
   }) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      width: 140,
+      padding: EdgeInsets.all(NeoBrutalTheme.spaceSM),
       decoration: BoxDecoration(
-        color: AppTheme.getCardColor(context),
-        borderRadius: BorderRadius.circular(16),
+        color: NeoBrutalTheme.surface,
+        borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium),
         border: Border.all(
-          color: color.withValues(alpha: 0.3),
-          width: 1.5,
+          color: Colors.black,
+          width: 4, // ✅ Bold 4px border - matches brutal standard
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        boxShadow: NeoBrutalTheme.chunkyShadow, // ✅ Chunky shadow - matches brutal standard
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          // Icon + Title row - more compact
           Row(
             children: [
               Container(
-                width: 32,
-                height: 32,
+                width: 36,
+                height: 36,
                 decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  color: iconColor,
+                  borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
+                  border: Border.all(
+                    color: Colors.black,
+                    width: 3, // ✅ Bold 3px icon border - matches brutal standard
+                  ),
                 ),
                 child: Icon(
                   icon,
-                  color: color,
+                  color: Colors.white,
                   size: 18,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
-                    color: AppTheme.textSecondary,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          // Value - more compact but still prominent
+          SizedBox(height: NeoBrutalTheme.spaceXS),
           Text(
             value,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: color,
+            style: NeoBrutalTheme.displayLarge.copyWith(
+              fontSize: 24,
+              color: Colors.black,
+              fontWeight: FontWeight.w900, // ✅ Extra bold - matches brutal aesthetic
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          SizedBox(height: NeoBrutalTheme.spaceXS),
+          Text(
+            title.toUpperCase(),
+            style: NeoBrutalTheme.labelSmall.copyWith(
+              color: Colors.black87,
+              letterSpacing: 1,
+              fontWeight: FontWeight.w700, // ✅ Bold uppercase - matches brutal aesthetic
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -212,42 +203,11 @@ class SalesHistoryScreen extends StatelessWidget {
 
   Widget _buildSearchBar(BuildContext context, SalesHistoryController controller) {
     return Padding(
-      padding: const EdgeInsets.all(16),
-      child: TextField(
-        decoration: InputDecoration(
-          hintText: 'Cari transaksi...',
-          hintStyle: TextStyle(
-            color: AppTheme.textSecondary,
-            fontSize: 15,
-          ),
-          prefixIcon: const Icon(Icons.search, color: AppTheme.textSecondary),
-          suffixIcon: controller.searchQuery.isNotEmpty
-              ? IconButton(
-                  icon: const Icon(Icons.clear, color: AppTheme.textSecondary),
-                  onPressed: () {
-                    controller.setSearchQuery('');
-                  },
-                )
-              : null,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(30), // Rounded search bar
-            borderSide: BorderSide(color: AppTheme.getBorderColor(context), width: 0.5),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(30),
-            borderSide: BorderSide(color: AppTheme.getBorderColor(context), width: 0.5),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(30),
-            borderSide: BorderSide(color: AppTheme.primaryColor, width: 1.5),
-          ),
-          filled: true,
-          fillColor: const Color(0xFFF1F5F9), // Light grey filled background
-          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-        ),
-        onChanged: (value) {
-          controller.setSearchQuery(value);
-        },
+      padding: EdgeInsets.all(NeoBrutalTheme.spaceMD),
+      child: BrutalSearchField(
+        hint: 'Cari transaksi...',
+        controller: TextEditingController(text: controller.searchQuery),
+        onChanged: (value) => controller.setSearchQuery(value),
       ),
     );
   }

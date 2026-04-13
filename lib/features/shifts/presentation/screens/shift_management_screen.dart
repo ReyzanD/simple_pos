@@ -4,8 +4,8 @@ import '../controllers/shift_controller.dart';
 import 'shift_open_screen.dart';
 import 'shift_close_screen.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../../../core/widgets/modern_card.dart';
-import '../../../../core/widgets/modern_button.dart';
+import '../../../../core/theme/neo_brutal_theme.dart';
+import '../../../../core/widgets/brutal_widgets.dart';
 
 /// Screen for managing cashier shifts
 class ShiftManagementScreen extends StatefulWidget {
@@ -52,12 +52,20 @@ class _ShiftManagementScreenState extends State<ShiftManagementScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.getBackgroundColor(context),
+      backgroundColor: NeoBrutalTheme.background, // ✅ Brutal white background
       appBar: AppBar(
         title: const Text('Manajemen Shift'),
-        backgroundColor: AppTheme.primaryColor,
-        foregroundColor: Colors.white,
-        elevation: 0,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            color: NeoBrutalTheme.blockYellow, // ✅ Bold yellow background
+            border: Border(
+              bottom: BorderSide(
+                color: Colors.black,
+                width: 6, // ✅ Extra thick bottom border
+              ),
+            ),
+          ),
+        ),
       ),
       body: Consumer<ShiftController>(
         builder: (context, controller, _) {
@@ -70,13 +78,16 @@ class _ShiftManagementScreenState extends State<ShiftManagementScreen> {
               await controller.loadCurrentShift();
               await controller.loadShiftHistory();
             },
+            color: NeoBrutalTheme.primary, // ✅ Brutal primary color
+            backgroundColor: NeoBrutalTheme.blockYellow.withValues(alpha: 0.3),
+            strokeWidth: 4, // ✅ Thicker indicator
             child: ListView(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(NeoBrutalTheme.spaceMD),
               children: [
                 // Current Shift Section
                 _buildCurrentShiftSection(context, controller),
 
-                const SizedBox(height: 20),
+                SizedBox(height: NeoBrutalTheme.spaceLG),
 
                 // Shift History Section
                 _buildShiftHistorySection(context, controller),
@@ -91,49 +102,51 @@ class _ShiftManagementScreenState extends State<ShiftManagementScreen> {
   Widget _buildCurrentShiftSection(BuildContext context, ShiftController controller) {
     final hasActiveShift = controller.hasActiveShift;
     final currentShift = controller.currentShift;
+    final statusColor = hasActiveShift ? AppTheme.successColor : AppTheme.warningColor;
 
-    return ModernCard(
-      padding: const EdgeInsets.all(20),
+    return BrutalCard(
+      padding: EdgeInsets.all(NeoBrutalTheme.spaceLG),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               Container(
-                width: 48,
-                height: 48,
+                width: 56,
+                height: 56,
                 decoration: BoxDecoration(
-                  color: hasActiveShift
-                      ? AppTheme.successColor.withValues(alpha: 0.1)
-                      : AppTheme.warningColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
+                  color: statusColor, // ✅ Solid bold color
+                  borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium), // ✅ Brutal 8px
+                  border: Border.all(
+                    color: Colors.black, // ✅ Bold black border
+                    width: 4, // ✅ Bold 4px border
+                  ),
+                  boxShadow: NeoBrutalTheme.chunkyShadow,
                 ),
                 child: Icon(
                   hasActiveShift ? Icons.store : Icons.store_outlined,
-                  color: hasActiveShift ? AppTheme.successColor : AppTheme.warningColor,
-                  size: 24,
+                  color: Colors.white, // ✅ White icon for contrast
+                  size: 30,
                 ),
               ),
-              const SizedBox(width: 16),
+              SizedBox(width: NeoBrutalTheme.spaceMD),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       'Shift Saat Ini',
-                      style: TextStyle(
-                        fontSize: 12,
+                      style: NeoBrutalTheme.labelLarge.copyWith(
                         color: AppTheme.getTextSecondaryColor(context),
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: NeoBrutalTheme.spaceXS),
                     Text(
                       hasActiveShift ? 'Sedang Aktif' : 'Tidak Aktif',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: hasActiveShift ? AppTheme.successColor : AppTheme.warningColor,
+                      style: NeoBrutalTheme.headlineMedium.copyWith(
+                        color: statusColor,
+                        fontWeight: FontWeight.w900,
                       ),
                     ),
                   ],
@@ -141,20 +154,24 @@ class _ShiftManagementScreenState extends State<ShiftManagementScreen> {
               ),
               if (hasActiveShift)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: NeoBrutalTheme.spaceMD,
+                    vertical: NeoBrutalTheme.spaceSM,
+                  ),
                   decoration: BoxDecoration(
-                    color: AppTheme.successColor.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(20),
+                    color: statusColor, // ✅ Solid bold color
+                    borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium), // ✅ Brutal 8px
                     border: Border.all(
-                      color: AppTheme.successColor.withValues(alpha: 0.3),
+                      color: Colors.black, // ✅ Bold black border
+                      width: 3, // ✅ Bold 3px border
                     ),
+                    boxShadow: NeoBrutalTheme.chunkyShadow,
                   ),
                   child: Text(
                     'BUKA',
-                    style: TextStyle(
-                      color: AppTheme.successColor,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
+                    style: NeoBrutalTheme.labelLarge.copyWith(
+                      color: Colors.white, // ✅ White text for contrast
+                      fontWeight: FontWeight.w900,
                     ),
                   ),
                 )
@@ -243,12 +260,12 @@ class _ShiftManagementScreenState extends State<ShiftManagementScreen> {
             ),
           ],
 
-          const SizedBox(height: 20),
+          SizedBox(height: NeoBrutalTheme.spaceLG),
 
           // Action Button
           SizedBox(
             width: double.infinity,
-            child: ModernButton(
+            child: BrutalButton(
               text: hasActiveShift ? 'Tutup Shift' : 'Buka Shift Baru',
               icon: hasActiveShift ? Icons.close : Icons.play_arrow,
               onPressed: hasActiveShift ? _handleCloseShift : _handleOpenShift,
@@ -265,21 +282,33 @@ class _ShiftManagementScreenState extends State<ShiftManagementScreen> {
     final history = controller.shiftHistory;
 
     if (history.isEmpty) {
-      return ModernCard(
-        padding: const EdgeInsets.all(32),
+      return BrutalCard(
+        padding: EdgeInsets.all(NeoBrutalTheme.spaceXL),
         child: Column(
           children: [
-            Icon(
-              Icons.history,
-              size: 48,
-              color: AppTheme.textTertiary,
+            Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                color: NeoBrutalTheme.blockCoral, // ✅ Bold coral background
+                borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusLarge), // ✅ Brutal radius
+                border: Border.all(
+                  color: Colors.black,
+                  width: 4, // ✅ Bold border
+                ),
+                boxShadow: NeoBrutalTheme.chunkyShadow,
+              ),
+              child: Icon(
+                Icons.history,
+                size: 50,
+                color: Colors.white,
+              ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: NeoBrutalTheme.spaceLG),
             Text(
               'Belum Ada Riwayat Shift',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
+              style: NeoBrutalTheme.headlineMedium.copyWith(
+                fontWeight: FontWeight.w900,
                 color: AppTheme.getTextSecondaryColor(context),
               ),
             ),
@@ -318,9 +347,9 @@ class _ShiftManagementScreenState extends State<ShiftManagementScreen> {
     final isClosed = shift.closedAt != null;
     final totalSales = shift.cashSales + shift.cardSales + shift.qrSales + shift.transferSales;
 
-    return ModernCard(
-      padding: const EdgeInsets.all(16),
-      margin: const EdgeInsets.only(bottom: 12),
+    return BrutalCard(
+      padding: EdgeInsets.all(NeoBrutalTheme.spaceMD),
+      margin: EdgeInsets.only(bottom: NeoBrutalTheme.spaceSM),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

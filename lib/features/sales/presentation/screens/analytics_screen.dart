@@ -5,8 +5,9 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../controllers/analytics_controller.dart';
 import '../../domain/entities/sales_analytics.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/neo_brutal_theme.dart';
 import '../../../../core/utils/currency_formatter.dart';
-import '../../../shared/presentation/main_navigation.dart';
+import '../../../../core/utils/responsive_helper.dart';
 import '../../../shared/widgets/loading_indicator.dart';
 import '../../../shared/widgets/error_display.dart';
 
@@ -29,47 +30,65 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Consumer<AnalyticsController>(
       builder: (context, controller, _) {
         return Scaffold(
+          backgroundColor:
+              NeoBrutalTheme.background, // ✅ Brutal white background
           appBar: AppBar(
             leading: IconButton(
-              icon: const Icon(Icons.menu),
-              onPressed: () {
-                final mainNavState = context
-                    .findAncestorStateOfType<MainNavigationState>();
-                mainNavState?.openDrawer();
-              },
+              icon: const Icon(Icons.arrow_back),
+              onPressed: () => Navigator.pop(context),
             ),
             title: const Text('Analitik Penjualan'),
             actions: [
-              PopupMenuButton<DateRangePreset>(
-                icon: const Icon(Icons.date_range),
-                onSelected: (preset) => controller.setPredefinedRange(preset),
-                itemBuilder: (context) => DateRangePreset.values
-                    .map((preset) => PopupMenuItem(
-                          value: preset,
-                          child: Text(preset.displayName),
-                        ))
-                    .toList(),
-              ),
-              IconButton(
-                icon: const Icon(Icons.refresh),
-                onPressed: controller.isLoading ? null : controller.refresh,
+              Padding(
+                padding: EdgeInsets.only(right: NeoBrutalTheme.spaceXS),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: NeoBrutalTheme.secondary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(
+                      NeoBrutalTheme.radiusSmall,
+                    ),
+                    border: Border.all(
+                      color: Colors.black,
+                      width: 4, // ✅ Bold 4px border
+                    ),
+                  ),
+                  child: PopupMenuButton<DateRangePreset>(
+                    icon: Icon(
+                      Icons.date_range,
+                      color: NeoBrutalTheme.secondary,
+                    ),
+                    onSelected: (preset) =>
+                        controller.setPredefinedRange(preset),
+                    itemBuilder: (context) => DateRangePreset.values
+                        .map(
+                          (preset) => PopupMenuItem(
+                            value: preset,
+                            child: Text(preset.displayName),
+                          ),
+                        )
+                        .toList(),
+                    color: NeoBrutalTheme.secondary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(
+                        NeoBrutalTheme.radiusSmall,
+                      ),
+                      side: BorderSide(color: Colors.black, width: 2),
+                    ),
+                  ),
+                ),
               ),
             ],
             flexibleSpace: Container(
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: isDark
-                      ? [
-                          AppTheme.darkSurface,
-                          AppTheme.darkSurface.withValues(alpha: 0.95),
-                        ]
-                      : [AppTheme.primaryColor, AppTheme.primaryLight],
+                color: NeoBrutalTheme.blockYellow, // ✅ Bold yellow background
+                border: Border(
+                  bottom: BorderSide(
+                    color: Colors.black,
+                    width: 6, // ✅ Extra thick bottom border
+                  ),
                 ),
               ),
             ),
@@ -77,13 +96,13 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           body: controller.isLoading && !controller.hasReport
               ? const LoadingIndicator(message: 'Memuat analitik...')
               : controller.hasError
-                  ? ErrorDisplay.fromException(
-                      controller.error!,
-                      onRetry: () => controller.loadAnalytics(),
-                    )
-                  : controller.hasReport
-                      ? _buildAnalyticsContent(context, controller.report!)
-                      : _buildEmptyState(),
+              ? ErrorDisplay.fromException(
+                  controller.error!,
+                  onRetry: () => controller.loadAnalytics(),
+                )
+              : controller.hasReport
+              ? _buildAnalyticsContent(context, controller.report!)
+              : _buildEmptyState(),
         );
       },
     );
@@ -119,20 +138,22 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           const SizedBox(height: 8),
           Text(
             'Pilih periode tanggal untuk melihat analitik',
-            style: TextStyle(
-              fontSize: 14,
-              color: AppTheme.textTertiary,
-            ),
+            style: TextStyle(fontSize: 14, color: AppTheme.textTertiary),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildAnalyticsContent(BuildContext context, SalesAnalyticsReport report) {
+  Widget _buildAnalyticsContent(
+    BuildContext context,
+    SalesAnalyticsReport report,
+  ) {
     return RefreshIndicator(
       onRefresh: context.read<AnalyticsController>().refresh,
-      color: AppTheme.primaryColor,
+      color: NeoBrutalTheme.primary, // ✅ Brutal primary color
+      backgroundColor: NeoBrutalTheme.blockYellow.withValues(alpha: 0.3),
+      strokeWidth: 4, // ✅ Thicker indicator
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.only(
@@ -165,24 +186,28 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             // Top Products
             if (report.topProducts.isNotEmpty)
               _buildTopProductsSection(context, report.topProducts),
-            if (report.topProducts.isNotEmpty)
-              const SizedBox(height: 24),
+            if (report.topProducts.isNotEmpty) const SizedBox(height: 24),
 
             // Category Performance
             if (report.categoryPerformance.isNotEmpty)
-              _buildCategoryPerformanceSection(context, report.categoryPerformance),
+              _buildCategoryPerformanceSection(
+                context,
+                report.categoryPerformance,
+              ),
             if (report.categoryPerformance.isNotEmpty)
               const SizedBox(height: 24),
 
             // Comparative Analytics
-            _buildComparativeAnalyticsSection(context, report.comparativeAnalytics),
+            _buildComparativeAnalyticsSection(
+              context,
+              report.comparativeAnalytics,
+            ),
             const SizedBox(height: 24),
 
             // Executive Summary
             if (report.executiveSummary.isNotEmpty)
               _buildExecutiveSummarySection(context, report.executiveSummary),
-            if (report.executiveSummary.isNotEmpty)
-              const SizedBox(height: 24),
+            if (report.executiveSummary.isNotEmpty) const SizedBox(height: 24),
 
             // Action Items
             if (report.actionItems.isNotEmpty)
@@ -196,95 +221,108 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   Widget _buildHealthScoreCard(BuildContext context, AnalyticsKPIs kpis) {
     final healthRating = kpis.healthRating;
     return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            healthRating.color.withValues(alpha: 0.2),
-            healthRating.color.withValues(alpha: 0.1),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: healthRating.color.withValues(alpha: 0.3),
-          width: 2,
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              color: healthRating.color.withValues(alpha: 0.2),
-              shape: BoxShape.circle,
+          padding: EdgeInsets.all(NeoBrutalTheme.spaceMD),
+          decoration: BoxDecoration(
+            color: healthRating.color, // ✅ Solid bold color
+            borderRadius: BorderRadius.circular(
+              NeoBrutalTheme.radiusMedium,
+            ), // ✅ Brutal 8px
+            border: Border.all(
+              color: Colors.black, // ✅ Bold black border
+              width: 4, // ✅ Bold 4px border
             ),
-            child: Icon(
-              healthRating.icon,
-              size: 32,
-              color: healthRating.color,
-            ),
+            boxShadow: NeoBrutalTheme.chunkyShadow,
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Skor Kesehatan Bisnis',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: AppTheme.getTextSecondaryColor(context),
+          child: Row(
+            children: [
+              Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  color: Colors.white, // ✅ White container for contrast
+                  borderRadius: BorderRadius.circular(
+                    NeoBrutalTheme.radiusMedium,
+                  ),
+                  border: Border.all(
+                    color: Colors.black,
+                    width: 3, // ✅ Bold 3px border
                   ),
                 ),
-                const SizedBox(height: 4),
-                Row(
+                child: Icon(
+                  healthRating.icon,
+                  size: 32,
+                  color: healthRating.color,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      kpis.healthScore.toStringAsFixed(1),
+                      'Skor Kesehatan Bisnis',
                       style: TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                        color: healthRating.color,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '/100',
-                      style: TextStyle(
-                        fontSize: 20,
+                        fontSize: 14,
                         color: AppTheme.getTextSecondaryColor(context),
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: healthRating.color,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        healthRating.displayName,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 12,
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Text(
+                          kpis.healthScore.toStringAsFixed(1),
+                          style: TextStyle(
+                            fontSize: 32,
+                            fontWeight: FontWeight.bold,
+                            color: healthRating.color,
+                          ),
                         ),
-                      ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '/100',
+                          style: TextStyle(
+                            fontSize: 20,
+                            color: AppTheme.getTextSecondaryColor(context),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: NeoBrutalTheme.spaceMD,
+                            vertical: NeoBrutalTheme.spaceSM,
+                          ),
+                          decoration: BoxDecoration(
+                            color:
+                                Colors.white, // ✅ White background for contrast
+                            borderRadius: BorderRadius.circular(
+                              NeoBrutalTheme.radiusMedium,
+                            ),
+                            border: Border.all(
+                              color: Colors.black,
+                              width: 3, // ✅ Bold 3px border
+                            ),
+                          ),
+                          child: Text(
+                            healthRating.displayName,
+                            style: TextStyle(
+                              color: healthRating
+                                  .color, // ✅ Colored text for contrast
+                              fontWeight: FontWeight.w800,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
-      ),
-    ).animate().fadeIn(duration: 400.ms).scale(
+        )
+        .animate()
+        .fadeIn(duration: 400.ms)
+        .scale(
           begin: const Offset(0.9, 0.9),
           end: const Offset(1, 1),
           duration: 400.ms,
@@ -296,10 +334,10 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     return GridView.count(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: 2,
-      mainAxisSpacing: 12,
-      crossAxisSpacing: 12,
-      childAspectRatio: 1.6,
+      crossAxisCount: ResponsiveHelper.getWideGridColumns(context),
+      mainAxisSpacing: ResponsiveHelper.getCardSpacing(context),
+      crossAxisSpacing: ResponsiveHelper.getCardSpacing(context),
+      childAspectRatio: ResponsiveHelper.isMobile(context) ? 1.4 : 1.6,
       children: [
         _buildKPICard(
           context,
@@ -319,8 +357,8 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           color: kpis.profitMargin >= 20
               ? AppTheme.successColor
               : kpis.profitMargin >= 15
-                  ? AppTheme.warningColor
-                  : AppTheme.errorColor,
+              ? AppTheme.warningColor
+              : AppTheme.errorColor,
           subtitle: 'Keuntungan',
         ),
         _buildKPICard(
@@ -351,306 +389,355 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     required Color color,
     required String subtitle,
   }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.getCardColor(context),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: AppTheme.getBorderColor(context),
-          width: 1,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final maxHeight = constraints.maxHeight; // 91.2px
+        final iconSize = (maxHeight * 0.45).clamp(36.0, 44.0); // Responsive
+        final valueSize = (maxHeight * 0.22).clamp(16.0, 20.0);
+        final titleSize = (maxHeight * 0.13).clamp(10.0, 12.0);
+
+        return Container(
+              padding: EdgeInsets.all(
+                NeoBrutalTheme.spaceMD * 0.8,
+              ), // 👈 Responsive padding
+              decoration: BoxDecoration(
+                color: NeoBrutalTheme.background,
+                borderRadius: BorderRadius.circular(
+                  NeoBrutalTheme.radiusMedium,
                 ),
-                child: Icon(
-                  icon,
-                  size: 18,
-                  color: color,
+                border: Border.all(
+                  color: Colors.black,
+                  width: 3, // 👈 Reduce from 4
                 ),
+                boxShadow: NeoBrutalTheme.chunkyShadow,
               ),
-              const Spacer(),
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: AppTheme.getTextSecondaryColor(context),
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween, // 👈 KEY FIX
+                children: [
+                  // Responsive Icon Row
+                  Flexible(
+                    child: Row(
+                      children: [
+                        // Responsive Icon Container
+                        Container(
+                          width: iconSize,
+                          height: iconSize,
+                          decoration: BoxDecoration(
+                            color: color,
+                            borderRadius: BorderRadius.circular(
+                              NeoBrutalTheme.radiusSmall,
+                            ),
+                            border: Border.all(
+                              color: Colors.black,
+                              width: 2,
+                            ), // 👈 Reduce
+                            boxShadow: NeoBrutalTheme.chunkyShadow,
+                          ),
+                          child: Icon(
+                            icon,
+                            size: iconSize * 0.55, // 👈 20-24px responsive
+                            color: Colors.white,
+                          ),
+                        ),
+                        SizedBox(width: 8),
+                        Flexible(
+                          // 👈 Prevents overflow
+                          child: Text(
+                            title,
+                            style: TextStyle(
+                              fontSize: titleSize,
+                              color: AppTheme.getTextSecondaryColor(context),
+                              overflow: TextOverflow.ellipsis, // 👈 Safety
+                            ),
+                            maxLines: 1,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Responsive Value
+                  Flexible(
+                    child: Text(
+                      value,
+                      style: TextStyle(
+                        fontSize: valueSize,
+                        fontWeight: FontWeight.bold,
+                        color: color,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  // Responsive Subtitle
+                  Flexible(
+                    child: Text(
+                      subtitle,
+                      style: TextStyle(
+                        fontSize: titleSize * 0.85,
+                        color: AppTheme.textTertiary,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            subtitle,
-            style: TextStyle(
-              fontSize: 11,
-              color: AppTheme.textTertiary,
-            ),
-          ),
-        ],
-      ),
-    ).animate().fadeIn(duration: 300.ms).scale(
-          begin: const Offset(0.95, 0.95),
-          duration: 300.ms,
-          curve: Curves.easeOut,
-        );
+            )
+            .animate()
+            .fadeIn(duration: 300.ms)
+            .scale(
+              begin: const Offset(0.95, 0.95),
+              duration: 300.ms,
+              curve: Curves.easeOut,
+            );
+      },
+    );
   }
 
-  Widget _buildTrendChart(BuildContext context, SalesTrendAnalysis trendAnalysis) {
+  Widget _buildTrendChart(
+    BuildContext context,
+    SalesTrendAnalysis trendAnalysis,
+  ) {
     if (trendAnalysis.historicalData.isEmpty) {
       return const SizedBox.shrink();
     }
 
     return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.getCardColor(context),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: AppTheme.getBorderColor(context),
-          width: 1,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                trendAnalysis.trendDirection.icon,
-                color: trendAnalysis.trendDirection.color,
-                size: 24,
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Tren Pendapatan',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.getTextPrimaryColor(context),
-                      ),
-                    ),
-                    Text(
-                      trendAnalysis.insight,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppTheme.getTextSecondaryColor(context),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: trendAnalysis.trendDirection.color.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: trendAnalysis.trendDirection.color.withValues(alpha: 0.3),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      trendAnalysis.trendDirection.icon,
-                      size: 16,
-                      color: trendAnalysis.trendDirection.color,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${trendAnalysis.growthRate.toStringAsFixed(1)}%',
-                      style: TextStyle(
-                        color: trendAnalysis.trendDirection.color,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+          padding: EdgeInsets.all(NeoBrutalTheme.spaceMD),
+          decoration: BoxDecoration(
+            color: NeoBrutalTheme.background, // ✅ Brutal white background
+            borderRadius: BorderRadius.circular(
+              NeoBrutalTheme.radiusMedium,
+            ), // ✅ Brutal 8px
+            border: Border.all(
+              color: Colors.black, // ✅ Bold black border
+              width: 4, // ✅ Bold 4px border
+            ),
+            boxShadow: NeoBrutalTheme.chunkyShadow,
           ),
-          const SizedBox(height: 16),
-          SizedBox(
-            height: 200,
-            child: LineChart(
-              LineChartData(
-                gridData: FlGridData(
-                  show: true,
-                  drawVerticalLine: false,
-                  horizontalInterval: _calculateYInterval(trendAnalysis),
-                  getDrawingHorizontalLine: (value) {
-                    return FlLine(
-                      color: AppTheme.getBorderColor(context)
-                          .withValues(alpha: 0.3),
-                      strokeWidth: 1,
-                    );
-                  },
-                ),
-                titlesData: FlTitlesData(
-                  show: true,
-                  rightTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    trendAnalysis.trendDirection.icon,
+                    color: trendAnalysis.trendDirection.color,
+                    size: 24,
                   ),
-                  topTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 30,
-                      interval: _calculateXInterval(trendAnalysis),
-                      getTitlesWidget: (value, meta) {
-                        return Text(
-                          _formatDate(value.toInt()),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Tren Pendapatan',
                           style: TextStyle(
-                            fontSize: 10,
-                            color: AppTheme.textTertiary,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.getTextPrimaryColor(context),
                           ),
-                        );
-                      },
-                    ),
-                  ),
-                  leftTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 60,
-                      interval: _calculateYInterval(trendAnalysis),
-                      getTitlesWidget: (value, meta) {
-                        return Text(
-                          _formatCurrency(value),
+                        ),
+                        Text(
+                          trendAnalysis.insight,
                           style: TextStyle(
-                            fontSize: 10,
-                            color: AppTheme.textTertiary,
+                            fontSize: 12,
+                            color: AppTheme.getTextSecondaryColor(context),
                           ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-                borderData: FlBorderData(
-                  show: false,
-                ),
-                lineBarsData: [
-                  // Historical data
-                  LineChartBarData(
-                    spots: _createHistoricalSpots(trendAnalysis),
-                    isCurved: true,
-                    gradient: LinearGradient(
-                      colors: [
-                        AppTheme.primaryColor,
-                        AppTheme.primaryColor.withValues(alpha: 0.7),
+                        ),
                       ],
                     ),
-                    barWidth: 3,
-                    isStrokeCapRound: true,
-                    dotData: const FlDotData(show: false),
-                    belowBarData: BarAreaData(
-                      show: true,
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          AppTheme.primaryColor.withValues(alpha: 0.2),
-                          AppTheme.primaryColor.withValues(alpha: 0.0),
-                        ],
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: trendAnalysis.trendDirection.color.withValues(
+                        alpha: 0.1,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: trendAnalysis.trendDirection.color.withValues(
+                          alpha: 0.3,
+                        ),
                       ),
                     ),
-                  ),
-                  // Forecast data
-                  if (trendAnalysis.forecastData.isNotEmpty)
-                    LineChartBarData(
-                      spots: _createForecastSpots(trendAnalysis),
-                      isCurved: true,
-                      color: AppTheme.warningColor,
-                      barWidth: 3,
-                      isStrokeCapRound: true,
-                      dotData: const FlDotData(show: true),
-                      dashArray: [5, 5],
+                    child: Row(
+                      children: [
+                        Icon(
+                          trendAnalysis.trendDirection.icon,
+                          size: 16,
+                          color: trendAnalysis.trendDirection.color,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${trendAnalysis.growthRate.toStringAsFixed(1)}%',
+                          style: TextStyle(
+                            color: trendAnalysis.trendDirection.color,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
                     ),
+                  ),
                 ],
-                minX: _getMinX(trendAnalysis),
-                maxX: _getMaxX(trendAnalysis),
-                minY: 0,
-                maxY: _getMaxY(trendAnalysis),
               ),
-            ),
+              const SizedBox(height: 16),
+              SizedBox(
+                height: ResponsiveHelper.getChartHeight(context),
+                child: LineChart(
+                  LineChartData(
+                    gridData: FlGridData(
+                      show: true,
+                      drawVerticalLine: false,
+                      horizontalInterval: _calculateYInterval(trendAnalysis),
+                      getDrawingHorizontalLine: (value) {
+                        return FlLine(
+                          color: AppTheme.getBorderColor(
+                            context,
+                          ).withValues(alpha: 0.3),
+                          strokeWidth: 1,
+                        );
+                      },
+                    ),
+                    titlesData: FlTitlesData(
+                      show: true,
+                      rightTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
+                      topTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
+                      bottomTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          reservedSize: 30,
+                          interval: _calculateXInterval(trendAnalysis),
+                          getTitlesWidget: (value, meta) {
+                            return Text(
+                              _formatDate(value.toInt()),
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: AppTheme.textTertiary,
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      leftTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          reservedSize: 60,
+                          interval: _calculateYInterval(trendAnalysis),
+                          getTitlesWidget: (value, meta) {
+                            return Text(
+                              _formatCurrency(value),
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: AppTheme.textTertiary,
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                    borderData: FlBorderData(show: false),
+                    lineBarsData: [
+                      // Historical data
+                      LineChartBarData(
+                        spots: _createHistoricalSpots(trendAnalysis),
+                        isCurved: true,
+                        gradient: LinearGradient(
+                          colors: [
+                            AppTheme.primaryColor,
+                            AppTheme.primaryColor.withValues(alpha: 0.7),
+                          ],
+                        ),
+                        barWidth: 3,
+                        isStrokeCapRound: true,
+                        dotData: const FlDotData(show: false),
+                        belowBarData: BarAreaData(
+                          show: true,
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              AppTheme.primaryColor.withValues(alpha: 0.2),
+                              AppTheme.primaryColor.withValues(alpha: 0.0),
+                            ],
+                          ),
+                        ),
+                      ),
+                      // Forecast data
+                      if (trendAnalysis.forecastData.isNotEmpty)
+                        LineChartBarData(
+                          spots: _createForecastSpots(trendAnalysis),
+                          isCurved: true,
+                          color: AppTheme.warningColor,
+                          barWidth: 3,
+                          isStrokeCapRound: true,
+                          dotData: const FlDotData(show: true),
+                          dashArray: [5, 5],
+                        ),
+                    ],
+                    minX: _getMinX(trendAnalysis),
+                    maxX: _getMaxX(trendAnalysis),
+                    minY: 0,
+                    maxY: _getMaxY(trendAnalysis),
+                  ),
+                ),
+              ),
+              if (trendAnalysis.forecastData.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 12,
+                        height: 12,
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryColor,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Aktual',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppTheme.getTextSecondaryColor(context),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Container(
+                        width: 12,
+                        height: 12,
+                        decoration: BoxDecoration(
+                          color: AppTheme.warningColor,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Forecast',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppTheme.getTextSecondaryColor(context),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
           ),
-          if (trendAnalysis.forecastData.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(top: 12),
-              child: Row(
-                children: [
-                  Container(
-                    width: 12,
-                    height: 12,
-                    decoration: BoxDecoration(
-                      color: AppTheme.primaryColor,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    'Aktual',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppTheme.getTextSecondaryColor(context),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Container(
-                    width: 12,
-                    height: 12,
-                    decoration: BoxDecoration(
-                      color: AppTheme.warningColor,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    'Forecast',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppTheme.getTextSecondaryColor(context),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-        ],
-      ),
-    ).animate().fadeIn(duration: 400.ms).slideY(
-          begin: 0.1,
-          end: 0,
-          duration: 400.ms,
-          curve: Curves.easeOut,
-        );
+        )
+        .animate()
+        .fadeIn(duration: 400.ms)
+        .slideY(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOut);
   }
 
   Widget _buildTimePatternsSection(
@@ -662,37 +749,37 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     }
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(NeoBrutalTheme.spaceMD),
       decoration: BoxDecoration(
-        color: AppTheme.getCardColor(context),
-        borderRadius: BorderRadius.circular(16),
+        color: NeoBrutalTheme.background, // ✅ Brutal white background
+        borderRadius: BorderRadius.circular(
+          NeoBrutalTheme.radiusMedium,
+        ), // ✅ Brutal 8px
         border: Border.all(
-          color: AppTheme.getBorderColor(context),
-          width: 1,
+          color: Colors.black, // ✅ Bold black border
+          width: 4, // ✅ Bold 4px border
         ),
+        boxShadow: NeoBrutalTheme.chunkyShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             'Pola Waktu',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: AppTheme.getTextPrimaryColor(context),
+            style: NeoBrutalTheme.headlineMedium.copyWith(
+              fontWeight: FontWeight.w900,
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: NeoBrutalTheme.spaceXS),
           Text(
             timePatterns.bestTimeSummary,
-            style: TextStyle(
-              fontSize: 12,
+            style: NeoBrutalTheme.bodyMedium.copyWith(
               color: AppTheme.getTextSecondaryColor(context),
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: NeoBrutalTheme.spaceMD),
           SizedBox(
-            height: 150,
+            height: ResponsiveHelper.getChartHeight(context) * 0.75,
             child: BarChart(
               BarChartData(
                 alignment: BarChartAlignment.spaceAround,
@@ -712,7 +799,8 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                       showTitles: true,
                       reservedSize: 30,
                       getTitlesWidget: (value, meta) {
-                        if (value.toInt() % 3 != 0) return const SizedBox.shrink();
+                        if (value.toInt() % 3 != 0)
+                          return const SizedBox.shrink();
                         return Text(
                           '${value.toInt()}:00',
                           style: TextStyle(
@@ -754,14 +842,17 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   ) {
     final displayProducts = products.take(5).toList();
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(NeoBrutalTheme.spaceMD),
       decoration: BoxDecoration(
-        color: AppTheme.getCardColor(context),
-        borderRadius: BorderRadius.circular(16),
+        color: NeoBrutalTheme.background, // ✅ Brutal white background
+        borderRadius: BorderRadius.circular(
+          NeoBrutalTheme.radiusMedium,
+        ), // ✅ Brutal 8px
         border: Border.all(
-          color: AppTheme.getBorderColor(context),
-          width: 1,
+          color: Colors.black, // ✅ Bold black border
+          width: 4, // ✅ Bold 4px border
         ),
+        boxShadow: NeoBrutalTheme.chunkyShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -801,23 +892,28 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     int rank,
   ) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: EdgeInsets.only(bottom: NeoBrutalTheme.spaceSM),
       child: Row(
         children: [
           Container(
-            width: 28,
-            height: 28,
+            width: 40, // ✅ Larger rank container
+            height: 40,
             decoration: BoxDecoration(
-              color: _getRankColor(rank).withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(8),
+              color: _getRankColor(rank), // ✅ Solid bold color
+              borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
+              border: Border.all(
+                color: Colors.black, // ✅ Bold black border
+                width: 3, // ✅ Bold 3px border
+              ),
+              boxShadow: NeoBrutalTheme.chunkyShadow,
             ),
             child: Center(
               child: Text(
                 rank.toString(),
                 style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: _getRankColor(rank),
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white, // ✅ White text for contrast
                 ),
               ),
             ),
@@ -861,10 +957,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
               ),
               const SizedBox(height: 2),
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 6,
-                  vertical: 2,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
                   color: product.rating.color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(4),
@@ -891,14 +984,17 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   ) {
     final displayCategories = categories.take(5).toList();
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(NeoBrutalTheme.spaceMD),
       decoration: BoxDecoration(
-        color: AppTheme.getCardColor(context),
-        borderRadius: BorderRadius.circular(16),
+        color: NeoBrutalTheme.background, // ✅ Brutal white background
+        borderRadius: BorderRadius.circular(
+          NeoBrutalTheme.radiusMedium,
+        ), // ✅ Brutal 8px
         border: Border.all(
-          color: AppTheme.getBorderColor(context),
-          width: 1,
+          color: Colors.black, // ✅ Bold black border
+          width: 4, // ✅ Bold 4px border
         ),
+        boxShadow: NeoBrutalTheme.chunkyShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -912,10 +1008,12 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          ...displayCategories.map((category) => Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: _buildCategoryItem(context, category),
-              )),
+          ...displayCategories.map(
+            (category) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: _buildCategoryItem(context, category),
+            ),
+          ),
         ],
       ),
     );
@@ -962,17 +1060,17 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             ),
           ],
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: NeoBrutalTheme.spaceXS),
         ClipRRect(
-          borderRadius: BorderRadius.circular(4),
+          borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
           child: LinearProgressIndicator(
             value: category.profitMargin / 100,
-            backgroundColor: AppTheme.getBorderColor(context),
+            backgroundColor: Colors.black.withValues(alpha: 0.1),
             valueColor: AlwaysStoppedAnimation<Color>(category.rating.color),
-            minHeight: 6,
+            minHeight: 8, // ✅ Thicker progress bar
           ),
         ),
-        const SizedBox(height: 4),
+        SizedBox(height: NeoBrutalTheme.spaceXS),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -981,14 +1079,29 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
               style: TextStyle(
                 fontSize: 10,
                 color: AppTheme.textTertiary,
+                fontWeight: FontWeight.w600,
               ),
             ),
-            Text(
-              category.rating.displayName,
-              style: TextStyle(
-                fontSize: 10,
-                color: category.rating.color,
-                fontWeight: FontWeight.w600,
+            Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: NeoBrutalTheme.spaceSM,
+                vertical: 2,
+              ),
+              decoration: BoxDecoration(
+                color: category.rating.color, // ✅ Solid bold color
+                borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
+                border: Border.all(
+                  color: Colors.black,
+                  width: 2, // ✅ Bold 2px border
+                ),
+              ),
+              child: Text(
+                category.rating.displayName,
+                style: TextStyle(
+                  fontSize: 10,
+                  color: Colors.white, // ✅ White text for contrast
+                  fontWeight: FontWeight.w800,
+                ),
               ),
             ),
           ],
@@ -1003,14 +1116,17 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     ComparativeAnalytics comparative,
   ) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(NeoBrutalTheme.spaceMD),
       decoration: BoxDecoration(
-        color: AppTheme.getCardColor(context),
-        borderRadius: BorderRadius.circular(16),
+        color: NeoBrutalTheme.background, // ✅ Brutal white background
+        borderRadius: BorderRadius.circular(
+          NeoBrutalTheme.radiusMedium,
+        ), // ✅ Brutal 8px
         border: Border.all(
-          color: AppTheme.getBorderColor(context),
-          width: 1,
+          color: Colors.black, // ✅ Bold black border
+          width: 4, // ✅ Bold 4px border
         ),
+        boxShadow: NeoBrutalTheme.chunkyShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1024,19 +1140,18 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          ...comparative.metricComparisons.map((metric) => Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: _buildMetricComparison(context, metric),
-              )),
+          ...comparative.metricComparisons.map(
+            (metric) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: _buildMetricComparison(context, metric),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildMetricComparison(
-    BuildContext context,
-    MetricComparison metric,
-  ) {
+  Widget _buildMetricComparison(BuildContext context, MetricComparison metric) {
     return Row(
       children: [
         Expanded(
@@ -1063,30 +1178,32 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           ),
         ),
         Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 10,
-            vertical: 6,
+          padding: EdgeInsets.symmetric(
+            horizontal: NeoBrutalTheme.spaceMD,
+            vertical: NeoBrutalTheme.spaceSM,
           ),
           decoration: BoxDecoration(
-            color: metric.direction.color.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(8),
+            color: metric.direction.color, // ✅ Solid bold color
+            borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium),
             border: Border.all(
-              color: metric.direction.color.withValues(alpha: 0.3),
+              color: Colors.black, // ✅ Bold black border
+              width: 3, // ✅ Bold 3px border
             ),
+            boxShadow: NeoBrutalTheme.chunkyShadow,
           ),
           child: Row(
             children: [
               Icon(
                 metric.direction.icon,
                 size: 14,
-                color: metric.direction.color,
+                color: Colors.white, // ✅ White icon for contrast
               ),
-              const SizedBox(width: 4),
+              SizedBox(width: NeoBrutalTheme.spaceXS),
               Text(
                 '${metric.changePercentage.toStringAsFixed(1)}%',
                 style: TextStyle(
-                  color: metric.direction.color,
-                  fontWeight: FontWeight.bold,
+                  color: Colors.white, // ✅ White text for contrast
+                  fontWeight: FontWeight.w800,
                   fontSize: 12,
                 ),
               ),
@@ -1102,20 +1219,17 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     List<String> summary,
   ) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(NeoBrutalTheme.spaceMD),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            AppTheme.infoColor.withValues(alpha: 0.1),
-            AppTheme.infoColor.withValues(alpha: 0.05),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(16),
+        color: AppTheme.infoColor, // ✅ Solid bold color
+        borderRadius: BorderRadius.circular(
+          NeoBrutalTheme.radiusMedium,
+        ), // ✅ Brutal 8px
         border: Border.all(
-          color: AppTheme.infoColor.withValues(alpha: 0.2),
+          color: Colors.black, // ✅ Bold black border
+          width: 4, // ✅ Bold 4px border
         ),
+        boxShadow: NeoBrutalTheme.chunkyShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1123,82 +1237,86 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           Row(
             children: [
               Container(
-                width: 32,
-                height: 32,
+                width: 48, // ✅ Larger icon container
+                height: 48,
                 decoration: BoxDecoration(
-                  color: AppTheme.infoColor.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(8),
+                  color: Colors.white, // ✅ White container for contrast
+                  borderRadius: BorderRadius.circular(
+                    NeoBrutalTheme.radiusSmall,
+                  ),
+                  border: Border.all(
+                    color: Colors.black,
+                    width: 3, // ✅ Bold 3px border
+                  ),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.summarize,
-                  size: 18,
+                  size: 24,
                   color: AppTheme.infoColor,
                 ),
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: NeoBrutalTheme.spaceSM),
               Text(
                 'Ringkasan Eksekutif',
                 style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.getTextPrimaryColor(context),
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.white, // ✅ White text for contrast
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          ...summary.map((item) => Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      margin: const EdgeInsets.only(top: 4),
-                      width: 4,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: AppTheme.infoColor,
-                        shape: BoxShape.circle,
+          SizedBox(height: NeoBrutalTheme.spaceMD),
+          ...summary.map(
+            (item) => Padding(
+              padding: EdgeInsets.only(bottom: NeoBrutalTheme.spaceSM),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    margin: EdgeInsets.only(top: 4),
+                    width: 8, // ✅ Larger bullet point
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: Colors.white, // ✅ White bullet for contrast
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 2),
+                    ),
+                  ),
+                  SizedBox(width: NeoBrutalTheme.spaceSM),
+                  Expanded(
+                    child: Text(
+                      item,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.white, // ✅ White text for contrast
+                        fontWeight: FontWeight.w600,
+                        height: 1.4,
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        item,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: AppTheme.getTextPrimaryColor(context),
-                          height: 1.4,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              )),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildActionItemsSection(
-    BuildContext context,
-    List<String> actions,
-  ) {
+  Widget _buildActionItemsSection(BuildContext context, List<String> actions) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(NeoBrutalTheme.spaceMD),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            AppTheme.warningColor.withValues(alpha: 0.1),
-            AppTheme.warningColor.withValues(alpha: 0.05),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(16),
+        color: AppTheme.warningColor, // ✅ Solid bold color
+        borderRadius: BorderRadius.circular(
+          NeoBrutalTheme.radiusMedium,
+        ), // ✅ Brutal 8px
         border: Border.all(
-          color: AppTheme.warningColor.withValues(alpha: 0.2),
+          color: Colors.black, // ✅ Bold black border
+          width: 4, // ✅ Bold 4px border
         ),
+        boxShadow: NeoBrutalTheme.chunkyShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1206,54 +1324,77 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           Row(
             children: [
               Container(
-                width: 32,
-                height: 32,
+                width: 48, // ✅ Larger icon container
+                height: 48,
                 decoration: BoxDecoration(
-                  color: AppTheme.warningColor.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(8),
+                  color: Colors.white, // ✅ White container for contrast
+                  borderRadius: BorderRadius.circular(
+                    NeoBrutalTheme.radiusSmall,
+                  ),
+                  border: Border.all(
+                    color: Colors.black,
+                    width: 3, // ✅ Bold 3px border
+                  ),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.task_alt,
-                  size: 18,
+                  size: 24,
                   color: AppTheme.warningColor,
                 ),
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: NeoBrutalTheme.spaceSM),
               Text(
                 'Rekomendasi Tindakan',
                 style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.getTextPrimaryColor(context),
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.white, // ✅ White text for contrast
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          ...actions.map((action) => Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(
-                      Icons.arrow_right,
-                      size: 16,
-                      color: AppTheme.warningColor,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        action,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: AppTheme.getTextPrimaryColor(context),
-                          height: 1.4,
-                        ),
+          SizedBox(height: NeoBrutalTheme.spaceMD),
+          ...actions.map(
+            (action) => Padding(
+              padding: EdgeInsets.only(bottom: NeoBrutalTheme.spaceSM),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 32, // ✅ Larger icon container
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: Colors.white, // ✅ White container for contrast
+                      borderRadius: BorderRadius.circular(
+                        NeoBrutalTheme.radiusSmall,
+                      ),
+                      border: Border.all(
+                        color: Colors.black,
+                        width: 2, // ✅ Bold 2px border
                       ),
                     ),
-                  ],
-                ),
-              )),
+                    child: Icon(
+                      Icons.arrow_right,
+                      size: 18,
+                      color: AppTheme.warningColor,
+                    ),
+                  ),
+                  SizedBox(width: NeoBrutalTheme.spaceSM),
+                  Expanded(
+                    child: Text(
+                      action,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.white, // ✅ White text for contrast
+                        fontWeight: FontWeight.w600,
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -1265,10 +1406,9 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     final spots = <FlSpot>[];
     for (int i = 0; i < analysis.historicalData.length; i++) {
       final data = analysis.historicalData[i];
-      spots.add(FlSpot(
-        data.date.millisecondsSinceEpoch.toDouble(),
-        data.revenue,
-      ));
+      spots.add(
+        FlSpot(data.date.millisecondsSinceEpoch.toDouble(), data.revenue),
+      );
     }
     return spots;
   }
@@ -1277,10 +1417,9 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     final spots = <FlSpot>[];
     for (int i = 0; i < analysis.forecastData.length; i++) {
       final data = analysis.forecastData[i];
-      spots.add(FlSpot(
-        data.date.millisecondsSinceEpoch.toDouble(),
-        data.revenue,
-      ));
+      spots.add(
+        FlSpot(data.date.millisecondsSinceEpoch.toDouble(), data.revenue),
+      );
     }
     return spots;
   }
@@ -1293,7 +1432,8 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   double _getMaxX(SalesTrendAnalysis analysis) {
     if (analysis.forecastData.isEmpty) {
       if (analysis.historicalData.isEmpty) return 0;
-      return analysis.historicalData.last.date.millisecondsSinceEpoch.toDouble();
+      return analysis.historicalData.last.date.millisecondsSinceEpoch
+          .toDouble();
     }
     return analysis.forecastData.last.date.millisecondsSinceEpoch.toDouble();
   }

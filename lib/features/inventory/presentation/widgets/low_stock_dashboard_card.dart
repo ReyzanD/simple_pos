@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../domain/entities/product.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/neo_brutal_theme.dart';
 import '../../../../core/utils/currency_formatter.dart';
 /// Stock status enum
 enum StockStatus {
@@ -27,30 +28,23 @@ class LowStockDashboardCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isOutOfStock = stockStatus == StockStatus.outOfStock;
     final statusColor = isOutOfStock ? AppTheme.errorColor : AppTheme.warningColor;
-    final statusBgColor = statusColor.withValues(alpha: 0.1);
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: EdgeInsets.only(bottom: NeoBrutalTheme.spaceSM),
       decoration: BoxDecoration(
         color: AppTheme.getCardColor(context),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium), // ✅ Brutal 8px
         border: Border.all(
-          color: statusColor.withValues(alpha: 0.3),
-          width: 1.5,
+          color: statusColor, // ✅ Bold colored border
+          width: 4, // ✅ Bold 4px border
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        boxShadow: NeoBrutalTheme.chunkyShadow, // ✅ Chunky brutal shadow
       ),
       child: InkWell(
         onTap: onEditPressed,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(NeoBrutalTheme.spaceMD),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -59,19 +53,24 @@ class LowStockDashboardCard extends StatelessWidget {
                 children: [
                   // Status icon
                   Container(
-                    width: 48,
-                    height: 48,
+                    width: 52,
+                    height: 52,
                     decoration: BoxDecoration(
-                      color: statusBgColor,
-                      borderRadius: BorderRadius.circular(12),
+                      color: statusColor, // ✅ Solid bold color
+                      borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium), // ✅ Brutal 8px
+                      border: Border.all(
+                        color: Colors.black, // ✅ Bold black border
+                        width: 3, // ✅ Bold 3px border
+                      ),
+                      boxShadow: NeoBrutalTheme.chunkyShadow,
                     ),
                     child: Icon(
                       isOutOfStock ? Icons.block : Icons.inventory_2_outlined,
-                      color: statusColor,
-                      size: 24,
+                      color: Colors.white, // ✅ White icon for contrast
+                      size: 28,
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  SizedBox(width: NeoBrutalTheme.spaceMD),
 
                   // Product info
                   Expanded(
@@ -109,17 +108,30 @@ class LowStockDashboardCard extends StatelessWidget {
 
                   // Status badge
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: NeoBrutalTheme.spaceSM,
+                      vertical: NeoBrutalTheme.spaceXS,
+                    ),
                     decoration: BoxDecoration(
-                      color: statusBgColor,
-                      borderRadius: BorderRadius.circular(8),
+                      color: statusColor, // ✅ Solid bold color
+                      borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall), // ✅ Brutal radius
+                      border: Border.all(
+                        color: Colors.black, // ✅ Bold black border
+                        width: 2, // ✅ Bold 2px border
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.2),
+                          offset: Offset(2, 2),
+                          blurRadius: 0,
+                        ),
+                      ],
                     ),
                     child: Text(
                       isOutOfStock ? 'Habis' : 'Rendah',
-                      style: TextStyle(
-                        color: statusColor,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
+                      style: NeoBrutalTheme.labelSmall.copyWith(
+                        color: Colors.white, // ✅ White text for contrast
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
                   ),

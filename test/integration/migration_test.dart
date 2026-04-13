@@ -10,7 +10,7 @@ void main() {
 
   setUp(() async {
     // Use in-memory database for testing
-    databaseHelper = DatabaseHelper();
+    databaseHelper = DatabaseHelper.instance;
     await databaseHelper.database;
   });
 
@@ -231,6 +231,7 @@ Future<void> _executeCreateDBV2(Database db) async {
   const intType = 'INTEGER NOT NULL';
   const textNullable = 'TEXT';
   const intNullable = 'INTEGER';
+  const realNullable = 'REAL';
 
   await db.execute('''
     CREATE TABLE categories (
