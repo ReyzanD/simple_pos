@@ -5,6 +5,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 // Core
 import 'core/constants/app_constants.dart';
 import 'core/theme/app_theme.dart';
+import 'core/providers/core_providers.dart';
 import 'core/controllers/theme_controller.dart';
 
 // Services - Database
@@ -148,16 +149,7 @@ class POSApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        // Theme Controller
-        ChangeNotifierProvider<ThemeController>(
-          create: (_) => ThemeController()..init(),
-        ),
-
-        // Database
-        Provider<DatabaseHelper>(
-          lazy: false,
-          create: (_) => DatabaseHelper.instance,
-        ),
+        ...createCoreProviders(),
 
         // Inventory - Data Layer
         ProxyProvider<DatabaseHelper, ProductLocalDataSourceImpl>(
