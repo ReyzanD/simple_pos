@@ -6,7 +6,7 @@ import '../../../../features/backup/domain/entities/backup_metadata.dart';
 import '../../../../features/backup/domain/entities/backup_config.dart';
 import '../../../../core/constants/backup_constants.dart';
 import '../../../../features/backup/presentation/controllers/backup_controller.dart';
-import '../../../../services/database/database_helper.dart';
+import '../../../../core/database/database_helper.dart';
 
 /// Screen for data management (export, backup, restore)
 class DataManagementScreen extends StatefulWidget {
@@ -17,11 +17,14 @@ class DataManagementScreen extends StatefulWidget {
 }
 
 class _DataManagementScreenState extends State<DataManagementScreen> {
-  final ExportService _exportService = ExportService(databaseHelper: DatabaseHelper.instance);
+  final ExportService _exportService = ExportService(
+    databaseHelper: DatabaseHelper.instance,
+  );
 
   bool _isExporting = false;
 
-  List<BackupMetadata> get _backups => context.watch<BackupController>().backups;
+  List<BackupMetadata> get _backups =>
+      context.watch<BackupController>().backups;
   bool get _isLoadingBackups => context.watch<BackupController>().isLoading;
 
   @override
@@ -173,20 +176,33 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Kelola Data'),
-      ),
+      appBar: AppBar(title: Text('Kelola Data')),
       body: ListView(
         padding: EdgeInsets.all(16),
         children: [
           // Export Section
           _buildSectionHeader('Ekspor Data', Icons.ios_share_rounded),
           const SizedBox(height: 12),
-          _buildExportCard('Transaksi', Icons.receipt_long_rounded, _exportTransactions, _isExporting),
+          _buildExportCard(
+            'Transaksi',
+            Icons.receipt_long_rounded,
+            _exportTransactions,
+            _isExporting,
+          ),
           const SizedBox(height: 8),
-          _buildExportCard('Produk', Icons.inventory_2_rounded, _exportProducts, _isExporting),
+          _buildExportCard(
+            'Produk',
+            Icons.inventory_2_rounded,
+            _exportProducts,
+            _isExporting,
+          ),
           const SizedBox(height: 8),
-          _buildExportCard('Pengeluaran', Icons.payments_rounded, _exportExpenses, _isExporting),
+          _buildExportCard(
+            'Pengeluaran',
+            Icons.payments_rounded,
+            _exportExpenses,
+            _isExporting,
+          ),
 
           const SizedBox(height: 24),
 
@@ -225,7 +241,12 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
     );
   }
 
-  Widget _buildExportCard(String title, IconData icon, VoidCallback onTap, bool isLoading) {
+  Widget _buildExportCard(
+    String title,
+    IconData icon,
+    VoidCallback onTap,
+    bool isLoading,
+  ) {
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

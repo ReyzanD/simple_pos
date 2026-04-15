@@ -1,8 +1,8 @@
 import '../models/product_model.dart';
 import 'product_local_datasource.dart';
-import '../../../../services/database/database_helper.dart';
-import '../../../../core/exceptions/app_exceptions.dart';
-import '../../../../core/utils/logger.dart';
+import 'package:simple_pos/core/database/database_helper.dart'; // package import
+import 'package:simple_pos/core/exceptions/app_exceptions.dart';
+import 'package:simple_pos/core/utils/logger.dart';
 
 /// Implementation of product local data source
 class ProductLocalDataSourceImpl implements ProductLocalDataSource {
@@ -13,9 +13,13 @@ class ProductLocalDataSourceImpl implements ProductLocalDataSource {
   @override
   Future<ProductModel> createProduct(ProductModel product) async {
     try {
-      AppLogger.debug('Creating product in local data source', tag: 'ProductDataSource');
+      AppLogger.debug(
+        'Creating product in local data source',
+        tag: 'ProductDataSource',
+      );
 
-      final result = await databaseHelper.insertProduct(product.toMap());
+      // CHANGED: Redirect to the products DAO specialist
+      final result = await databaseHelper.products.insert(product.toMap());
 
       AppLogger.info('Product created successfully', tag: 'ProductDataSource');
       return ProductModel.fromMap(result);
@@ -40,9 +44,13 @@ class ProductLocalDataSourceImpl implements ProductLocalDataSource {
   @override
   Future<List<ProductModel>> getAllProducts() async {
     try {
-      AppLogger.debug('Fetching all products from local data source', tag: 'ProductDataSource');
+      AppLogger.debug(
+        'Fetching all products from local data source',
+        tag: 'ProductDataSource',
+      );
 
-      final data = await databaseHelper.getAllProducts();
+      // CHANGED: Redirect to the products DAO specialist
+      final data = await databaseHelper.products.getAll();
 
       AppLogger.info('Products fetched successfully', tag: 'ProductDataSource');
       return data.map((map) => ProductModel.fromMap(map)).toList();
@@ -69,7 +77,8 @@ class ProductLocalDataSourceImpl implements ProductLocalDataSource {
     try {
       AppLogger.debug('Fetching product by ID', tag: 'ProductDataSource');
 
-      final data = await databaseHelper.getProductById(id);
+      // CHANGED: Redirect to the products DAO specialist
+      final data = await databaseHelper.products.getById(id);
 
       if (data == null) {
         throw NotFoundException(
@@ -106,7 +115,8 @@ class ProductLocalDataSourceImpl implements ProductLocalDataSource {
     try {
       AppLogger.debug('Updating product', tag: 'ProductDataSource');
 
-      await databaseHelper.updateProduct(product.toMap());
+      // CHANGED: Redirect to the products DAO specialist
+      await databaseHelper.products.update(product.toMap());
 
       AppLogger.info('Product updated successfully', tag: 'ProductDataSource');
     } on NotFoundException {
@@ -134,7 +144,8 @@ class ProductLocalDataSourceImpl implements ProductLocalDataSource {
     try {
       AppLogger.debug('Deleting product', tag: 'ProductDataSource');
 
-      await databaseHelper.deleteProduct(id);
+      // CHANGED: Redirect to the products DAO specialist
+      await databaseHelper.products.delete(id);
 
       AppLogger.info('Product deleted successfully', tag: 'ProductDataSource');
     } on NotFoundException {
@@ -162,9 +173,13 @@ class ProductLocalDataSourceImpl implements ProductLocalDataSource {
     try {
       AppLogger.debug('Searching products', tag: 'ProductDataSource');
 
-      final data = await databaseHelper.searchProducts(query);
+      // CHANGED: Redirect to the products DAO specialist
+      final data = await databaseHelper.products.search(query);
 
-      AppLogger.info('Products searched successfully', tag: 'ProductDataSource');
+      AppLogger.info(
+        'Products searched successfully',
+        tag: 'ProductDataSource',
+      );
       return data.map((map) => ProductModel.fromMap(map)).toList();
     } on DatabaseException {
       rethrow;
@@ -189,7 +204,8 @@ class ProductLocalDataSourceImpl implements ProductLocalDataSource {
     try {
       AppLogger.debug('Checking product existence', tag: 'ProductDataSource');
 
-      final exists = await databaseHelper.productExists(id);
+      // CHANGED: Redirect to the products DAO specialist
+      final exists = await databaseHelper.products.exists(id);
 
       AppLogger.info('Product existence checked', tag: 'ProductDataSource');
       return exists;

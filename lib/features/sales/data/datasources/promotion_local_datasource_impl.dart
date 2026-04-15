@@ -1,6 +1,6 @@
 import '../models/promotion_model.dart';
 import '../../domain/entities/promotion.dart';
-import '../../../../services/database/database_helper.dart';
+import '../../../../core/database/database_helper.dart';
 import '../../../../core/exceptions/app_exceptions.dart';
 import '../../../../core/utils/logger.dart';
 
@@ -16,12 +16,12 @@ class PromotionLocalDataSourceImpl {
       final db = await databaseHelper.database;
       AppLogger.database('Fetching all promotions');
 
-      final result = await db.query(
-        'promotions',
-        orderBy: 'created_at DESC',
-      );
+      final result = await db.query('promotions', orderBy: 'created_at DESC');
 
-      AppLogger.database('Promotions fetched', details: '${result.length} items');
+      AppLogger.database(
+        'Promotions fetched',
+        details: '${result.length} items',
+      );
       return result.map((map) => PromotionModel.fromMap(map)).toList();
     } catch (e, stackTrace) {
       AppLogger.error(
@@ -44,13 +44,16 @@ class PromotionLocalDataSourceImpl {
       final db = await databaseHelper.database;
       final now = DateTime.now().toIso8601String();
 
-      final result = await db.rawQuery('''
+      final result = await db.rawQuery(
+        '''
         SELECT * FROM promotions
         WHERE is_enabled = 1
         AND (start_date IS NULL OR start_date <= ?)
         AND (end_date IS NULL OR end_date >= ?)
         ORDER BY created_at DESC
-      ''', [now, now]);
+      ''',
+        [now, now],
+      );
 
       return result.map((map) => PromotionModel.fromMap(map)).toList();
     } catch (e, stackTrace) {
@@ -151,7 +154,9 @@ class PromotionLocalDataSourceImpl {
       );
 
       if (count == 0) {
-        throw NotFoundException('Promosi dengan ID ${promotion.id} tidak ditemukan');
+        throw NotFoundException(
+          'Promosi dengan ID ${promotion.id} tidak ditemukan',
+        );
       }
 
       AppLogger.database('Promotion updated', details: 'ID: ${promotion.id}');
@@ -213,7 +218,10 @@ class PromotionLocalDataSourceImpl {
   Future<PromotionModel> togglePromotion(int id, bool isEnabled) async {
     try {
       final db = await databaseHelper.database;
-      AppLogger.database('Toggling promotion', details: 'ID: $id, enabled: $isEnabled');
+      AppLogger.database(
+        'Toggling promotion',
+        details: 'ID: $id, enabled: $isEnabled',
+      );
 
       final count = await db.update(
         'promotions',

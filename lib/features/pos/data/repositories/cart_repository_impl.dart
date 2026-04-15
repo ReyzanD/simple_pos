@@ -1,6 +1,6 @@
 import '../../domain/entities/cart_item.dart';
 import '../../domain/repositories/cart_repository.dart';
-import '../../../../services/database/database_helper.dart';
+import '../../../../core/database/database_helper.dart';
 import '../../../../core/utils/logger.dart';
 import '../../../../core/exceptions/app_exceptions.dart' as app_exceptions;
 import '../../../../core/data/models/cart_model.dart';
@@ -10,7 +10,7 @@ class CartRepositoryImpl implements CartRepository {
   final DatabaseHelper _databaseHelper;
 
   CartRepositoryImpl({required DatabaseHelper databaseHelper})
-      : _databaseHelper = databaseHelper;
+    : _databaseHelper = databaseHelper;
 
   @override
   Future<int> saveCart({
@@ -18,7 +18,10 @@ class CartRepositoryImpl implements CartRepository {
     required List<CartItem> items,
   }) async {
     try {
-      AppLogger.database('Saving held cart', details: 'Customer: $customerName, Items: ${items.length}');
+      AppLogger.database(
+        'Saving held cart',
+        details: 'Customer: $customerName, Items: ${items.length}',
+      );
 
       final db = await _databaseHelper.database;
 
@@ -64,12 +67,12 @@ class CartRepositoryImpl implements CartRepository {
 
       final db = await _databaseHelper.database;
 
-      final results = await db.query(
-        'held_carts',
-        orderBy: 'created_at DESC',
-      );
+      final results = await db.query('held_carts', orderBy: 'created_at DESC');
 
-      AppLogger.database('Held carts fetched', details: 'Count: ${results.length}');
+      AppLogger.database(
+        'Held carts fetched',
+        details: 'Count: ${results.length}',
+      );
       return results;
     } catch (e, stackTrace) {
       AppLogger.error(

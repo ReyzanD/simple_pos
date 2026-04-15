@@ -3,7 +3,7 @@ import 'package:csv/csv.dart';
 import 'package:excel/excel.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:simple_pos/services/database/database_helper.dart';
+import 'package:simple_pos/core/database/database_helper.dart';
 
 /// ExportService for exporting data to CSV and Excel formats
 class ExportService {

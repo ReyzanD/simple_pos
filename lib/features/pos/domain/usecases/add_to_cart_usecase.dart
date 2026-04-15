@@ -25,7 +25,9 @@ class AddToCartUseCase {
 
       // Check if product already exists in cart
       final existingIndex = currentCart.indexWhere(
-        (item) => item.product.id == product.id,
+        (item) =>
+            item.product.id == product.id &&
+            item.variant?.id == product.variant?.id,
       );
 
       List<CartItem> updatedCart;
@@ -39,7 +41,9 @@ class AddToCartUseCase {
         Validators.validateStockAvailability(newQuantity, product.stock);
 
         updatedCart = List<CartItem>.from(currentCart);
-        updatedCart[existingIndex] = existingItem.copyWith(quantity: newQuantity);
+        updatedCart[existingIndex] = existingItem.copyWith(
+          quantity: newQuantity,
+        );
 
         AppLogger.info('Cart item quantity updated');
       } else {

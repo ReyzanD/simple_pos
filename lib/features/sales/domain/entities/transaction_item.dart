@@ -5,6 +5,7 @@ class TransactionItem {
   final int? id;
   final int transactionId;
   final int productId;
+  final int variantId; // Add variantId to track specific product variants
   final String productName;
   final int quantity;
   final double unitPrice;
@@ -15,6 +16,7 @@ class TransactionItem {
     this.id,
     required this.transactionId,
     required this.productId,
+    this.variantId = 0, // Default to 0 for non-variant products
     required this.productName,
     required this.quantity,
     required this.unitPrice,
@@ -27,6 +29,7 @@ class TransactionItem {
     int? id,
     int? transactionId,
     int? productId,
+    int? variantId,
     String? productName,
     int? quantity,
     double? unitPrice,
@@ -37,6 +40,7 @@ class TransactionItem {
       id: id ?? this.id,
       transactionId: transactionId ?? this.transactionId,
       productId: productId ?? this.productId,
+      variantId: variantId ?? this.variantId,
       productName: productName ?? this.productName,
       quantity: quantity ?? this.quantity,
       unitPrice: unitPrice ?? this.unitPrice,
@@ -71,6 +75,7 @@ class TransactionItem {
       'id': id,
       'transaction_id': transactionId,
       'product_id': productId,
+      'variant_id': variantId,
       'product_name': productName,
       'quantity': quantity,
       'unit_price': unitPrice,
@@ -83,13 +88,15 @@ class TransactionItem {
   factory TransactionItem.fromMap(Map<String, dynamic> map) {
     return TransactionItem(
       id: map['id'] as int?,
-      transactionId: map['transaction_id'] as int,
-      productId: map['product_id'] as int,
-      productName: map['product_name'] as String,
-      quantity: map['quantity'] as int,
-      unitPrice: (map['unit_price'] as num).toDouble(),
-      subtotal: (map['subtotal'] as num).toDouble(),
-      costPrice: (map['cost_price'] as num?)?.toDouble() ?? 0,
+      // The Fix: Cast as nullable first, then provide fallback
+      transactionId: map['transaction_id'] as int? ?? 0,
+      productId: map['product_id'] as int? ?? 0,
+      variantId: map['variant_id'] as int? ?? 0,
+      productName: map['product_name'] as String? ?? '',
+      quantity: map['quantity'] as int? ?? 0,
+      unitPrice: (map['unit_price'] as num? ?? 0.0).toDouble(),
+      subtotal: (map['subtotal'] as num? ?? 0.0).toDouble(),
+      costPrice: (map['cost_price'] as num? ?? 0.0).toDouble(),
     );
   }
 

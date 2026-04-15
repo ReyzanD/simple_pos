@@ -1,5 +1,5 @@
 import '../models/shift_model.dart';
-import '../../../../services/database/database_helper.dart';
+import '../../../../core/database/database_helper.dart';
 import '../../../../core/exceptions/app_exceptions.dart';
 import '../../../../core/utils/logger.dart';
 
@@ -31,11 +31,7 @@ class ShiftLocalDataSourceImpl {
       AppLogger.database('Shift opened', details: 'ID: $id');
       return created;
     } catch (e, stackTrace) {
-      AppLogger.error(
-        'Failed to open shift',
-        error: e,
-        stackTrace: stackTrace,
-      );
+      AppLogger.error('Failed to open shift', error: e, stackTrace: stackTrace);
       throw DatabaseException(
         'Gagal membuka shift',
         operation: 'openShift',
@@ -60,10 +56,7 @@ class ShiftLocalDataSourceImpl {
       final now = DateTime.now().millisecondsSinceEpoch;
       final count = await db.update(
         'shifts',
-        {
-          'closing_balance': closingBalance,
-          'closed_at': now,
-        },
+        {'closing_balance': closingBalance, 'closed_at': now},
         where: 'id = ?',
         whereArgs: [shiftId],
       );
@@ -112,7 +105,10 @@ class ShiftLocalDataSourceImpl {
         return null;
       }
 
-      AppLogger.database('Active shift found', details: 'ID: ${result.first['id']}');
+      AppLogger.database(
+        'Active shift found',
+        details: 'ID: ${result.first['id']}',
+      );
       return ShiftModel.fromMap(result.first);
     } catch (e, stackTrace) {
       AppLogger.error(
@@ -138,7 +134,10 @@ class ShiftLocalDataSourceImpl {
   }) async {
     try {
       final db = await databaseHelper.database;
-      AppLogger.database('Fetching shifts', details: 'Limit: $limit, Offset: $offset');
+      AppLogger.database(
+        'Fetching shifts',
+        details: 'Limit: $limit, Offset: $offset',
+      );
 
       String? where;
       List<dynamic>? whereArgs;
@@ -169,11 +168,7 @@ class ShiftLocalDataSourceImpl {
       AppLogger.database('Shifts fetched', details: '${result.length} items');
       return result.map((map) => ShiftModel.fromMap(map)).toList();
     } catch (e, stackTrace) {
-      AppLogger.error(
-        'Failed to get shifts',
-        error: e,
-        stackTrace: stackTrace,
-      );
+      AppLogger.error('Failed to get shifts', error: e, stackTrace: stackTrace);
       throw DatabaseException(
         'Gagal mengambil riwayat shift',
         operation: 'getShifts',
@@ -205,11 +200,7 @@ class ShiftLocalDataSourceImpl {
     } on NotFoundException {
       rethrow;
     } catch (e, stackTrace) {
-      AppLogger.error(
-        'Failed to get shift',
-        error: e,
-        stackTrace: stackTrace,
-      );
+      AppLogger.error('Failed to get shift', error: e, stackTrace: stackTrace);
       throw DatabaseException(
         'Gagal mengambil data shift',
         operation: 'getShiftById',
@@ -240,7 +231,8 @@ class ShiftLocalDataSourceImpl {
       final newCardSales = currentShift.cardSales + cardSales;
       final newQrSales = currentShift.qrSales + qrSales;
       final newTransferSales = currentShift.transferSales + transferSales;
-      final newTotalTransactions = currentShift.totalTransactions + transactionCount;
+      final newTotalTransactions =
+          currentShift.totalTransactions + transactionCount;
 
       final count = await db.update(
         'shifts',
@@ -290,11 +282,7 @@ class ShiftLocalDataSourceImpl {
       final db = await databaseHelper.database;
       AppLogger.database('Deleting shift', details: 'ID: $id');
 
-      final count = await db.delete(
-        'shifts',
-        where: 'id = ?',
-        whereArgs: [id],
-      );
+      final count = await db.delete('shifts', where: 'id = ?', whereArgs: [id]);
 
       AppLogger.database('Shift deleted', details: 'ID: $id, affected: $count');
       return count > 0;

@@ -84,6 +84,7 @@ lib/
 ### When to Extract a Widget
 
 Extract a widget when it:
+
 - Is >100 lines
 - Is used in multiple places
 - Has complex state (StatefulWidgets with multiple methods)
@@ -125,6 +126,7 @@ BackupStorageStatusWidget(controller: controller),
 ### Current Problem
 
 main.dart has 975 lines of repeated ProxyProvider chains:
+
 ```dart
 ProxyProvider<DatabaseHelper, ProductLocalDataSourceImpl>(
   update: (_, db, __) => ProductLocalDataSourceImpl(databaseHelper: db),
@@ -140,6 +142,7 @@ ProxyProvider<ProductLocalDataSourceImpl, ProductRepositoryImpl>(
 Create provider group files for each feature:
 
 **Core Providers (`lib/core/providers/core_providers.dart`)**
+
 ```dart
 List<SingleChildWidget> createCoreProviders() {
   return [
@@ -154,6 +157,7 @@ List<SingleChildWidget> createCoreProviders() {
 ```
 
 **Feature Providers (e.g., `lib/features/backup/domain/providers/backup_providers.dart`)**
+
 ```dart
 List<SingleChildWidget> createBackupProviders() {
   return [
@@ -246,6 +250,7 @@ class BackupStorageStatusWidget extends StatefulWidget {
 ### backup_screen.dart (2,743 → ~300 lines)
 
 Extract these widgets:
+
 1. `_StorageStatusWidget` → `BackupStorageStatusWidget`
 2. `_StorageProgressBar` → `BackupStorageProgressBar`
 3. `_StorageDetailsDialog` → `BackupStorageDetailsDialog`
@@ -260,6 +265,7 @@ Extract these widgets:
 ### sales_report_screen.dart (2,323 → ~400 lines)
 
 Extract into:
+
 1. `ReportSummaryCards` - KPI stats at top
 2. `ReportChartSection` - Graphs and visualizations
 3. `ReportTransactionList` - Transaction history
@@ -268,12 +274,14 @@ Extract into:
 ### add_product_dialog.dart (1,722 → ~600 lines)
 
 Split into:
+
 1. `ProductFormFields` - Reusable form field components
 2. Keep `AddProductDialog` as orchestrator (but much smaller)
 
 ### drawer_sections.dart (1,153 → ~200 lines)
 
 Extract each section into its own file:
+
 1. `DrawerCategoryChips`
 2. `DrawerStoreStats`
 3. `DrawerLowStockItem`
@@ -304,6 +312,7 @@ Extract each section into its own file:
 ### Phase 3: Feature Providers (2-3 hours)
 
 Migrate one feature at a time in this order:
+
 1. Inventory (most critical)
 2. POS (second most critical)
 3. Sales (reporting)
@@ -314,6 +323,7 @@ Migrate one feature at a time in this order:
 8. Shifts
 
 **For each feature:**
+
 - Copy providers to feature_providers.dart
 - Update main.dart
 - **VERIFY:** Run app, test feature functionality
@@ -321,6 +331,7 @@ Migrate one feature at a time in this order:
 ### Phase 4: Widget Extraction (3-4 hours)
 
 Extract widgets one file at a time in this order:
+
 1. `backup_screen.dart` (biggest win)
 2. `sales_report_screen.dart`
 3. `add_product_dialog.dart`
@@ -328,6 +339,7 @@ Extract widgets one file at a time in this order:
 5. `pos_screen.dart`
 
 **For each widget:**
+
 1. Create new widget file
 2. Copy widget class, fix imports
 3. Update original file to import new widget
@@ -400,6 +412,7 @@ flutter run # fresh start
 ## Post-Refactoring Verification
 
 After completion, verify:
+
 1. ✅ App launches without errors
 2. ✅ All features work: POS, Inventory, Sales, Backup, Expenses, Settings, Users
 3. ✅ Hot reload works smoothly
@@ -410,3 +423,4 @@ After completion, verify:
 ## Migration Notes
 
 This refactoring maintains 100% functional compatibility. No business logic changes, only code organization. All existing tests should pass without modification.
+https://gemini.google.com/u/1/app/14593e782065f31f

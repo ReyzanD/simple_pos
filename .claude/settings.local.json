@@ -22,7 +22,8 @@
       "Bash(flutter run:*)",
       "Bash(adb -s emulator-5554 shell \"ps | grep simple_pos\")",
       "Bash(flutter devices:*)",
-      "Bash(find lib/core/providers lib/features/*/domain/providers lib/features/backup/presentation/widgets -type d)"
+      "Bash(find lib/core/providers lib/features/*/domain/providers lib/features/backup/presentation/widgets -type d)",
+      "Bash(git commit:*)"
     ]
   }
 }

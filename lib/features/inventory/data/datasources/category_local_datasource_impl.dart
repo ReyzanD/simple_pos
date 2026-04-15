@@ -1,7 +1,8 @@
 import '../models/category_model.dart';
-import '../../../../services/database/database_helper.dart';
-import '../../../../core/exceptions/app_exceptions.dart' as app_exceptions;
-import '../../../../core/utils/logger.dart';
+import 'package:simple_pos/core/database/database_helper.dart'; // Use package import
+import 'package:simple_pos/core/exceptions/app_exceptions.dart'
+    as app_exceptions;
+import 'package:simple_pos/core/utils/logger.dart';
 
 /// Implementation of category local data source
 class CategoryLocalDataSourceImpl {
@@ -12,11 +13,18 @@ class CategoryLocalDataSourceImpl {
   /// Creates a new category
   Future<CategoryModel> createCategory(CategoryModel category) async {
     try {
-      AppLogger.debug('Creating category in local data source', tag: 'CategoryDataSource');
+      AppLogger.debug(
+        'Creating category in local data source',
+        tag: 'CategoryDataSource',
+      );
 
-      final result = await databaseHelper.insertCategory(category.toMap());
+      // CHANGED: Use the categories DAO
+      final result = await databaseHelper.categories.insert(category.toMap());
 
-      AppLogger.info('Category created successfully', tag: 'CategoryDataSource');
+      AppLogger.info(
+        'Category created successfully',
+        tag: 'CategoryDataSource',
+      );
       return CategoryModel.fromMap(result);
     } on app_exceptions.DatabaseException {
       rethrow;
@@ -39,11 +47,18 @@ class CategoryLocalDataSourceImpl {
   /// Gets all categories
   Future<List<CategoryModel>> getAllCategories() async {
     try {
-      AppLogger.debug('Fetching all categories from local data source', tag: 'CategoryDataSource');
+      AppLogger.debug(
+        'Fetching all categories from local data source',
+        tag: 'CategoryDataSource',
+      );
 
-      final data = await databaseHelper.getAllCategories();
+      // CHANGED: Use the categories DAO
+      final data = await databaseHelper.categories.getAll();
 
-      AppLogger.info('Categories fetched successfully', tag: 'CategoryDataSource');
+      AppLogger.info(
+        'Categories fetched successfully',
+        tag: 'CategoryDataSource',
+      );
       return data.map((map) => CategoryModel.fromMap(map)).toList();
     } on app_exceptions.DatabaseException {
       rethrow;
@@ -68,7 +83,8 @@ class CategoryLocalDataSourceImpl {
     try {
       AppLogger.debug('Fetching category by ID', tag: 'CategoryDataSource');
 
-      final data = await databaseHelper.getCategoryById(id);
+      // CHANGED: Use the categories DAO
+      final data = await databaseHelper.categories.getById(id);
 
       if (data == null) {
         throw app_exceptions.NotFoundException(
@@ -78,7 +94,10 @@ class CategoryLocalDataSourceImpl {
         );
       }
 
-      AppLogger.info('Category fetched successfully', tag: 'CategoryDataSource');
+      AppLogger.info(
+        'Category fetched successfully',
+        tag: 'CategoryDataSource',
+      );
       return CategoryModel.fromMap(data);
     } on app_exceptions.NotFoundException {
       rethrow;
@@ -112,9 +131,13 @@ class CategoryLocalDataSourceImpl {
     try {
       AppLogger.debug('Updating category', tag: 'CategoryDataSource');
 
-      await databaseHelper.updateCategory(category.id!, category.toMap());
+      // CHANGED: Use the categories DAO
+      await databaseHelper.categories.update(category.id!, category.toMap());
 
-      AppLogger.info('Category updated successfully', tag: 'CategoryDataSource');
+      AppLogger.info(
+        'Category updated successfully',
+        tag: 'CategoryDataSource',
+      );
       return category;
     } on app_exceptions.ValidationException {
       rethrow;
@@ -141,9 +164,13 @@ class CategoryLocalDataSourceImpl {
     try {
       AppLogger.debug('Deleting category', tag: 'CategoryDataSource');
 
-      await databaseHelper.deleteCategory(id);
+      // CHANGED: Use the categories DAO
+      await databaseHelper.categories.delete(id);
 
-      AppLogger.info('Category deleted successfully', tag: 'CategoryDataSource');
+      AppLogger.info(
+        'Category deleted successfully',
+        tag: 'CategoryDataSource',
+      );
     } on app_exceptions.DatabaseException {
       rethrow;
     } catch (e, stackTrace) {

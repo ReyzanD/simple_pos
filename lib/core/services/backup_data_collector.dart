@@ -7,7 +7,7 @@ import 'package:simple_pos/core/exceptions/app_exceptions.dart';
 import 'package:simple_pos/core/utils/logger.dart';
 import 'package:simple_pos/features/backup/domain/entities/backup_config.dart';
 import 'package:simple_pos/features/backup/domain/entities/backup_data.dart';
-import 'package:simple_pos/services/database/database_helper.dart';
+import 'package:simple_pos/core/database/database_helper.dart';
 import 'package:simple_pos/core/constants/app_constants.dart';
 import 'package:simple_pos/core/constants/backup_constants.dart';
 
@@ -16,9 +16,8 @@ import 'package:simple_pos/core/constants/backup_constants.dart';
 class BackupDataCollector {
   final DatabaseHelper _databaseHelper;
 
-  BackupDataCollector({
-    required DatabaseHelper databaseHelper,
-  }) : _databaseHelper = databaseHelper;
+  BackupDataCollector({required DatabaseHelper databaseHelper})
+    : _databaseHelper = databaseHelper;
 
   /// Collect all backup data based on configuration
   /// Returns BackupData with collected files and preferences
@@ -59,10 +58,7 @@ class BackupDataCollector {
 
       // Collect images
       if (config.includesImages) {
-        AppLogger.info(
-          'Collecting product images',
-          tag: 'BackupDataCollector',
-        );
+        AppLogger.info('Collecting product images', tag: 'BackupDataCollector');
         imageFiles.addAll(await _collectImages(since));
       }
 
@@ -79,10 +75,7 @@ class BackupDataCollector {
       // Collect settings
       if (config.dataTypes.contains(BackupDataType.all) ||
           config.dataTypes.contains(BackupDataType.database)) {
-        AppLogger.info(
-          'Collecting app settings',
-          tag: 'BackupDataCollector',
-        );
+        AppLogger.info('Collecting app settings', tag: 'BackupDataCollector');
         settings = await _collectSettings();
       }
 
@@ -178,7 +171,9 @@ class BackupDataCollector {
         try {
           // Check if table has updated_at column
           final columns = await db.rawQuery('PRAGMA table_info($table)');
-          final hasUpdatedAt = columns.any((col) => col['name'] == 'updated_at');
+          final hasUpdatedAt = columns.any(
+            (col) => col['name'] == 'updated_at',
+          );
 
           List<Map<String, dynamic>> rows;
 
@@ -190,7 +185,9 @@ class BackupDataCollector {
             );
           } else {
             // Fallback to created_at if no updated_at
-            final hasCreatedAt = columns.any((col) => col['name'] == 'created_at');
+            final hasCreatedAt = columns.any(
+              (col) => col['name'] == 'created_at',
+            );
             if (hasCreatedAt) {
               rows = await db.query(
                 table,
@@ -403,10 +400,7 @@ class BackupDataCollector {
 
         final size = await data.databaseFile!.length();
         if (size == 0) {
-          AppLogger.error(
-            'Database file is empty',
-            tag: 'BackupDataCollector',
-          );
+          AppLogger.error('Database file is empty', tag: 'BackupDataCollector');
           return false;
         }
       }

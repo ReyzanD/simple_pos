@@ -1,7 +1,8 @@
 import '../models/supplier_model.dart';
-import '../../../../services/database/database_helper.dart';
-import '../../../../core/exceptions/app_exceptions.dart' as app_exceptions;
-import '../../../../core/utils/logger.dart';
+import 'package:simple_pos/core/database/database_helper.dart';
+import 'package:simple_pos/core/exceptions/app_exceptions.dart'
+    as app_exceptions;
+import 'package:simple_pos/core/utils/logger.dart';
 
 /// Implementation of supplier local data source
 class SupplierLocalDataSourceImpl {
@@ -12,11 +13,18 @@ class SupplierLocalDataSourceImpl {
   /// Creates a new supplier
   Future<SupplierModel> createSupplier(SupplierModel supplier) async {
     try {
-      AppLogger.debug('Creating supplier in local data source', tag: 'SupplierDataSource');
+      AppLogger.debug(
+        'Creating supplier in local data source',
+        tag: 'SupplierDataSource',
+      );
 
-      final result = await databaseHelper.insertSupplier(supplier.toMap());
+      // CHANGED: Call the DAO insert method
+      final result = await databaseHelper.suppliers.insert(supplier.toMap());
 
-      AppLogger.info('Supplier created successfully', tag: 'SupplierDataSource');
+      AppLogger.info(
+        'Supplier created successfully',
+        tag: 'SupplierDataSource',
+      );
       return SupplierModel.fromMap(result);
     } on app_exceptions.DatabaseException {
       rethrow;
@@ -39,11 +47,18 @@ class SupplierLocalDataSourceImpl {
   /// Gets all suppliers
   Future<List<SupplierModel>> getAllSuppliers() async {
     try {
-      AppLogger.debug('Fetching all suppliers from local data source', tag: 'SupplierDataSource');
+      AppLogger.debug(
+        'Fetching all suppliers from local data source',
+        tag: 'SupplierDataSource',
+      );
 
-      final data = await databaseHelper.getAllSuppliers();
+      // CHANGED: Call the DAO getAll method
+      final data = await databaseHelper.suppliers.getAll();
 
-      AppLogger.info('Suppliers fetched successfully', tag: 'SupplierDataSource');
+      AppLogger.info(
+        'Suppliers fetched successfully',
+        tag: 'SupplierDataSource',
+      );
       return data.map((map) => SupplierModel.fromMap(map)).toList();
     } on app_exceptions.DatabaseException {
       rethrow;
@@ -68,7 +83,8 @@ class SupplierLocalDataSourceImpl {
     try {
       AppLogger.debug('Fetching supplier by ID', tag: 'SupplierDataSource');
 
-      final data = await databaseHelper.getSupplierById(id);
+      // CHANGED: Call the DAO getById method
+      final data = await databaseHelper.suppliers.getById(id);
 
       if (data == null) {
         throw app_exceptions.NotFoundException(
@@ -78,7 +94,10 @@ class SupplierLocalDataSourceImpl {
         );
       }
 
-      AppLogger.info('Supplier fetched successfully', tag: 'SupplierDataSource');
+      AppLogger.info(
+        'Supplier fetched successfully',
+        tag: 'SupplierDataSource',
+      );
       return SupplierModel.fromMap(data);
     } on app_exceptions.NotFoundException {
       rethrow;
@@ -112,9 +131,13 @@ class SupplierLocalDataSourceImpl {
     try {
       AppLogger.debug('Updating supplier', tag: 'SupplierDataSource');
 
-      await databaseHelper.updateSupplier(supplier.id!, supplier.toMap());
+      // CHANGED: Call the DAO update method
+      await databaseHelper.suppliers.update(supplier.id!, supplier.toMap());
 
-      AppLogger.info('Supplier updated successfully', tag: 'SupplierDataSource');
+      AppLogger.info(
+        'Supplier updated successfully',
+        tag: 'SupplierDataSource',
+      );
       return supplier;
     } on app_exceptions.ValidationException {
       rethrow;
@@ -141,9 +164,13 @@ class SupplierLocalDataSourceImpl {
     try {
       AppLogger.debug('Deleting supplier', tag: 'SupplierDataSource');
 
-      await databaseHelper.deleteSupplier(id);
+      // CHANGED: Call the DAO delete method
+      await databaseHelper.suppliers.delete(id);
 
-      AppLogger.info('Supplier deleted successfully', tag: 'SupplierDataSource');
+      AppLogger.info(
+        'Supplier deleted successfully',
+        tag: 'SupplierDataSource',
+      );
     } on app_exceptions.DatabaseException {
       rethrow;
     } catch (e, stackTrace) {

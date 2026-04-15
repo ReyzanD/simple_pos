@@ -12,7 +12,7 @@ import 'package:simple_pos/features/backup/domain/entities/backup_metadata.dart'
 import 'package:simple_pos/features/backup/domain/repositories/backup_repository.dart';
 import 'package:simple_pos/core/constants/backup_constants.dart';
 import 'package:simple_pos/core/constants/app_constants.dart';
-import 'package:simple_pos/services/database/database_helper.dart';
+import 'package:simple_pos/core/database/database_helper.dart';
 import 'package:simple_pos/core/services/backup_data_collector.dart';
 
 /// Core service orchestrating all backup operations
@@ -26,8 +26,8 @@ class BackupService {
     required this.backupRepository,
     required BackupDataCollector dataCollector,
     required DatabaseHelper databaseHelper,
-  })  : _dataCollector = dataCollector,
-        _databaseHelper = databaseHelper;
+  }) : _dataCollector = dataCollector,
+       _databaseHelper = databaseHelper;
 
   /// Create a backup with the given configuration
   /// Returns BackupResult with success status and metadata
@@ -64,22 +64,10 @@ class BackupService {
         tag: 'BackupService',
       );
 
-      return BackupResult(
-        success: true,
-        error: null,
-        metadata: metadata,
-      );
+      return BackupResult(success: true, error: null, metadata: metadata);
     } on AppException catch (e) {
-      AppLogger.error(
-        'Backup creation failed',
-        error: e,
-        tag: 'BackupService',
-      );
-      return BackupResult(
-        success: false,
-        error: e.userMessage,
-        metadata: null,
-      );
+      AppLogger.error('Backup creation failed', error: e, tag: 'BackupService');
+      return BackupResult(success: false, error: e.userMessage, metadata: null);
     } catch (e, stackTrace) {
       AppLogger.error(
         'Unexpected error in createBackup',
@@ -97,10 +85,7 @@ class BackupService {
 
   /// Restore backup with given mode
   /// Returns RestoreResult with success status and details
-  Future<RestoreResult> restoreBackup(
-    String backupId,
-    RestoreMode mode,
-  ) async {
+  Future<RestoreResult> restoreBackup(String backupId, RestoreMode mode) async {
     try {
       AppLogger.info(
         'Starting backup restore: $backupId (mode: ${mode.name})',
@@ -135,11 +120,7 @@ class BackupService {
         recordsProcessed: await _estimateRecordsProcessed(data),
       );
     } on AppException catch (e) {
-      AppLogger.error(
-        'Backup restore failed',
-        error: e,
-        tag: 'BackupService',
-      );
+      AppLogger.error('Backup restore failed', error: e, tag: 'BackupService');
       return RestoreResult(
         success: false,
         error: e.userMessage,
@@ -203,11 +184,7 @@ class BackupService {
 
       AppLogger.info('Backup validation completed', tag: 'BackupService');
 
-      return ValidationResult(
-        isValid: true,
-        error: null,
-        warnings: warnings,
-      );
+      return ValidationResult(isValid: true, error: null, warnings: warnings);
     } on AppException catch (e) {
       AppLogger.error(
         'Backup validation failed',
@@ -311,7 +288,10 @@ class BackupService {
 
       // 4. Restore images
       if (data.imageFiles.isNotEmpty) {
-        AppLogger.info('Restoring ${data.imageFiles.length} images', tag: 'BackupService');
+        AppLogger.info(
+          'Restoring ${data.imageFiles.length} images',
+          tag: 'BackupService',
+        );
         await _restoreImages(data.imageFiles, replaceAll: true);
       }
 
@@ -369,10 +349,7 @@ class BackupService {
               await _mergeTableRow(db, table, row);
               recordsProcessed++;
             }
-            AppLogger.database(
-              'Merged $table',
-              details: '${rows.length} rows',
-            );
+            AppLogger.database('Merged $table', details: '${rows.length} rows');
           } catch (e, stackTrace) {
             AppLogger.error(
               'Failed to merge table $table',
@@ -383,7 +360,8 @@ class BackupService {
             // Continue with other tables
           }
         }
-      } else if (data.databaseFile != null && await data.databaseFile!.exists()) {
+      } else if (data.databaseFile != null &&
+          await data.databaseFile!.exists()) {
         // Full database merge - open backup database and merge tables
         AppLogger.info('Merging full database', tag: 'BackupService');
         recordsProcessed += await _mergeFullDatabase(data.databaseFile!);
@@ -391,7 +369,10 @@ class BackupService {
 
       // 2. Merge images (add new, don't replace existing)
       if (data.imageFiles.isNotEmpty) {
-        AppLogger.info('Merging ${data.imageFiles.length} images', tag: 'BackupService');
+        AppLogger.info(
+          'Merging ${data.imageFiles.length} images',
+          tag: 'BackupService',
+        );
         await _restoreImages(data.imageFiles, replaceAll: false);
       }
 
@@ -454,12 +435,17 @@ class BackupService {
         await db.insert(table, row);
       } else {
         // Check if backup row is newer
-        final backupUpdated = row['updated_at']?.toString() ?? row['created_at']?.toString();
-        final existingUpdated = existing.first['updated_at']?.toString() ?? existing.first['created_at']?.toString();
+        final backupUpdated =
+            row['updated_at']?.toString() ?? row['created_at']?.toString();
+        final existingUpdated =
+            existing.first['updated_at']?.toString() ??
+            existing.first['created_at']?.toString();
 
         if (backupUpdated != null &&
             (existingUpdated == null ||
-             DateTime.parse(backupUpdated).isAfter(DateTime.parse(existingUpdated)))) {
+                DateTime.parse(
+                  backupUpdated,
+                ).isAfter(DateTime.parse(existingUpdated)))) {
           // Update existing row
           await db.update(table, row, where: 'id = ?', whereArgs: [id]);
         }
@@ -534,7 +520,10 @@ class BackupService {
   }
 
   /// Restore image files
-  Future<void> _restoreImages(List<File> images, {required bool replaceAll}) async {
+  Future<void> _restoreImages(
+    List<File> images, {
+    required bool replaceAll,
+  }) async {
     try {
       final appDir = await getApplicationDocumentsDirectory();
       final imagesDir = Directory(path.join(appDir.path, 'images', 'products'));
@@ -718,11 +707,7 @@ class BackupResult {
   final String? error;
   final BackupMetadata? metadata;
 
-  BackupResult({
-    required this.success,
-    this.error,
-    this.metadata,
-  });
+  BackupResult({required this.success, this.error, this.metadata});
 
   @override
   String toString() =>

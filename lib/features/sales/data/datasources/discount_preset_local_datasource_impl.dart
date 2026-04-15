@@ -1,6 +1,6 @@
 import '../models/discount_preset_model.dart';
 import '../../domain/entities/discount_preset.dart';
-import '../../../../services/database/database_helper.dart';
+import '../../../../core/database/database_helper.dart';
 import '../../../../core/exceptions/app_exceptions.dart';
 import '../../../../core/utils/logger.dart';
 
@@ -21,7 +21,10 @@ class DiscountPresetLocalDataSourceImpl {
         orderBy: 'created_at DESC',
       );
 
-      AppLogger.database('Discount presets fetched', details: '${result.length} items');
+      AppLogger.database(
+        'Discount presets fetched',
+        details: '${result.length} items',
+      );
       return result.map((map) => DiscountPresetModel.fromMap(map)).toList();
     } catch (e, stackTrace) {
       AppLogger.error(
@@ -75,7 +78,9 @@ class DiscountPresetLocalDataSourceImpl {
   }
 
   /// Creates a new discount preset
-  Future<DiscountPresetModel> createDiscountPreset(DiscountPreset preset) async {
+  Future<DiscountPresetModel> createDiscountPreset(
+    DiscountPreset preset,
+  ) async {
     try {
       final db = await databaseHelper.database;
       AppLogger.database('Creating discount preset', details: preset.name);
@@ -103,10 +108,15 @@ class DiscountPresetLocalDataSourceImpl {
   }
 
   /// Updates an existing discount preset
-  Future<DiscountPresetModel> updateDiscountPreset(DiscountPreset preset) async {
+  Future<DiscountPresetModel> updateDiscountPreset(
+    DiscountPreset preset,
+  ) async {
     try {
       final db = await databaseHelper.database;
-      AppLogger.database('Updating discount preset', details: 'ID: ${preset.id}');
+      AppLogger.database(
+        'Updating discount preset',
+        details: 'ID: ${preset.id}',
+      );
 
       if (preset.id == null) {
         throw ValidationException('ID preset diperlukan', field: 'ID');
@@ -121,10 +131,15 @@ class DiscountPresetLocalDataSourceImpl {
       );
 
       if (count == 0) {
-        throw NotFoundException('Preset diskon dengan ID ${preset.id} tidak ditemukan');
+        throw NotFoundException(
+          'Preset diskon dengan ID ${preset.id} tidak ditemukan',
+        );
       }
 
-      AppLogger.database('Discount preset updated', details: 'ID: ${preset.id}');
+      AppLogger.database(
+        'Discount preset updated',
+        details: 'ID: ${preset.id}',
+      );
       return model;
     } on ValidationException {
       rethrow;

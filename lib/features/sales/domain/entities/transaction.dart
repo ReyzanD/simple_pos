@@ -80,7 +80,9 @@ class Transaction {
   /// Checks if transaction is refundable
   bool get isRefundable =>
       paymentStatus == PaymentStatus.completed &&
-      transactionDate.isAfter(DateTime.now().subtract(const Duration(days: 30)));
+      transactionDate.isAfter(
+        DateTime.now().subtract(const Duration(days: 30)),
+      );
 
   /// Converts transaction to map for database storage
   Map<String, dynamic> toMap() {

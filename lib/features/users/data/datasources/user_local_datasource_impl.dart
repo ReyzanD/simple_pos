@@ -1,4 +1,4 @@
-import 'package:simple_pos/services/database/database_helper.dart';
+import 'package:simple_pos/core/database/database_helper.dart';
 import '../models/user_model.dart';
 
 /// Local data source implementation for User using SQLite
@@ -10,21 +10,14 @@ class UserLocalDataSourceImpl {
   /// Get all users from database
   Future<List<UserModel>> getUsers() async {
     final db = await databaseHelper.database;
-    final maps = await db.query(
-      'users',
-      orderBy: 'created_at DESC',
-    );
+    final maps = await db.query('users', orderBy: 'created_at DESC');
     return maps.map((map) => UserModel.fromMap(map)).toList();
   }
 
   /// Get user by ID
   Future<UserModel?> getUserById(int id) async {
     final db = await databaseHelper.database;
-    final maps = await db.query(
-      'users',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    final maps = await db.query('users', where: 'id = ?', whereArgs: [id]);
     if (maps.isEmpty) return null;
     return UserModel.fromMap(maps.first);
   }

@@ -1,6 +1,6 @@
 import '../domain/entities/audit_log.dart';
 import '../utils/logger.dart';
-import '../../services/database/database_helper.dart';
+import '../database/database_helper.dart';
 
 /// Service for logging audit events
 /// Tracks sensitive operations for security, compliance, and fraud detection
@@ -61,10 +61,7 @@ class AuditLogger {
   }
 
   /// Log user login
-  Future<void> logLogin({
-    required String username,
-    String? userId,
-  }) async {
+  Future<void> logLogin({required String username, String? userId}) async {
     await log(
       action: AuditAction.userLoggedIn,
       entityType: 'User',
@@ -76,10 +73,7 @@ class AuditLogger {
   }
 
   /// Log user logout
-  Future<void> logLogout({
-    required String username,
-    String? userId,
-  }) async {
+  Future<void> logLogout({required String username, String? userId}) async {
     await log(
       action: AuditAction.userLoggedOut,
       entityType: 'User',
@@ -130,7 +124,8 @@ class AuditLogger {
           userId: userId,
           oldValues: {'price': oldPrice},
           newValues: {'price': newPrice},
-          description: 'Price changed for "$productName": $oldPrice → $newPrice',
+          description:
+              'Price changed for "$productName": $oldPrice → $newPrice',
         );
         return;
       }
@@ -181,10 +176,7 @@ class AuditLogger {
       entityId: transactionId.toString(),
       username: username,
       userId: userId,
-      newValues: {
-        'total': totalAmount,
-        'payment_method': paymentMethod,
-      },
+      newValues: {'total': totalAmount, 'payment_method': paymentMethod},
       description: 'Transaction created: $paymentMethod $totalAmount',
     );
   }
@@ -349,7 +341,8 @@ class AuditLogger {
       userId: userId,
       oldValues: {'stock': oldStock},
       newValues: {'stock': newStock},
-      description: 'Stock adjusted for "$productName": $oldStock → $newStock ($reason)',
+      description:
+          'Stock adjusted for "$productName": $oldStock → $newStock ($reason)',
     );
   }
 

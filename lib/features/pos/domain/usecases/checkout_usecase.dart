@@ -37,7 +37,14 @@ class CheckoutUseCase {
       // Calculate total amount
       final subtotal = cart.fold<double>(
         0,
-        (sum, item) => sum + item.totalPrice,
+        // Use the compound total to account for active promotions/category discounts
+        (sum, item) =>
+            sum +
+            item.getCompoundTotalPrice(
+              categoryDiscount:
+                  categoryDiscount, // You'll need to pass these into the UseCase
+              promotionDiscount: promotionDiscount,
+            ),
       );
       final totalAmount = subtotal + tax - discount;
 
@@ -87,7 +94,10 @@ class CheckoutUseCase {
     double discount = 0,
   }) async {
     // Calculate total
-    final total = cart.fold<double>(0, (sum, item) => sum + item.totalPrice) + tax - discount;
+    final total =
+        cart.fold<double>(0, (sum, item) => sum + item.totalPrice) +
+        tax -
+        discount;
 
     return execute(
       cart: cart,
@@ -105,7 +115,8 @@ class CheckoutResult {
   final String? message;
   final double totalAmount;
   final int itemsProcessed;
-  final dynamic transaction; // Transaction entity (optional import to avoid circular dependency)
+  final dynamic
+  transaction; // Transaction entity (optional import to avoid circular dependency)
 
   const CheckoutResult({
     required this.success,

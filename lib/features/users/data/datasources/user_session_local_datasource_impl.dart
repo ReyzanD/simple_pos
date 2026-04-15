@@ -1,4 +1,4 @@
-import 'package:simple_pos/services/database/database_helper.dart';
+import 'package:simple_pos/core/database/database_helper.dart';
 import '../models/user_session_model.dart';
 
 /// Local data source implementation for UserSession using SQLite
@@ -71,9 +71,8 @@ class UserSessionLocalDataSourceImpl {
   /// Get recent sessions from last N days
   Future<List<UserSessionModel>> getRecentSessions(int days) async {
     final db = await databaseHelper.database;
-    final cutoffTime = DateTime.now()
-            .subtract(Duration(days: days))
-            .millisecondsSinceEpoch ~/
+    final cutoffTime =
+        DateTime.now().subtract(Duration(days: days)).millisecondsSinceEpoch ~/
         1000;
     final maps = await db.query(
       'user_sessions',

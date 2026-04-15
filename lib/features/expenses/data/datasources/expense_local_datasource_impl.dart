@@ -1,4 +1,4 @@
-import 'package:simple_pos/services/database/database_helper.dart';
+import 'package:simple_pos/core/database/database_helper.dart';
 import '../models/expense_model.dart';
 
 /// Local data source implementation for Expense using SQLite
@@ -49,11 +49,7 @@ class ExpenseLocalDataSourceImpl {
   /// Get expense by ID
   Future<ExpenseModel?> getExpenseById(int id) async {
     final db = await databaseHelper.database;
-    final maps = await db.query(
-      'expenses',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    final maps = await db.query('expenses', where: 'id = ?', whereArgs: [id]);
     if (maps.isEmpty) return null;
     return ExpenseModel.fromMap(maps.first);
   }
@@ -122,10 +118,7 @@ class ExpenseLocalDataSourceImpl {
   }
 
   /// Get total expenses
-  Future<double> getTotalExpenses({
-    int? startDate,
-    int? endDate,
-  }) async {
+  Future<double> getTotalExpenses({int? startDate, int? endDate}) async {
     final db = await databaseHelper.database;
 
     String? where;
@@ -166,8 +159,19 @@ class ExpenseLocalDataSourceImpl {
   /// Get today's expenses
   Future<List<ExpenseModel>> getTodayExpenses() async {
     final today = DateTime.now();
-    final startOfDay = DateTime(today.year, today.month, today.day).millisecondsSinceEpoch ~/ 1000;
-    final endOfDay = DateTime(today.year, today.month, today.day, 23, 59, 59).millisecondsSinceEpoch ~/ 1000;
+    final startOfDay =
+        DateTime(today.year, today.month, today.day).millisecondsSinceEpoch ~/
+        1000;
+    final endOfDay =
+        DateTime(
+          today.year,
+          today.month,
+          today.day,
+          23,
+          59,
+          59,
+        ).millisecondsSinceEpoch ~/
+        1000;
 
     return await getExpenses(startDate: startOfDay, endDate: endOfDay);
   }
@@ -175,8 +179,10 @@ class ExpenseLocalDataSourceImpl {
   /// Get this month's expenses
   Future<List<ExpenseModel>> getThisMonthExpenses() async {
     final now = DateTime.now();
-    final startOfMonth = DateTime(now.year, now.month, 1).millisecondsSinceEpoch ~/ 1000;
-    final endOfMonth = DateTime(now.year, now.month + 1, 1).millisecondsSinceEpoch ~/ 1000 - 1;
+    final startOfMonth =
+        DateTime(now.year, now.month, 1).millisecondsSinceEpoch ~/ 1000;
+    final endOfMonth =
+        DateTime(now.year, now.month + 1, 1).millisecondsSinceEpoch ~/ 1000 - 1;
 
     return await getExpenses(startDate: startOfMonth, endDate: endOfMonth);
   }

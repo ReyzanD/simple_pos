@@ -1,7 +1,7 @@
 import '../datasources/settings_local_datasource.dart';
 import '../../domain/entities/settings.dart';
 import '../../domain/repositories/settings_repository.dart';
-import '../../../../services/database/database_helper.dart';
+import '../../../../core/database/database_helper.dart';
 
 /// Implementation of SettingsRepository
 class SettingsRepositoryImpl implements SettingsRepository {

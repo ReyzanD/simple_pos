@@ -1,4 +1,4 @@
-import '../../../../services/database/database_helper.dart';
+import '../../../../core/database/database_helper.dart';
 import '../../domain/entities/cash_count.dart';
 
 /// Local data source for cash count operations using SQLite
@@ -6,7 +6,7 @@ class CashCountLocalDataSourceImpl {
   final DatabaseHelper _databaseHelper;
 
   CashCountLocalDataSourceImpl({required DatabaseHelper databaseHelper})
-      : _databaseHelper = databaseHelper;
+    : _databaseHelper = databaseHelper;
 
   /// Save cash count (replaces existing for same shift)
   Future<CashCount> saveCashCount(CashCount cashCount) async {
