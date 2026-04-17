@@ -1,9 +1,9 @@
 import 'package:sqflite/sqflite.dart';
-import 'package:path/path.dart';
 import 'package:simple_pos/core/exceptions/app_exceptions.dart'
     as app_exceptions;
 import 'package:simple_pos/core/utils/logger.dart';
 import 'package:simple_pos/core/constants/app_constants.dart';
+import 'package:simple_pos/services/database/database_connection.dart';
 
 // DAO Imports
 import 'package:simple_pos/features/inventory/data/datasources/daos/product_dao.dart';
@@ -15,8 +15,10 @@ import 'package:simple_pos/features/inventory/data/datasources/daos/variant_attr
 
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
-  static Database? _database;
   DatabaseHelper._init();
+
+  // Delegate to DatabaseConnection for connection management
+  final DatabaseConnection _connection = DatabaseConnection.instance;
 
   // Specialist sub-modules
   late final ProductDao products = ProductDao(this);
@@ -26,36 +28,89 @@ class DatabaseHelper {
   late final ProductVariantDao productVariants = ProductVariantDao(this);
   late final VariantAttributeDao variantAttributes = VariantAttributeDao(this);
 
+  /// Gets the database instance.
+  ///
+  /// This method now delegates to DatabaseConnection for connection management,
+  /// providing retry logic and better error handling.
   Future<Database> get database async {
-    if (_database != null) return _database!;
-    _database = await _initDB(AppConstants.databaseName);
-    return _database!;
-  }
-
-  Future<Database> _initDB(String filePath) async {
     try {
-      final dbPath = await getDatabasesPath();
-      final path = join(dbPath, filePath);
-      AppLogger.database('Initializing database', details: path);
+      // Get database from connection manager
+      final db = await _connection.database;
 
-      return await openDatabase(
-        path,
-        version: AppConstants.databaseVersion,
-        onCreate: _createDB,
-        onUpgrade: _onUpgrade,
-      );
+      // Check if schema exists, create if not (for new databases)
+      if (!await _isSchemaCreated(db)) {
+        await _createDB(db, AppConstants.databaseVersion);
+      }
+
+      return db;
     } catch (e, stackTrace) {
       AppLogger.error(
-        'Failed to initialize database',
+        'Failed to get database',
         error: e,
         stackTrace: stackTrace,
       );
       throw app_exceptions.DatabaseException(
-        'Gagal inisialisasi database',
-        operation: 'init',
+        'Gagal mendapatkan database',
+        operation: 'getDatabase',
         originalError: e,
       );
     }
+  }
+
+  /// Upgrade database to new version.
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    try {
+      if (oldVersion < 2) await _migrateToV2(db);
+      if (oldVersion < 3) await _migrateToV3(db);
+      if (oldVersion < 4) await _migrateToV4(db);
+      if (oldVersion < 5) await _migrateToV5(db);
+      if (oldVersion < 6) await _migrateToV6(db);
+      if (oldVersion < 7) await _migrateToV7(db);
+      if (oldVersion < 8) await _migrateToV8(db);
+      if (oldVersion < 9) await _migrateToV9(db);
+      if (oldVersion < 10) await _migrateToV10(db);
+      if (oldVersion < 11) await _migrateToV11(db);
+      if (oldVersion < 12) await _migrateToV12(db);
+      if (oldVersion < 13) await _migrateToV13(db);
+      if (oldVersion < 14) await _migrateToV14(db);
+      if (oldVersion < 15) await _migrateToV15(db);
+      if (oldVersion < 16) await _migrateToV16(db);
+    } catch (e, stackTrace) {
+      AppLogger.error('Upgrade failed', error: e, stackTrace: stackTrace);
+    }
+  }
+
+  /// Check if database schema has been created.
+  Future<bool> _isSchemaCreated(Database db) async {
+    try {
+      final tables = await db.rawQuery(
+        "SELECT name FROM sqlite_master WHERE type='table'",
+      );
+      return tables.isNotEmpty;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// Initialize database with specific path (for testing or custom paths).
+  ///
+  /// @deprecated Use DatabaseConnection.initialize() directly for new code.
+  Future<Database> initialize(String filePath) async {
+    return _connection.initialize(filePath);
+  }
+
+  /// Close the database connection.
+  ///
+  /// @deprecated Use DatabaseConnection.close() directly for new code.
+  Future<void> close() async {
+    return _connection.close();
+  }
+
+  /// Reset the database connection (useful for testing).
+  ///
+  /// @deprecated Use DatabaseConnection.reset() directly for new code.
+  Future<void> reset() async {
+    return _connection.reset();
   }
 
   Future _createDB(Database db, int version) async {
@@ -118,28 +173,6 @@ class DatabaseHelper {
         operation: 'onCreate',
         originalError: e,
       );
-    }
-  }
-
-  Future _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    try {
-      if (oldVersion < 2) await _migrateToV2(db);
-      if (oldVersion < 3) await _migrateToV3(db);
-      if (oldVersion < 4) await _migrateToV4(db);
-      if (oldVersion < 5) await _migrateToV5(db);
-      if (oldVersion < 6) await _migrateToV6(db);
-      if (oldVersion < 7) await _migrateToV7(db);
-      if (oldVersion < 8) await _migrateToV8(db);
-      if (oldVersion < 9) await _migrateToV9(db);
-      if (oldVersion < 10) await _migrateToV10(db);
-      if (oldVersion < 11) await _migrateToV11(db);
-      if (oldVersion < 12) await _migrateToV12(db);
-      if (oldVersion < 13) await _migrateToV13(db);
-      if (oldVersion < 14) await _migrateToV14(db);
-      if (oldVersion < 15) await _migrateToV15(db);
-      if (oldVersion < 16) await _migrateToV16(db);
-    } catch (e, stackTrace) {
-      AppLogger.error('Upgrade failed', error: e, stackTrace: stackTrace);
     }
   }
 
@@ -249,14 +282,6 @@ class DatabaseHelper {
     );
     for (var table in tables) {
       await db.delete(table['name'] as String);
-    }
-  }
-
-  Future<void> close() async {
-    final db = _database; // Fix: No 'await' on non-future Database
-    if (db != null) {
-      await db.close();
-      _database = null;
     }
   }
 }
