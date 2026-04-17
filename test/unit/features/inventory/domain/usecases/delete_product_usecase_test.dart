@@ -4,7 +4,7 @@ import 'package:mockito/annotations.dart';
 import 'package:simple_pos/core/exceptions/app_exceptions.dart';
 import 'package:simple_pos/features/inventory/domain/usecases/delete_product_usecase.dart';
 import 'package:simple_pos/features/inventory/domain/repositories/product_repository.dart';
-import '../../../helpers/test_constants.dart';
+import '../../../../helpers/test_constants.dart';
 
 // Generate mocks
 @GenerateMocks([ProductRepository])

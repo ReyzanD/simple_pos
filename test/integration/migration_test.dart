@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite/sqflite.dart';
-import 'package:simple_pos/services/database/database_helper.dart';
+import 'package:simple_pos/core/database/database_helper.dart';
 import 'package:simple_pos/core/constants/app_constants.dart';
 
 /// Integration tests for database migrations

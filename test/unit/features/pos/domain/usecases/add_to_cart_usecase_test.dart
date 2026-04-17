@@ -6,7 +6,7 @@ import 'package:simple_pos/features/inventory/domain/entities/product.dart';
 import 'package:simple_pos/features/inventory/domain/repositories/product_repository.dart';
 import 'package:simple_pos/features/pos/domain/entities/cart_item.dart';
 import 'package:simple_pos/features/pos/domain/usecases/add_to_cart_usecase.dart';
-import '../../../helpers/test_constants.dart';
+import '../../../../helpers/test_constants.dart';
 
 // Generate mocks
 @GenerateMocks([ProductRepository])

@@ -43,7 +43,7 @@ List<SingleChildWidget> createSalesProviders() {
   return [
     // --- DATA LAYER ---
     ProxyProvider<DatabaseHelper, TransactionLocalDataSourceImpl>(
-      update: (_, db, __) => TransactionLocalDataSourceImpl(databaseHelper: db),
+      update: (_, db, __) => TransactionLocalDataSourceImpl(transactionDao: db.transactions),
     ),
     ProxyProvider<DatabaseHelper, PromotionLocalDataSourceImpl>(
       update: (_, db, __) => PromotionLocalDataSourceImpl(databaseHelper: db),

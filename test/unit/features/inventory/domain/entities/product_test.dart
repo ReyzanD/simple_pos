@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:simple_pos/core/exceptions/app_exceptions.dart';
 import 'package:simple_pos/features/inventory/domain/entities/product.dart';
 import 'package:simple_pos/core/constants/app_constants.dart';
-import '../../../helpers/test_constants.dart';
+import '../../../../helpers/test_constants.dart';
 
 void main() {
   group('Product entity', () {

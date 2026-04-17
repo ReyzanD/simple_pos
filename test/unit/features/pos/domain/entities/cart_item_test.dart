@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:simple_pos/features/inventory/domain/entities/product.dart';
 import 'package:simple_pos/features/pos/domain/entities/cart_item.dart';
-import '../../../helpers/test_constants.dart';
+import '../../../../helpers/test_constants.dart';
 
 void main() {
   late Product testProduct;
