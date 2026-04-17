@@ -9,8 +9,11 @@ import 'package:simple_pos/services/database/migrations/database_migration.dart'
 // DAO Imports
 import 'package:simple_pos/services/database/dao/product_dao.dart';
 import 'package:simple_pos/services/database/dao/transaction_dao.dart';
-import 'package:simple_pos/features/inventory/data/datasources/daos/category_dao.dart';
-import 'package:simple_pos/features/inventory/data/datasources/daos/supplier_dao.dart';
+import 'package:simple_pos/services/database/dao/category_dao.dart';
+import 'package:simple_pos/services/database/dao/supplier_dao.dart';
+import 'package:simple_pos/services/database/dao/shift_dao.dart';
+import 'package:simple_pos/services/database/dao/expense_dao.dart';
+import 'package:simple_pos/services/database/dao/user_dao.dart';
 import 'package:simple_pos/features/inventory/data/datasources/daos/product_variant_dao.dart';
 import 'package:simple_pos/features/inventory/data/datasources/daos/variant_attribute_dao.dart';
 
@@ -24,8 +27,11 @@ class DatabaseHelper {
   // Specialist sub-modules
   final ProductDao products = ProductDao.instance;
   final TransactionDao transactions = TransactionDao.instance;
-  late final CategoryDao categories = CategoryDao(this);
-  late final SupplierDao suppliers = SupplierDao(this);
+  final CategoryDao categories = CategoryDao.instance;
+  final SupplierDao suppliers = SupplierDao.instance;
+  final ShiftDao shifts = ShiftDao.instance;
+  final ExpenseDao expenses = ExpenseDao.instance;
+  final UserDao users = UserDao.instance;
   late final ProductVariantDao productVariants = ProductVariantDao(this);
   late final VariantAttributeDao variantAttributes = VariantAttributeDao(this);
 
