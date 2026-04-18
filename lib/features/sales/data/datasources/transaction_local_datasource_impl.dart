@@ -1,4 +1,4 @@
-import 'package:simple_pos/core/database/database_helper.dart';
+import 'package:simple_pos/services/database/dao/transaction_dao.dart';
 import '../../domain/entities/transaction.dart';
 import '../../domain/entities/transaction_item.dart';
 import '../../domain/entities/payment.dart';
@@ -7,13 +7,13 @@ import '../../../../core/utils/logger.dart';
 import '../models/payment_model.dart';
 
 class TransactionLocalDataSourceImpl {
-  final DatabaseHelper databaseHelper;
+  final TransactionDao transactionDao;
 
-  TransactionLocalDataSourceImpl({required this.databaseHelper});
+  TransactionLocalDataSourceImpl({required this.transactionDao});
 
   Future<Transaction> createTransaction(Transaction transaction) async {
     try {
-      final txId = await databaseHelper.transactions.createFullTransaction(
+      final txId = await transactionDao.createFullTransaction(
         txnMap: transaction.toMap(),
         itemMaps: transaction.items.map((e) => e.toMap()).toList(),
         paymentMap: transaction.payment?.toMap(),
@@ -40,13 +40,13 @@ class TransactionLocalDataSourceImpl {
 
   Future<List<Transaction>> getTransactions() async {
     try {
-      final txMaps = await databaseHelper.transactions.getAll();
+      final txMaps = await transactionDao.getAll();
       final List<Transaction> transactions = [];
 
       for (var map in txMaps) {
         final id = map['id'] as int;
-        final itemMaps = await databaseHelper.transactions.getItems(id);
-        final payMap = await databaseHelper.transactions.getPayment(id);
+        final itemMaps = await transactionDao.getItems(id);
+        final payMap = await transactionDao.getPayment(id);
 
         transactions.add(
           Transaction.fromMap(
@@ -67,11 +67,11 @@ class TransactionLocalDataSourceImpl {
   }
 
   Future<Transaction?> getTransactionById(int id) async {
-    final map = await databaseHelper.transactions.getById(id);
+    final map = await transactionDao.getById(id);
     if (map == null) return null;
 
-    final items = await databaseHelper.transactions.getItems(id);
-    final payment = await databaseHelper.transactions.getPayment(id);
+    final items = await transactionDao.getItems(id);
+    final payment = await transactionDao.getPayment(id);
 
     return Transaction.fromMap(
       map,
@@ -81,7 +81,7 @@ class TransactionLocalDataSourceImpl {
   }
 
   Future<void> updateTransactionStatus(int id, String status) async {
-    await databaseHelper.transactions.updateStatus(id, status);
+    await transactionDao.updateStatus(id, status);
   }
 
   Future<List<Transaction>> getTransactionsByDateRange(
@@ -89,7 +89,7 @@ class TransactionLocalDataSourceImpl {
     DateTime end,
   ) async {
     try {
-      final txnMaps = await databaseHelper.transactions.getByDateRange(
+      final txnMaps = await transactionDao.getByDateRange(
         start.toIso8601String(),
         end.toIso8601String(),
       );
@@ -105,7 +105,7 @@ class TransactionLocalDataSourceImpl {
 
   Future<List<Transaction>> getTransactionsByStatus(String status) async {
     try {
-      final txnMaps = await databaseHelper.transactions.getByStatus(status);
+      final txnMaps = await transactionDao.getByStatus(status);
       return _mapTransactionList(txnMaps);
     } catch (e) {
       throw app_exceptions.DatabaseException(
@@ -123,8 +123,8 @@ class TransactionLocalDataSourceImpl {
     final List<Transaction> transactions = [];
     for (var map in maps) {
       final id = map['id'] as int;
-      final itemMaps = await databaseHelper.transactions.getItems(id);
-      final payMap = await databaseHelper.transactions.getPayment(id);
+      final itemMaps = await transactionDao.getItems(id);
+      final payMap = await transactionDao.getPayment(id);
 
       transactions.add(
         Transaction.fromMap(

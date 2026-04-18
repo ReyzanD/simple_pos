@@ -1,0 +1,205 @@
+import 'package:flutter/material.dart';
+import 'product_entity.dart';
+import 'product_use_cases.dart';
+import 'product_form_screen.dart';
+
+class ProductListScreen extends StatefulWidget {
+  final GetProductsUseCase getProducts;
+  final DeleteProductUseCase deleteProduct;
+  final SearchProductsUseCase searchProducts;
+  final AddProductUseCase addProduct;
+  final UpdateProductUseCase updateProduct;
+
+  const ProductListScreen({
+    super.key,
+    required this.getProducts,
+    required this.deleteProduct,
+    required this.searchProducts,
+    required this.addProduct,
+    required this.updateProduct,
+  });
+
+  @override
+  State<ProductListScreen> createState() => _ProductListScreenState();
+}
+
+class _ProductListScreenState extends State<ProductListScreen> {
+  List<Product> _products = [];
+  bool _loading = true;
+  String? _error;
+  final _searchController = TextEditingController();
+  bool _isSearching = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProducts();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadProducts() async {
+    setState(() { _loading = true; _error = null; });
+    final result = await widget.getProducts();
+    if (!mounted) return;
+    setState(() {
+      _loading = false;
+      if (result.isSuccess) {
+        _products = result.data!;
+      } else {
+        _error = result.error;
+      }
+    });
+  }
+
+  Future<void> _search(String query) async {
+    setState(() { _loading = true; _error = null; });
+    final result = await widget.searchProducts(query);
+    if (!mounted) return;
+    setState(() {
+      _loading = false;
+      if (result.isSuccess) {
+        _products = result.data!;
+      } else {
+        _error = result.error;
+      }
+    });
+  }
+
+  Future<void> _confirmDelete(Product product) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Product'),
+        content: Text('Delete "${product.name}"? This cannot be undone.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      final result = await widget.deleteProduct(product.id!);
+      if (!mounted) return;
+      if (result.isSuccess) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('"${product.name}" deleted')),
+        );
+        _loadProducts();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(result.error ?? 'Delete failed'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  Future<void> _openForm({Product? product}) async {
+    final didSave = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ProductFormScreen(
+          addProduct: widget.addProduct,
+          updateProduct: widget.updateProduct,
+          existingProduct: product,
+        ),
+      ),
+    );
+    if (didSave == true) _loadProducts();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: _isSearching
+            ? TextField(
+                controller: _searchController,
+                autofocus: true,
+                decoration: const InputDecoration(hintText: 'Search products...', border: InputBorder.none),
+                style: const TextStyle(color: Colors.white),
+                onChanged: _search,
+              )
+            : const Text('Products'),
+        actions: [
+          IconButton(
+            icon: Icon(_isSearching ? Icons.close : Icons.search),
+            onPressed: () {
+              setState(() {
+                _isSearching = !_isSearching;
+                if (!_isSearching) {
+                  _searchController.clear();
+                  _loadProducts();
+                }
+              });
+            },
+          ),
+        ],
+      ),
+      body: _buildBody(),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _openForm(),
+        child: const Icon(Icons.add),
+      ),
+    );
+  }
+
+  Widget _buildBody() {
+    if (_loading) return const Center(child: CircularProgressIndicator());
+    if (_error != null) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(_error!, style: const TextStyle(color: Colors.red)),
+            const SizedBox(height: 12),
+            ElevatedButton(onPressed: _loadProducts, child: const Text('Retry')),
+          ],
+        ),
+      );
+    }
+    if (_products.isEmpty) {
+      return const Center(child: Text('No products yet. Tap + to add one.'));
+    }
+    return RefreshIndicator(
+      onRefresh: _loadProducts,
+      child: ListView.builder(
+        itemCount: _products.length,
+        itemBuilder: (ctx, i) => _ProductTile(
+          product: _products[i],
+          onTap: () => _openForm(product: _products[i]),
+          onDelete: () => _confirmDelete(_products[i]),
+        ),
+      ),
+    );
+  }
+}
+
+class _ProductTile extends StatelessWidget {
+  final Product product;
+  final VoidCallback onTap;
+  final VoidCallback onDelete;
+
+  const _ProductTile({required this.product, required this.onTap, required this.onDelete});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: product.imageUrl != null
+          ? CircleAvatar(backgroundImage: NetworkImage(product.imageUrl!))
+          : CircleAvatar(child: Text(product.name[0].toUpperCase())),
+      title: Text(product.name),
+      subtitle: Text('\$${product.price.toStringAsFixed(2)}  •  Qty: ${product.quantity}'),
+      trailing: IconButton(icon: const Icon(Icons.delete_outline, color: Colors.red), onPressed: onDelete),
+      onTap: onTap,
+    );
+  }
+}

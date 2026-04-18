@@ -1,0 +1,163 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'product_entity.dart';
+import 'product_use_cases.dart';
+import 'product_repository.dart';
+
+class ProductFormScreen extends StatefulWidget {
+  final AddProductUseCase addProduct;
+  final UpdateProductUseCase updateProduct;
+  final Product? existingProduct;
+
+  const ProductFormScreen({
+    super.key,
+    required this.addProduct,
+    required this.updateProduct,
+    this.existingProduct,
+  });
+
+  bool get isEditing => existingProduct != null;
+
+  @override
+  State<ProductFormScreen> createState() => _ProductFormScreenState();
+}
+
+class _ProductFormScreenState extends State<ProductFormScreen> {
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _nameCtrl;
+  late final TextEditingController _descCtrl;
+  late final TextEditingController _priceCtrl;
+  late final TextEditingController _qtyCtrl;
+  late final TextEditingController _imageCtrl;
+  bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final p = widget.existingProduct;
+    _nameCtrl = TextEditingController(text: p?.name ?? '');
+    _descCtrl = TextEditingController(text: p?.description ?? '');
+    _priceCtrl = TextEditingController(text: p != null ? p.price.toStringAsFixed(2) : '');
+    _qtyCtrl = TextEditingController(text: p != null ? p.quantity.toString() : '0');
+    _imageCtrl = TextEditingController(text: p?.imageUrl ?? '');
+  }
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _descCtrl.dispose();
+    _priceCtrl.dispose();
+    _qtyCtrl.dispose();
+    _imageCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _saving = true);
+
+    Result result;
+    if (widget.isEditing) {
+      final updated = widget.existingProduct!.copyWith(
+        name: _nameCtrl.text,
+        description: _descCtrl.text,
+        price: double.parse(_priceCtrl.text),
+        quantity: int.parse(_qtyCtrl.text),
+        imageUrl: _imageCtrl.text.isEmpty ? null : _imageCtrl.text,
+      );
+      result = await widget.updateProduct(updated);
+    } else {
+      result = await widget.addProduct(
+        name: _nameCtrl.text,
+        description: _descCtrl.text,
+        price: double.parse(_priceCtrl.text),
+        quantity: int.parse(_qtyCtrl.text),
+        imageUrl: _imageCtrl.text.isEmpty ? null : _imageCtrl.text,
+      );
+    }
+
+    if (!mounted) return;
+    setState(() => _saving = false);
+
+    if (result.isSuccess) {
+      Navigator.pop(context, true);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result.error ?? 'Save failed'), backgroundColor: Colors.red),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.isEditing ? 'Edit Product' : 'Add Product'),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              TextFormField(
+                controller: _nameCtrl,
+                decoration: const InputDecoration(labelText: 'Product Name', border: OutlineInputBorder()),
+                textCapitalization: TextCapitalization.words,
+                validator: (v) => (v == null || v.trim().isEmpty) ? 'Name is required' : null,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _descCtrl,
+                decoration: const InputDecoration(labelText: 'Description', border: OutlineInputBorder()),
+                maxLines: 3,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _priceCtrl,
+                decoration: const InputDecoration(labelText: 'Price', prefixText: '\$ ', border: OutlineInputBorder()),
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}'))],
+                validator: (v) {
+                  if (v == null || v.isEmpty) return 'Price is required';
+                  final n = double.tryParse(v);
+                  if (n == null || n < 0) return 'Enter a valid price';
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _qtyCtrl,
+                decoration: const InputDecoration(labelText: 'Quantity', border: OutlineInputBorder()),
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                validator: (v) {
+                  if (v == null || v.isEmpty) return 'Quantity is required';
+                  if (int.tryParse(v) == null) return 'Enter a valid number';
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _imageCtrl,
+                decoration: const InputDecoration(labelText: 'Image URL (optional)', border: OutlineInputBorder()),
+                keyboardType: TextInputType.url,
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: _saving ? null : _save,
+                  child: _saving
+                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                      : Text(widget.isEditing ? 'Update' : 'Add Product'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

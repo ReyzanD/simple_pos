@@ -1,0 +1,40 @@
+import 'package:flutter/material.dart';
+import 'lib_features_inventory_domain_usecases_get_products_usecase.dart';
+import 'lib_features_inventory_domain_entities_product.dart';
+
+class InventoryController extends ChangeNotifier {
+  final GetProductsUseCase _getProductsUseCase;
+
+  List<Product> _products = [];
+  bool _isLoading = false;
+  String? _error;
+
+  List<Product> get products => _products;
+  bool get isLoading => _isLoading;
+  String? get error => _error;
+
+  InventoryController({required GetProductsUseCase getProductsUseCase})
+      : _getProductsUseCase = getProductsUseCase;
+
+  Future<void> loadProducts() async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+    try {
+      final list = await _getProductsUseCase.call();
+      _products = list;
+    } catch (e) {
+      _error = e.toString();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> refresh() async => await loadProducts();
+
+  void clearError() {
+    _error = null;
+    notifyListeners();
+  }
+}

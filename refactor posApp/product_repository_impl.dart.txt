@@ -1,0 +1,82 @@
+import 'package:sqflite/sqflite.dart';
+import 'product_entity.dart';
+import 'product_repository.dart';
+
+class ProductRepositoryImpl implements ProductRepository {
+  final Database _db;
+
+  ProductRepositoryImpl(this._db);
+
+  @override
+  Future<Result<List<Product>>> getAllProducts() async {
+    try {
+      final maps = await _db.query('products', orderBy: 'updated_at DESC');
+      return Result.success(maps.map((m) => Product.fromMap(m)).toList());
+    } catch (e) {
+      return Result.failure('Failed to load products: $e');
+    }
+  }
+
+  @override
+  Future<Result<Product>> getProductById(int id) async {
+    try {
+      final maps = await _db.query('products', where: 'id = ?', whereArgs: [id]);
+      if (maps.isEmpty) return Result.failure('Product not found');
+      return Result.success(Product.fromMap(maps.first));
+    } catch (e) {
+      return Result.failure('Failed to load product: $e');
+    }
+  }
+
+  @override
+  Future<Result<int>> addProduct(Product product) async {
+    try {
+      final id = await _db.insert('products', product.toMap());
+      return Result.success(id);
+    } catch (e) {
+      return Result.failure('Failed to add product: $e');
+    }
+  }
+
+  @override
+  Future<Result<void>> updateProduct(Product product) async {
+    try {
+      final count = await _db.update(
+        'products',
+        product.toMap(),
+        where: 'id = ?',
+        whereArgs: [product.id],
+      );
+      if (count == 0) return Result.failure('Product not found');
+      return Result.success(null);
+    } catch (e) {
+      return Result.failure('Failed to update product: $e');
+    }
+  }
+
+  @override
+  Future<Result<void>> deleteProduct(int id) async {
+    try {
+      final count = await _db.delete('products', where: 'id = ?', whereArgs: [id]);
+      if (count == 0) return Result.failure('Product not found');
+      return Result.success(null);
+    } catch (e) {
+      return Result.failure('Failed to delete product: $e');
+    }
+  }
+
+  @override
+  Future<Result<List<Product>>> searchProducts(String query) async {
+    try {
+      final maps = await _db.query(
+        'products',
+        where: 'name LIKE ? OR description LIKE ?',
+        whereArgs: ['%$query%', '%$query%'],
+        orderBy: 'updated_at DESC',
+      );
+      return Result.success(maps.map((m) => Product.fromMap(m)).toList());
+    } catch (e) {
+      return Result.failure('Failed to search products: $e');
+    }
+  }
+}

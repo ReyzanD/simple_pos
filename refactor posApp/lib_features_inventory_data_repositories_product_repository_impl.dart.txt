@@ -1,0 +1,37 @@
+import 'lib_features_inventory_domain_entities_product.dart';
+import 'lib_features_inventory_domain_repositories_product_repository.dart';
+import 'lib_features_inventory_data_datasources_product_local_data_source.dart';
+
+class ProductRepositoryImpl implements ProductRepository {
+  final ProductLocalDataSource localDataSource;
+
+  ProductRepositoryImpl({required this.localDataSource});
+
+  @override
+  Future<List<Product>> getProducts() async {
+    final raw = await localDataSource.fetchAll();
+    return raw.map((p) => Product.fromMap(p as Map<String, dynamic>)).toList();
+  }
+
+  @override
+  Future<Product?> getProduct(String id) async {
+    final raw = await localDataSource.fetchById(id);
+    if (raw == null) return null;
+    return Product.fromMap(raw as Map<String, dynamic>);
+  }
+
+  @override
+  Future<void> insertProduct(Product product) async {
+    await localDataSource.insert(product.toMap());
+  }
+
+  @override
+  Future<void> updateProduct(Product product) async {
+    await localDataSource.update(product.toMap());
+  }
+
+  @override
+  Future<void> deleteProduct(String id) async {
+    await localDataSource.delete(id);
+  }
+}

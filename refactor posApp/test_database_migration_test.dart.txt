@@ -1,0 +1,54 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:sqflite/sqflite.dart';
+import 'dart:io';
+
+import '../lib_core_database_helper.dart';
+
+void main() {
+  group('Database migration tests', () {
+    const testDbName = 'test_simple_pos.db';
+
+    DatabaseHelper createHelper(int version) => DatabaseHelper.createForTest(testDbName, version);
+
+    tearDown(() async {
+      // Ensure DB file removed after each test
+      try {
+        final databasesPath = await getDatabasesPath();
+        final path = '$databasesPath/$testDbName';
+        if (await File(path).exists()) {
+          await deleteDatabase(path);
+        }
+      } catch (e) {
+        // ignore
+      }
+    });
+
+    test('migrates v1 -> v2 and preserves data', () async {
+      // Step 1: Create a v1 DB and insert sample data
+      final helperV1 = createHelper(1);
+      final dbV1 = await helperV1.database;
+
+      await dbV1.insert('products', {'id': 'p1', 'name': 'Apple', 'stock': 10, 'price': 1.0});
+      await helperV1.close();
+
+      // Step 2: Open DB with helper v2 which should run migrations
+      final helperV2 = createHelper(2);
+      final dbV2 = await helperV2.database; // triggers onUpgrade
+
+      // Verify that the 'barcode' column exists by selecting it with NULL default
+      final result = await dbV2.query('products', columns: ['id', 'name', 'stock', 'price', 'barcode']);
+
+      expect(result.length, 1);
+      final row = result.first;
+      expect(row['id'], 'p1');
+      expect(row['name'], 'Apple');
+      expect(row['stock'], 10);
+      expect(row['price'], 1.0);
+      // New column should exist and be null for existing rows
+      expect(row.containsKey('barcode'), true);
+      expect(row['barcode'], null);
+
+      await helperV2.close();
+    });
+  });
+}

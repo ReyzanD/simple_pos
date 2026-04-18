@@ -1,0 +1,51 @@
+import 'package:flutter_test/flutter_test.dart';
+
+import '../lib_features_inventory_domain_usecases_get_products_usecase.dart';
+import '../lib_features_inventory_domain_repositories_product_repository.dart';
+import '../lib_features_inventory_domain_entities_product.dart';
+
+class FakeProductRepository implements ProductRepository {
+  final bool throwError;
+  FakeProductRepository({this.throwError = false});
+
+  @override
+  Future<List<Product>> getProducts() async {
+    if (throwError) throw Exception('Repository failure');
+    return [
+      Product(id: 'p1', name: 'Apple', stock: 10, price: 1.0),
+      Product(id: 'p2', name: 'Banana', stock: 5, price: 0.5),
+    ];
+  }
+
+  @override
+  Future<Product?> getProduct(String id) => throw UnimplementedError();
+
+  @override
+  Future<void> insertProduct(Product product) => throw UnimplementedError();
+
+  @override
+  Future<void> updateProduct(Product product) => throw UnimplementedError();
+
+  @override
+  Future<void> deleteProduct(String id) => throw UnimplementedError();
+}
+
+void main() {
+  test('GetProductsUseCase returns products when repository succeeds', () async {
+    final repo = FakeProductRepository();
+    final usecase = GetProductsUseCase(repository: repo);
+
+    final products = await usecase.call();
+
+    expect(products, isA<List<Product>>());
+    expect(products.length, 2);
+    expect(products.first.name, 'Apple');
+  });
+
+  test('GetProductsUseCase throws when repository throws', () async {
+    final repo = FakeProductRepository(throwError: true);
+    final usecase = GetProductsUseCase(repository: repo);
+
+    expect(() => usecase.call(), throwsA(isA<Exception>()));
+  });
+}

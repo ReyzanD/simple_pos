@@ -1,0 +1,299 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:sqflite/sqflite.dart';
+
+// Import your project files — adjust paths to match your structure:
+// import 'package:your_app/data/product_repository_impl.dart';
+// import 'package:your_app/domain/product_entity.dart';
+// import 'package:your_app/domain/product_use_cases.dart';
+// import 'package:your_app/domain/product_repository.dart';
+
+// --- Inline minimal versions for test self-containment ---
+// In your real project, delete these and use the imports above.
+
+class Product {
+  final int? id;
+  final String name;
+  final String description;
+  final double price;
+  final int quantity;
+  final String? imageUrl;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+
+  Product({
+    this.id,
+    required this.name,
+    this.description = '',
+    required this.price,
+    this.quantity = 0,
+    this.imageUrl,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  })  : createdAt = createdAt ?? DateTime.now(),
+        updatedAt = updatedAt ?? DateTime.now();
+
+  Product copyWith({
+    int? id,
+    String? name,
+    String? description,
+    double? price,
+    int? quantity,
+    String? imageUrl,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) {
+    return Product(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      price: price ?? this.price,
+      quantity: quantity ?? this.quantity,
+      imageUrl: imageUrl ?? this.imageUrl,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? DateTime.now(),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      if (id != null) 'id': id,
+      'name': name,
+      'description': description,
+      'price': price,
+      'quantity': quantity,
+      'image_url': imageUrl,
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt.toIso8601String(),
+    };
+  }
+
+  factory Product.fromMap(Map<String, dynamic> map) {
+    return Product(
+      id: map['id'] as int?,
+      name: map['name'] as String,
+      description: (map['description'] as String?) ?? '',
+      price: (map['price'] as num).toDouble(),
+      quantity: (map['quantity'] as int?) ?? 0,
+      imageUrl: map['image_url'] as String?,
+      createdAt: DateTime.parse(map['created_at'] as String),
+      updatedAt: DateTime.parse(map['updated_at'] as String),
+    );
+  }
+}
+
+class Result<T> {
+  final T? data;
+  final String? error;
+  Result.success(this.data) : error = null;
+  Result.failure(this.error) : data = null;
+  bool get isSuccess => error == null;
+}
+
+// --- Test helper: open an in-memory DB with the products table ---
+
+Future<Database> openTestDatabase() async {
+  return await databaseFactoryFfi.openDatabase(
+    inMemoryDatabasePath,
+    options: OpenDatabaseOptions(
+      version: 1,
+      onCreate: (db, version) async {
+        await db.execute('''
+          CREATE TABLE products (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            description TEXT DEFAULT '',
+            price REAL NOT NULL,
+            quantity INTEGER DEFAULT 0,
+            image_url TEXT,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+          )
+        ''');
+      },
+    ),
+  );
+}
+
+// --- Minimal repository for testing ---
+
+class TestProductRepository {
+  final Database db;
+  TestProductRepository(this.db);
+
+  Future<Result<int>> addProduct(Product p) async {
+    try {
+      final id = await db.insert('products', p.toMap());
+      return Result.success(id);
+    } catch (e) {
+      return Result.failure('$e');
+    }
+  }
+
+  Future<Result<List<Product>>> getAll() async {
+    try {
+      final maps = await db.query('products', orderBy: 'updated_at DESC');
+      return Result.success(maps.map((m) => Product.fromMap(m)).toList());
+    } catch (e) {
+      return Result.failure('$e');
+    }
+  }
+
+  Future<Result<Product>> getById(int id) async {
+    try {
+      final maps = await db.query('products', where: 'id = ?', whereArgs: [id]);
+      if (maps.isEmpty) return Result.failure('Not found');
+      return Result.success(Product.fromMap(maps.first));
+    } catch (e) {
+      return Result.failure('$e');
+    }
+  }
+
+  Future<Result<void>> update(Product p) async {
+    try {
+      await db.update('products', p.toMap(), where: 'id = ?', whereArgs: [p.id]);
+      return Result.success(null);
+    } catch (e) {
+      return Result.failure('$e');
+    }
+  }
+
+  Future<Result<void>> delete(int id) async {
+    try {
+      await db.delete('products', where: 'id = ?', whereArgs: [id]);
+      return Result.success(null);
+    } catch (e) {
+      return Result.failure('$e');
+    }
+  }
+
+  Future<Result<List<Product>>> search(String q) async {
+    try {
+      final maps = await db.query('products',
+          where: 'name LIKE ? OR description LIKE ?',
+          whereArgs: ['%$q%', '%$q%']);
+      return Result.success(maps.map((m) => Product.fromMap(m)).toList());
+    } catch (e) {
+      return Result.failure('$e');
+    }
+  }
+}
+
+// ===================== TESTS =====================
+
+void main() {
+  // Initialize FFI once for all tests
+  sqfliteFfiInit();
+
+  late Database db;
+  late TestProductRepository repo;
+
+  setUp(() async {
+    db = await openTestDatabase();
+    repo = TestProductRepository(db);
+  });
+
+  tearDown(() async {
+    await db.close();
+  });
+
+  group('Add Product', () {
+    test('inserts a product and returns its id', () async {
+      final result = await repo.addProduct(
+        Product(name: 'Widget', price: 9.99, quantity: 10),
+      );
+      expect(result.isSuccess, true);
+      expect(result.data, greaterThan(0));
+    });
+
+    test('inserted product is retrievable', () async {
+      final addResult = await repo.addProduct(
+        Product(name: 'Gadget', price: 19.99, quantity: 5),
+      );
+      final getResult = await repo.getById(addResult.data!);
+      expect(getResult.isSuccess, true);
+      expect(getResult.data!.name, 'Gadget');
+      expect(getResult.data!.price, 19.99);
+      expect(getResult.data!.quantity, 5);
+    });
+  });
+
+  group('Get Products', () {
+    test('returns empty list when no products', () async {
+      final result = await repo.getAll();
+      expect(result.isSuccess, true);
+      expect(result.data, isEmpty);
+    });
+
+    test('returns all inserted products', () async {
+      await repo.addProduct(Product(name: 'A', price: 1.0));
+      await repo.addProduct(Product(name: 'B', price: 2.0));
+      await repo.addProduct(Product(name: 'C', price: 3.0));
+      final result = await repo.getAll();
+      expect(result.data!.length, 3);
+    });
+  });
+
+  group('Update Product', () {
+    test('updates name and price', () async {
+      final addResult = await repo.addProduct(
+        Product(name: 'Old Name', price: 5.0),
+      );
+      final id = addResult.data!;
+
+      final fetched = (await repo.getById(id)).data!;
+      final updated = fetched.copyWith(name: 'New Name', price: 15.0);
+      final updateResult = await repo.update(updated);
+      expect(updateResult.isSuccess, true);
+
+      final refreshed = (await repo.getById(id)).data!;
+      expect(refreshed.name, 'New Name');
+      expect(refreshed.price, 15.0);
+    });
+  });
+
+  group('Delete Product', () {
+    test('removes a product', () async {
+      final addResult = await repo.addProduct(
+        Product(name: 'ToDelete', price: 1.0),
+      );
+      final id = addResult.data!;
+
+      final deleteResult = await repo.delete(id);
+      expect(deleteResult.isSuccess, true);
+
+      final getResult = await repo.getById(id);
+      expect(getResult.isSuccess, false);
+    });
+  });
+
+  group('Search Products', () {
+    test('finds products by name', () async {
+      await repo.addProduct(Product(name: 'Blue Widget', price: 1.0));
+      await repo.addProduct(Product(name: 'Red Gadget', price: 2.0));
+      await repo.addProduct(Product(name: 'Blue Gadget', price: 3.0));
+
+      final result = await repo.search('Blue');
+      expect(result.data!.length, 2);
+    });
+
+    test('finds products by description', () async {
+      await repo.addProduct(
+        Product(name: 'Item', price: 1.0, description: 'A premium quality item'),
+      );
+      await repo.addProduct(
+        Product(name: 'Other', price: 2.0, description: 'Basic stuff'),
+      );
+
+      final result = await repo.search('premium');
+      expect(result.data!.length, 1);
+      expect(result.data!.first.name, 'Item');
+    });
+
+    test('returns empty for no match', () async {
+      await repo.addProduct(Product(name: 'Widget', price: 1.0));
+      final result = await repo.search('nonexistent');
+      expect(result.data, isEmpty);
+    });
+  });
+}

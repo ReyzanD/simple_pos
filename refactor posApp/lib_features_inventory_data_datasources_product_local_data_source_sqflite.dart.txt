@@ -1,0 +1,45 @@
+import 'package:sqflite/sqflite.dart';
+
+import '../../../../../lib_core_database_helper.dart';
+import 'lib_features_inventory_data_datasources_product_local_data_source.dart';
+
+class ProductLocalDataSourceSqfliteImpl implements ProductLocalDataSource {
+  final DatabaseHelper _dbHelper = DatabaseHelper.instance;
+
+  ProductLocalDataSourceSqfliteImpl();
+
+  Future<Database> get _db async => await _dbHelper.database;
+
+  @override
+  Future<void> delete(String id) async {
+    final db = await _db;
+    await db.delete('products', where: 'id = ?', whereArgs: [id]);
+  }
+
+  @override
+  Future<Map<String, dynamic>?> fetchById(String id) async {
+    final db = await _db;
+    final maps = await db.query('products', where: 'id = ?', whereArgs: [id]);
+    if (maps.isEmpty) return null;
+    return maps.first;
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> fetchAll() async {
+    final db = await _db;
+    final results = await db.query('products', orderBy: 'name ASC');
+    return results;
+  }
+
+  @override
+  Future<void> insert(Map<String, dynamic> data) async {
+    final db = await _db;
+    await db.insert('products', data);
+  }
+
+  @override
+  Future<void> update(Map<String, dynamic> data) async {
+    final db = await _db;
+    await db.update('products', data, where: 'id = ?', whereArgs: [data['id']]);
+  }
+}

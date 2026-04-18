@@ -1,0 +1,143 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'product_entity.dart';
+import 'product_cubit.dart';
+import 'product_form_screen.dart';
+
+class ProductListScreen extends StatefulWidget {
+  const ProductListScreen({super.key});
+
+  @override
+  State<ProductListScreen> createState() => _ProductListScreenState();
+}
+
+class _ProductListScreenState extends State<ProductListScreen> {
+  final _searchController = TextEditingController();
+  bool _isSearching = false;
+
+  @override
+  void initState() {
+    super.initState();
+    context.read<ProductCubit>().loadProducts();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _confirmDelete(Product product) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Product'),
+        content: Text('Delete "${product.name}"? This cannot be undone.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && mounted) {
+      final success = await context.read<ProductCubit>().deleteProduct(product.id!);
+      if (mounted && success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('"${product.name}" deleted')),
+        );
+      }
+    }
+  }
+
+  void _openForm({Product? product}) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => BlocProvider.value(
+          value: context.read<ProductCubit>(),
+          child: ProductFormScreen(existingProduct: product),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: _isSearching
+            ? TextField(
+                controller: _searchController,
+                autofocus: true,
+                decoration: const InputDecoration(
+                  hintText: 'Search products...',
+                  border: InputBorder.none,
+                ),
+                style: const TextStyle(color: Colors.white),
+                onChanged: (q) => context.read<ProductCubit>().search(q),
+              )
+            : const Text('Products'),
+        actions: [
+          IconButton(
+            icon: Icon(_isSearching ? Icons.close : Icons.search),
+            onPressed: () {
+              setState(() {
+                _isSearching = !_isSearching;
+                if (!_isSearching) {
+                  _searchController.clear();
+                  context.read<ProductCubit>().clearSearch();
+                }
+              });
+            },
+          ),
+        ],
+      ),
+      body: BlocConsumer<ProductCubit, ProductState>(
+        listener: (ctx, state) {
+          if (state.status == ProductStatus.failure && state.error != null) {
+            ScaffoldMessenger.of(ctx).showSnackBar(
+              SnackBar(content: Text(state.error!), backgroundColor: Colors.red),
+            );
+          }
+        },
+        builder: (ctx, state) {
+          if (state.status == ProductStatus.loading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (state.products.isEmpty) {
+            return const Center(child: Text('No products yet. Tap + to add one.'));
+          }
+          return RefreshIndicator(
+            onRefresh: () => context.read<ProductCubit>().loadProducts(),
+            child: ListView.builder(
+              itemCount: state.products.length,
+              itemBuilder: (_, i) {
+                final p = state.products[i];
+                return ListTile(
+                  leading: p.imageUrl != null
+                      ? CircleAvatar(backgroundImage: NetworkImage(p.imageUrl!))
+                      : CircleAvatar(child: Text(p.name[0].toUpperCase())),
+                  title: Text(p.name),
+                  subtitle: Text('\$${p.price.toStringAsFixed(2)}  •  Qty: ${p.quantity}'),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.delete_outline, color: Colors.red),
+                    onPressed: () => _confirmDelete(p),
+                  ),
+                  onTap: () => _openForm(product: p),
+                );
+              },
+            ),
+          );
+        },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _openForm(),
+        child: const Icon(Icons.add),
+      ),
+    );
+  }
+}

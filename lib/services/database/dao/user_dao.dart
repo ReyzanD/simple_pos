@@ -45,8 +45,10 @@ class UserDao {
 
       AppLogger.database('User inserted', details: 'ID: $id');
 
-      // Return the user with its ID
-      return {...user, 'id': id};
+      // Return the user with its ID (excluding password_hash for security)
+      final result = {...user, 'id': id};
+      result.remove('password_hash');
+      return result;
     } catch (e, stackTrace) {
       AppLogger.error('Failed to insert user',
           error: e, stackTrace: stackTrace);
@@ -131,7 +133,7 @@ class UserDao {
   /// Retrieves a user by username (for authentication).
   ///
   /// [username] - The username to search for
-  /// Returns user map including password hash if found, null otherwise
+  /// Returns user map excluding password hash if found, null otherwise
   /// Throws [app_exceptions.DatabaseException] if operation fails
   Future<Map<String, dynamic>?> getByUsername(String username) async {
     try {
@@ -140,6 +142,7 @@ class UserDao {
       final db = await _db;
       final results = await db.query(
         'users',
+        columns: ['id', 'username', 'full_name', 'role', 'is_active', 'created_at', 'last_login'],
         where: 'username = ?',
         whereArgs: [username],
         limit: 1,
@@ -411,10 +414,22 @@ class UserDao {
       if (results.isNotEmpty) {
         AppLogger.database('Authentication successful', details: 'Username: $username');
 
-        // Update last login
-        await updateLastLogin(results.first['id'] as int);
+        // Store result before updating last login
+        final user = results.first;
 
-        return results.first;
+        // Update last login
+        await updateLastLogin(user['id'] as int);
+
+        // Query the user again to get updated last_login
+        final updatedResults = await db.query(
+          'users',
+          columns: ['id', 'username', 'full_name', 'role', 'is_active', 'created_at', 'last_login'],
+          where: 'id = ?',
+          whereArgs: [user['id']],
+          limit: 1,
+        );
+
+        return updatedResults.first;
       } else {
         AppLogger.database('Authentication failed', details: 'Username: $username');
         return null;

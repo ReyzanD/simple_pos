@@ -22,4 +22,4 @@ class CategoryNotifier extends _$CategoryNotifier {
 }
 
 /// Public provider for widgets
-final categoryProvider = notifierProvider<CategoryNotifier, List<Category>>(CategoryNotifier.new);
+final categoryProvider = categoryNotifierProvider;

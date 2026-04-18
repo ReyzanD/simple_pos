@@ -1,0 +1,43 @@
+class Product {
+  final String id;
+  final String name;
+  final int stock;
+  final double price;
+
+  Product({required this.id, required this.name, required this.stock, required this.price});
+
+  factory Product.fromMap(Map<String, dynamic> map) {
+    return Product(
+      id: map['id'] as String,
+      name: map['name'] as String,
+      stock: map['stock'] as int,
+      price: (map['price'] as num).toDouble(),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'name': name,
+      'stock': stock,
+      'price': price,
+    };
+  }
+
+  Product copyWith({String? id, String? name, int? stock, double? price}) {
+    return Product(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      stock: stock ?? this.stock,
+      price: price ?? this.price,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Product && runtimeType == other.runtimeType && id == other.id && name == other.name && stock == other.stock && price == other.price;
+
+  @override
+  int get hashCode => id.hashCode ^ name.hashCode ^ stock.hashCode ^ price.hashCode;
+}

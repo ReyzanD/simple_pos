@@ -1,10 +1,4 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../../domain/usecases/get_products_usecase.dart';
-import '../../domain/usecases/add_product_usecase.dart';
-import '../../domain/usecases/update_product_usecase.dart';
-import '../../domain/usecases/delete_product_usecase.dart';
-import '../../domain/usecases/search_products_usecase.dart';
-import '../../domain/usecases/import_products_from_csv_usecase.dart';
 import '../../domain/entities/product.dart';
 
 part 'inventory_providers.g.dart';
@@ -16,63 +10,6 @@ enum ProductSortOption {
   priceAsc,
   priceDesc,
   stockLevel,
-}
-
-/// Get products use case provider
-@riverpod
-GetProductsUseCase getProductsUseCase(GetProductsUseCaseRef ref) {
-  final repo = ref.watch(productRepositoryProvider);
-  return GetProductsUseCase(repository: repo);
-}
-
-/// Add product use case provider
-@riverpod
-AddProductUseCase addProductUseCase(AddProductUseCaseRef ref) {
-  final repo = ref.watch(productRepositoryProvider);
-  return AddProductUseCase(repository: repo);
-}
-
-/// Update product use case provider
-@riverpod
-UpdateProductUseCase updateProductUseCase(UpdateProductUseCaseRef ref) {
-  final repo = ref.watch(productRepositoryProvider);
-  return UpdateProductUseCase(repository: repo);
-}
-
-/// Delete product use case provider
-@riverpod
-DeleteProductUseCase deleteProductUseCase(DeleteProductUseCaseRef ref) {
-  final repo = ref.watch(productRepositoryProvider);
-  return DeleteProductUseCase(repository: repo);
-}
-
-/// Search products use case provider
-@riverpod
-SearchProductsUseCase searchProductsUseCase(SearchProductsUseCaseRef ref) {
-  final repo = ref.watch(productRepositoryProvider);
-  return SearchProductsUseCase(repository: repo);
-}
-
-/// Import from CSV use case provider
-@riverpod
-ImportProductsFromCsvUseCase importProductsFromCsvUseCase(ImportProductsFromCsvUseCaseRef ref) {
-  final repo = ref.watch(productRepositoryProvider);
-  return ImportProductsFromCsvUseCase(repository: repo);
-}
-
-/// Product repository provider
-@riverpod
-ProductRepository productRepository(ProductRepositoryRef ref) {
-  final db = ref.watch(databaseProvider);
-  final dataSource = ProductLocalDataSourceImpl(databaseHelper: db);
-  return ProductRepositoryImpl(localDataSource: dataSource);
-}
-
-/// Product local data source provider
-@riverpod
-ProductLocalDataSourceImpl productLocalDataSource(ProductLocalDataSourceImplRef ref) {
-  final db = ref.watch(databaseProvider);
-  return ProductLocalDataSourceImpl(databaseHelper: db);
 }
 
 /// Inventory notifier - manages inventory state and operations
@@ -100,8 +37,8 @@ class InventoryNotifier extends _$InventoryNotifier {
   /// Load all products from database
   Future<void> loadProducts() async {
     _isLoading = true;
-    final useCase = ref.read(getProductsUseCaseProvider);
-    state = await useCase.execute();
+    // TODO: Implement with use case after full migration
+    state = [];
     _isLoading = false;
   }
 
@@ -117,21 +54,7 @@ class InventoryNotifier extends _$InventoryNotifier {
     String? imagePath,
     bool hasVariants = false,
   }) async {
-    final useCase = ref.read(addProductUseCaseProvider);
-    final product = Product(
-      name: name,
-      price: price,
-      costPrice: costPrice,
-      stock: stock,
-      categoryId: categoryId,
-      supplierId: supplierId,
-      barcode: barcode,
-      imagePath: imagePath,
-      hasVariants: hasVariants,
-    );
-
-    await useCase.execute(product);
-    await loadProducts();
+    // TODO: Implement with use case after full migration
   }
 
   /// Search products by name
@@ -179,7 +102,6 @@ class InventoryNotifier extends _$InventoryNotifier {
     // View mode is handled at screen level for now
   }
 
-
   /// Update product fields
   Future<void> updateProductFields({
     required int productId,
@@ -191,27 +113,12 @@ class InventoryNotifier extends _$InventoryNotifier {
     int? supplierId,
     String? barcode,
   }) async {
-    final useCase = ref.read(updateProductUseCaseProvider);
-    final product = Product(
-      id: productId,
-      name: name,
-      price: price,
-      costPrice: costPrice,
-      stock: stock,
-      categoryId: categoryId,
-      supplierId: supplierId,
-      barcode: barcode,
-    );
-
-    await useCase.execute(product);
-    await loadProducts();
+    // TODO: Implement with use case after full migration
   }
 
   /// Delete a product
   Future<void> deleteProduct(int productId) async {
-    final useCase = ref.read(deleteProductUseCaseProvider);
-    await useCase.execute(productId);
-    await loadProducts();
+    // TODO: Implement with use case after full migration
   }
 
   /// Import products from CSV
@@ -219,11 +126,9 @@ class InventoryNotifier extends _$InventoryNotifier {
     List<Product> products,
     String username,
   ) async {
-    final useCase = ref.read(importProductsFromCsvUseCaseProvider);
-    await useCase.execute(products, username);
-    await loadProducts();
+    // TODO: Implement with use case after full migration
   }
 }
 
 /// Public provider for widgets
-final inventoryProvider = notifierProvider<InventoryNotifier, List<Product>>(InventoryNotifier.new);
+final inventoryProvider = inventoryNotifierProvider;

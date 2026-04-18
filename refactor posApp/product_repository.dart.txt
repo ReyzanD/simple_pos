@@ -1,0 +1,23 @@
+import 'product_entity.dart';
+
+/// Result wrapper for repository operations
+class Result<T> {
+  final T? data;
+  final String? error;
+
+  Result.success(this.data) : error = null;
+  Result.failure(this.error) : data = null;
+
+  bool get isSuccess => error == null;
+  bool get isFailure => error != null;
+}
+
+/// Abstract repository — use cases depend on this, not the implementation.
+abstract class ProductRepository {
+  Future<Result<List<Product>>> getAllProducts();
+  Future<Result<Product>> getProductById(int id);
+  Future<Result<int>> addProduct(Product product);
+  Future<Result<void>> updateProduct(Product product);
+  Future<Result<void>> deleteProduct(int id);
+  Future<Result<List<Product>>> searchProducts(String query);
+}

@@ -1,0 +1,57 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
+import 'lib_features_inventory_presentation_controllers_inventory_controller.dart';
+
+class InventoryScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final currencyFormatter = NumberFormat.simpleCurrency(locale: Localizations.localeOf(context).toString());
+
+    return Scaffold(
+      appBar: AppBar(title: Text('Inventory')),
+      body: Consumer<InventoryController>(
+        builder: (context, controller, _) {
+          if (controller.isLoading) {
+            return Center(child: CircularProgressIndicator());
+          }
+
+          if (controller.error != null) {
+            return Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('Error: ${controller.error}'),
+                  SizedBox(height: 8),
+                  ElevatedButton(
+                    onPressed: () => controller.refresh(),
+                    child: Text('Retry'),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          final products = controller.products;
+          if (products.isEmpty) {
+            return Center(child: Text('No products.'));
+          }
+
+          return ListView.builder(
+            itemCount: products.length,
+            itemBuilder: (ctx, index) {
+              final p = products[index];
+              final name = p.name;
+              final stock = p.stock;
+              final price = p.price;
+              return ListTile(
+                title: Text(name),
+                subtitle: Text('Stock: $stock • Price: ${currencyFormatter.format(price)}'),
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+}

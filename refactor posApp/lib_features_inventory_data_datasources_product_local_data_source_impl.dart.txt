@@ -1,0 +1,47 @@
+import 'dart:async';
+
+import 'lib_features_inventory_data_datasources_product_local_data_source.dart';
+
+class ProductLocalDataSourceImpl implements ProductLocalDataSource {
+  final List<Map<String, dynamic>> _storage = [];
+
+  ProductLocalDataSourceImpl() {
+    // Seed with sample data for development/demo
+    _storage.addAll([
+      {'id': 'p1', 'name': 'Apple', 'stock': 50, 'price': 0.5},
+      {'id': 'p2', 'name': 'Banana', 'stock': 30, 'price': 0.3},
+      {'id': 'p3', 'name': 'Orange', 'stock': 20, 'price': 0.75},
+    ]);
+  }
+
+  @override
+  Future<void> delete(String id) async {
+    _storage.removeWhere((m) => m['id'] == id);
+  }
+
+  @override
+  Future<Product?> fetchById(String id) async {
+    final found = _storage.firstWhere((m) => m['id'] == id, orElse: () => null);
+    return found as Map<String, dynamic>?;
+  }
+
+  @override
+  Future<List<Product>> fetchAll() async {
+    // Return copies to avoid external mutation
+    return _storage.map((m) => Map<String, dynamic>.from(m)).toList();
+  }
+
+  @override
+  Future<void> insert(Map<String, dynamic> data) async {
+    _storage.add(Map<String, dynamic>.from(data));
+  }
+
+  @override
+  Future<void> update(Map<String, dynamic> data) async {
+    final id = data['id'];
+    final idx = _storage.indexWhere((m) => m['id'] == id);
+    if (idx >= 0) {
+      _storage[idx] = Map<String, dynamic>.from(data);
+    }
+  }
+}

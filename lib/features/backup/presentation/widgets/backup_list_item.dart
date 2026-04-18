@@ -34,7 +34,7 @@ class BackupListItem extends StatelessWidget {
         padding: EdgeInsets.all(NeoBrutalTheme.spaceLG),
         decoration: BoxDecoration(
           color: isSelected
-              ? NeoBrutalTheme.primary.withOpacity(0.1)
+              ? NeoBrutalTheme.primary.withValues(alpha:0.1)
               : Colors.white,
           borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium),
           border: Border.all(
@@ -45,7 +45,7 @@ class BackupListItem extends StatelessWidget {
               ? NeoBrutalTheme.chunkyShadow
               : [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha:0.1),
                     offset: const Offset(4, 4),
                   ),
                 ],
@@ -165,8 +165,8 @@ class _TypeIcon extends StatelessWidget {
       width: 48,
       height: 48,
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium),
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: color, width: 3),
       ),
       child: Icon(isFull ? Icons.backup : Icons.update, color: color),
@@ -189,7 +189,7 @@ class _InfoChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha:0.1),
         borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
         border: Border.all(color: color, width: 2),
       ),

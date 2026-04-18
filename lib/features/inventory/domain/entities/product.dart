@@ -1,7 +1,5 @@
-import '../../../../core/utils/validators.dart';
-import '../../../../core/utils/discount_calculator.dart';
 import '../../../../core/constants/app_constants.dart';
-import '../../../../core/exceptions/app_exceptions.dart';
+import '../../../../core/utils/discount_calculator.dart';
 
 /// Product entity representing a product in the inventory
 class Product {
@@ -31,6 +29,135 @@ class Product {
     this.hasVariants = false,
   });
 
+  /// Gets the active product variant (if hasVariants is true)
+  Product? get variant {
+    if (!hasVariants) return null;
+    // TODO: Return active variant when variant system is implemented
+    return null;
+  }
+
+  /// Checks if the product is out of stock
+  bool get isOutOfStock => stock <= AppConstants.outOfStockThreshold;
+
+  /// Checks if the product has low stock
+  bool get isLowStock =>
+      stock > AppConstants.outOfStockThreshold &&
+      stock <= AppConstants.lowStockThreshold;
+
+  /// Calculates profit margin
+  double get profitMargin {
+    if (costPrice <= 0) return 0;
+    return ((price - costPrice) / price) * 100;
+  }
+
+  /// Calculates profit amount
+  double get profit => price - costPrice;
+
+  /// Checks if the product has a discount
+  bool get hasDiscount => discountPercentage != null && discountPercentage! > 0;
+
+  /// Checks if product has any discount available
+  bool hasAnyDiscount({
+    double? categoryDiscount,
+    double? promotionDiscount,
+  }) {
+    return hasDiscount ||
+        (categoryDiscount != null && categoryDiscount > 0) ||
+        (promotionDiscount != null && promotionDiscount > 0);
+  }
+
+  /// Calculates the effective price after discount
+  double get effectivePrice {
+    if (!hasDiscount) return price;
+    return price * (1 - discountPercentage! / 100);
+  }
+
+  /// Validates product data
+  /// Throws Exception if any field is invalid
+  void validate() {
+    if (name.trim().length < 3) {
+      throw Exception('Nama produk minimal 3 karakter');
+    }
+    if (price <= 0) {
+      throw Exception('Harga produk harus lebih dari 0');
+    }
+    if (stock < 0) {
+      throw Exception('Stok produk tidak boleh negatif');
+    }
+  }
+
+  /// Gets the discount amount for this product
+  double get discountAmount {
+    if (!hasDiscount) return 0;
+    return price - effectivePrice;
+  }
+
+  /// Calculates compound price with category and promotion discounts
+  double calculateCompoundPrice({
+    double? categoryDiscount,
+    double? promotionDiscount,
+  }) {
+    var finalPrice = price;
+
+    // Apply product discount
+    if (hasDiscount) {
+      finalPrice = effectivePrice;
+    }
+
+    // Apply additional discounts
+    if (categoryDiscount != null && categoryDiscount! > 0) {
+      finalPrice -= categoryDiscount!;
+    }
+    if (promotionDiscount != null && promotionDiscount! > 0) {
+      finalPrice -= promotionDiscount!;
+    }
+
+    return finalPrice < 0 ? 0 : finalPrice;
+  }
+
+  /// Gets discount breakdown for this product
+  DiscountBreakdown getDiscountBreakdown({
+    double? categoryDiscount,
+    double? promotionDiscount,
+  }) {
+    final productDiscount = hasDiscount ? discountAmount : 0;
+    final totalDiscount = productDiscount +
+        (categoryDiscount ?? 0) +
+        (promotionDiscount ?? 0);
+
+    return DiscountBreakdown(
+      basePrice: price,
+      productDiscountAmount: productDiscount.toDouble(),
+      categoryDiscountAmount: (categoryDiscount ?? 0).toDouble(),
+      promotionDiscountAmount: (promotionDiscount ?? 0).toDouble(),
+      totalDiscount: totalDiscount.toDouble(),
+      finalPrice: (price - totalDiscount).toDouble(),
+    );
+  }
+
+  /// Calculates category discount amount
+  double calculateCategoryDiscountAmount(List<dynamic> cart) {
+    // Simple implementation - can be enhanced later
+    return hasDiscount ? discountAmount : 0;
+  }
+
+  /// Calculates promotion discount amount
+  double calculatePromotionDiscountAmount(List<dynamic> cart) {
+    // Simple implementation - can be enhanced later
+    return 0; // No promotion discounts currently
+  }
+
+  /// Calculates compound total price
+  double calculateCompoundTotalPrice({
+    double? categoryDiscount,
+    double? promotionDiscount,
+  }) {
+    return calculateCompoundPrice(
+      categoryDiscount: categoryDiscount,
+      promotionDiscount: promotionDiscount,
+    );
+  }
+
   /// Creates a copy of this product with the given fields replaced
   Product copyWith({
     int? id,
@@ -58,97 +185,6 @@ class Product {
       discountPercentage: discountPercentage ?? this.discountPercentage,
       hasVariants: hasVariants ?? this.hasVariants,
     );
-  }
-
-  /// Checks if the product is out of stock
-  bool get isOutOfStock => stock <= AppConstants.outOfStockThreshold;
-
-  /// Checks if the product has low stock
-  bool get isLowStock =>
-      stock > AppConstants.outOfStockThreshold &&
-      stock <= AppConstants.lowStockThreshold;
-
-  /// Calculates profit margin
-  double get profitMargin {
-    if (costPrice <= 0) return 0;
-    return ((price - costPrice) / price * 100);
-  }
-
-  /// Calculates profit amount
-  double get profit => price - costPrice;
-
-  /// Checks if the product has a discount
-  bool get hasDiscount => discountPercentage != null && discountPercentage! > 0;
-
-  /// Calculates the effective price after discount
-  double get effectivePrice {
-    if (!hasDiscount) return price;
-    return price * (1 - discountPercentage! / 100);
-  }
-
-  /// Calculates the discount amount per unit
-  double get discountAmount {
-    if (!hasDiscount) return 0;
-    return price - effectivePrice;
-  }
-
-  /// Calculates the compound final price after applying all discounts
-  /// [categoryDiscount] - Optional category-level discount percentage
-  /// [promotionDiscount] - Optional promotion-level discount percentage
-  /// Returns the final price after sequential application of all discounts
-  double calculateCompoundPrice({
-    double? categoryDiscount,
-    double? promotionDiscount,
-  }) {
-    return DiscountCalculator.calculateFinalPrice(
-      basePrice: price,
-      productDiscount: discountPercentage,
-      categoryDiscount: categoryDiscount,
-      promotionDiscount: promotionDiscount,
-    );
-  }
-
-  /// Gets the compound discount breakdown
-  /// [categoryDiscount] - Optional category-level discount percentage
-  /// [promotionDiscount] - Optional promotion-level discount percentage
-  DiscountBreakdown getDiscountBreakdown({
-    double? categoryDiscount,
-    double? promotionDiscount,
-  }) {
-    return DiscountCalculator.getDiscountBreakdown(
-      basePrice: price,
-      productDiscount: discountPercentage,
-      categoryDiscount: categoryDiscount,
-      promotionDiscount: promotionDiscount,
-    );
-  }
-
-  /// Checks if the product has any discount (including category and promotion)
-  bool hasAnyDiscount({
-    double? categoryDiscount,
-    double? promotionDiscount,
-  }) {
-    return DiscountCalculator.hasAnyDiscount(
-      productDiscount: discountPercentage,
-      categoryDiscount: categoryDiscount,
-      promotionDiscount: promotionDiscount,
-    );
-  }
-
-  /// Validates the product data
-  /// Throws [ValidationException] if validation fails
-  void validate() {
-    Validators.validateProductName(name);
-    Validators.validatePrice(price);
-    Validators.validateStock(stock);
-
-    if (costPrice < 0) {
-      throw const ValidationException('Harga modal tidak boleh negatif', field: 'Harga Modal');
-    }
-
-    if (discountPercentage != null && (discountPercentage! < 0 || discountPercentage! > 100)) {
-      throw const ValidationException('Diskon harus antara 0-100', field: 'Diskon');
-    }
   }
 
   /// Converts product to map for database storage
@@ -209,7 +245,7 @@ class Product {
 
   @override
   int get hashCode =>
-      id.hashCode ^
+    id.hashCode ^
       name.hashCode ^
       price.hashCode ^
       stock.hashCode ^

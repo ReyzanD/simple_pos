@@ -1,0 +1,43 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import 'lib_features_inventory_data_datasources_product_local_data_source_impl.dart';
+import 'lib_features_inventory_data_repositories_product_repository_impl.dart';
+import 'lib_features_inventory_domain_usecases_get_products_usecase.dart';
+import 'lib_features_inventory_presentation_controllers_inventory_controller.dart';
+import 'lib_features_inventory_presentation_screens_inventory_screen.dart';
+
+void main() {
+  runApp(SimplePosApp());
+}
+
+class SimplePosApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MultiProvider(
+      providers: [
+        Provider<ProductLocalDataSource>(create: (_) => ProductLocalDataSourceSqfliteImpl()),
+        ProxyProvider<ProductLocalDataSource, ProductRepositoryImpl>(
+          update: (_, local, __) => ProductRepositoryImpl(localDataSource: local),
+        ),
+        ProxyProvider<ProductRepositoryImpl, GetProductsUseCase>(
+          update: (_, repo, __) => GetProductsUseCase(repository: repo),
+        ),
+        ChangeNotifierProxyProvider<GetProductsUseCase, InventoryController>(
+          create: (ctx) => InventoryController(getProductsUseCase: Provider.of<GetProductsUseCase>(ctx, listen: false)),
+          update: (_, useCase, controller) {
+            controller ??= InventoryController(getProductsUseCase: useCase);
+            // Optionally reload products when use case changes
+            controller.loadProducts();
+            return controller;
+          },
+        ),
+      ],
+      child: MaterialApp(
+        title: 'Simple POS',
+        theme: ThemeData(primarySwatch: Colors.blue),
+        home: InventoryScreen(),
+      ),
+    );
+  }
+}

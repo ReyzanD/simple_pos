@@ -9,6 +9,7 @@ import 'package:simple_pos/services/database/migrations/database_migration.dart'
 // DAO Imports
 import 'package:simple_pos/services/database/dao/product_dao.dart';
 import 'package:simple_pos/services/database/dao/transaction_dao.dart';
+import 'package:simple_pos/services/database/dao/payment_dao.dart';
 import 'package:simple_pos/services/database/dao/category_dao.dart';
 import 'package:simple_pos/services/database/dao/supplier_dao.dart';
 import 'package:simple_pos/services/database/dao/shift_dao.dart';
@@ -27,6 +28,7 @@ class DatabaseHelper {
   // Specialist sub-modules
   final ProductDao products = ProductDao.instance;
   final TransactionDao transactions = TransactionDao.instance;
+  final PaymentDao payments = PaymentDao.instance;
   final CategoryDao categories = CategoryDao.instance;
   final SupplierDao suppliers = SupplierDao.instance;
   final ShiftDao shifts = ShiftDao.instance;

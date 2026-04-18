@@ -214,7 +214,7 @@ class CategoryDao {
 
   // ==================== Query Operations ====================
 
-  /// Searches categories by name (case-insensitive partial match).
+  /// Searches categories by name or description (case-insensitive partial match).
   ///
   /// [query] - The search query string
   /// Returns a list of matching category maps
@@ -226,8 +226,8 @@ class CategoryDao {
       final db = await _db;
       final categories = await db.query(
         'categories',
-        where: 'name LIKE ?',
-        whereArgs: ['%$query%'],
+        where: 'name LIKE ? OR description LIKE ?',
+        whereArgs: ['%$query%', '%$query%'],
         orderBy: 'name ASC',
       );
 

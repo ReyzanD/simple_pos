@@ -1,0 +1,127 @@
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'product_entity.dart';
+import 'product_use_cases.dart';
+
+// --- States ---
+
+enum ProductStatus { initial, loading, success, failure }
+
+class ProductState {
+  final ProductStatus status;
+  final List<Product> products;
+  final String? error;
+  final String searchQuery;
+
+  const ProductState({
+    this.status = ProductStatus.initial,
+    this.products = const [],
+    this.error,
+    this.searchQuery = '',
+  });
+
+  ProductState copyWith({
+    ProductStatus? status,
+    List<Product>? products,
+    String? error,
+    String? searchQuery,
+  }) {
+    return ProductState(
+      status: status ?? this.status,
+      products: products ?? this.products,
+      error: error,
+      searchQuery: searchQuery ?? this.searchQuery,
+    );
+  }
+}
+
+// --- Cubit ---
+
+class ProductCubit extends Cubit<ProductState> {
+  final GetProductsUseCase _getProducts;
+  final AddProductUseCase _addProduct;
+  final UpdateProductUseCase _updateProduct;
+  final DeleteProductUseCase _deleteProduct;
+  final SearchProductsUseCase _searchProducts;
+
+  ProductCubit({
+    required GetProductsUseCase getProducts,
+    required AddProductUseCase addProduct,
+    required UpdateProductUseCase updateProduct,
+    required DeleteProductUseCase deleteProduct,
+    required SearchProductsUseCase searchProducts,
+  })  : _getProducts = getProducts,
+        _addProduct = addProduct,
+        _updateProduct = updateProduct,
+        _deleteProduct = deleteProduct,
+        _searchProducts = searchProducts,
+        super(const ProductState());
+
+  Future<void> loadProducts() async {
+    emit(state.copyWith(status: ProductStatus.loading));
+    final result = state.searchQuery.isEmpty
+        ? await _getProducts()
+        : await _searchProducts(state.searchQuery);
+    if (result.isSuccess) {
+      emit(state.copyWith(status: ProductStatus.success, products: result.data!));
+    } else {
+      emit(state.copyWith(status: ProductStatus.failure, error: result.error));
+    }
+  }
+
+  Future<void> search(String query) async {
+    emit(state.copyWith(searchQuery: query, status: ProductStatus.loading));
+    final result = await _searchProducts(query);
+    if (result.isSuccess) {
+      emit(state.copyWith(status: ProductStatus.success, products: result.data!));
+    } else {
+      emit(state.copyWith(status: ProductStatus.failure, error: result.error));
+    }
+  }
+
+  void clearSearch() {
+    emit(state.copyWith(searchQuery: ''));
+    loadProducts();
+  }
+
+  Future<bool> addProduct({
+    required String name,
+    required double price,
+    String description = '',
+    int quantity = 0,
+    String? imageUrl,
+  }) async {
+    final result = await _addProduct(
+      name: name,
+      price: price,
+      description: description,
+      quantity: quantity,
+      imageUrl: imageUrl,
+    );
+    if (result.isSuccess) {
+      await loadProducts();
+      return true;
+    }
+    emit(state.copyWith(error: result.error));
+    return false;
+  }
+
+  Future<bool> updateProduct(Product product) async {
+    final result = await _updateProduct(product);
+    if (result.isSuccess) {
+      await loadProducts();
+      return true;
+    }
+    emit(state.copyWith(error: result.error));
+    return false;
+  }
+
+  Future<bool> deleteProduct(int id) async {
+    final result = await _deleteProduct(id);
+    if (result.isSuccess) {
+      await loadProducts();
+      return true;
+    }
+    emit(state.copyWith(error: result.error));
+    return false;
+  }
+}

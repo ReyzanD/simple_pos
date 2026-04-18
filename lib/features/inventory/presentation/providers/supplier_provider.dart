@@ -22,4 +22,4 @@ class SupplierNotifier extends _$SupplierNotifier {
 }
 
 /// Public provider for widgets
-final supplierProvider = notifierProvider<SupplierNotifier, List<Supplier>>(SupplierNotifier.new);
+final supplierProvider = supplierNotifierProvider;

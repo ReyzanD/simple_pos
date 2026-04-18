@@ -4,6 +4,7 @@ import '../../../sales/domain/entities/payment_method.dart';
 import '../../../sales/domain/usecases/create_transaction_usecase.dart';
 import '../../../../core/exceptions/app_exceptions.dart';
 import '../../../../core/utils/logger.dart';
+import '../entities/checkout_result.dart';
 
 /// Use case for processing checkout (completing a sale)
 class CheckoutUseCase {
@@ -31,21 +32,19 @@ class CheckoutUseCase {
       AppLogger.useCase('Checkout', details: '${cart.length} items');
 
       if (cart.isEmpty) {
-        return CheckoutResult.failure('Keranjang kosong');
+        return CheckoutResult.failure(errorMessage: 'Keranjang kosong');
       }
 
       // Calculate total amount
       final subtotal = cart.fold<double>(
         0,
-        // Use the compound total to account for active promotions/category discounts
         (sum, item) =>
             sum +
-            item.getCompoundTotalPrice(
-              categoryDiscount:
-                  categoryDiscount, // You'll need to pass these into the UseCase
-              promotionDiscount: promotionDiscount,
-            ),
-      );
+              item.product.calculateCompoundTotalPrice(
+                categoryDiscount: item.product.calculateCategoryDiscountAmount(cart),
+                promotionDiscount: item.product.calculatePromotionDiscountAmount(cart),
+              ),
+        );
       final totalAmount = subtotal + tax - discount;
 
       // Create transaction with stock update
@@ -67,9 +66,9 @@ class CheckoutUseCase {
         itemsProcessed: cart.length,
       );
     } on EmptyCartException {
-      return CheckoutResult.failure('Keranjang kosong');
+      return CheckoutResult.failure(errorMessage: 'Keranjang kosong');
     } on InsufficientStockException catch (e) {
-      return CheckoutResult.failure(e.message);
+      return CheckoutResult.failure(errorMessage: e.message);
     } on DatabaseException {
       rethrow;
     } catch (e, stackTrace) {
@@ -97,8 +96,9 @@ class CheckoutUseCase {
     final total =
         cart.fold<double>(0, (sum, item) => sum + item.totalPrice) +
         tax -
-        discount;
+            discount;
 
+    // Use main execute method with cash payment
     return execute(
       cart: cart,
       paymentMethod: PaymentMethod.cash,
@@ -107,45 +107,26 @@ class CheckoutUseCase {
       discount: discount,
     );
   }
-}
 
-/// Result of checkout operation
-class CheckoutResult {
-  final bool success;
-  final String? message;
-  final double totalAmount;
-  final int itemsProcessed;
-  final dynamic
-  transaction; // Transaction entity (optional import to avoid circular dependency)
+  /// Executes the use case with card payment
+  Future<CheckoutResult> executeWithCardPayment({
+    required List<CartItem> cart,
+    String? cardLast4Digits,
+    String? notes,
+    double tax = 0,
+    double discount = 0,
+  }) async {
+    // Calculate total
+    cart.fold<double>(0, (sum, item) => sum + item.totalPrice);
 
-  const CheckoutResult({
-    required this.success,
-    this.message,
-    required this.totalAmount,
-    required this.itemsProcessed,
-    this.transaction,
-  });
-
-  factory CheckoutResult.success({
-    required dynamic transaction,
-    required double totalAmount,
-    required int itemsProcessed,
-  }) {
-    return CheckoutResult(
-      success: true,
-      message: 'Checkout berhasil!',
-      totalAmount: totalAmount,
-      itemsProcessed: itemsProcessed,
-      transaction: transaction,
-    );
-  }
-
-  factory CheckoutResult.failure(String message) {
-    return const CheckoutResult(
-      success: false,
-      totalAmount: 0,
-      itemsProcessed: 0,
-      transaction: null,
+    // Use main execute method with card payment
+    return execute(
+      cart: cart,
+      paymentMethod: PaymentMethod.card,
+      cardLast4Digits: cardLast4Digits,
+      notes: notes,
+      tax: tax,
+      discount: discount,
     );
   }
 }

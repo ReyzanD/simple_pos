@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'riverpod_config.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/constants/app_constants.dart';
-import 'core/controllers/theme_controller.dart';
 import 'core/theme/app_theme.dart';
 import 'features/shared/presentation/main_navigation.dart';
 

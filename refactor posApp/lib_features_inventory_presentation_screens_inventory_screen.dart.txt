@@ -1,0 +1,38 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'lib_features_inventory_presentation_controllers_inventory_controller.dart';
+
+class InventoryScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final controller = Provider.of<InventoryController>(context);
+    return Scaffold(
+      appBar: AppBar(title: Text('Inventory')),
+      body: FutureBuilder(
+        future: controller.loadProducts(),
+        builder: (ctx, snapshot) {
+          if (snapshot.connectionState != ConnectionState.done) {
+            return Center(child: CircularProgressIndicator());
+          }
+          final products = controller.products;
+          if (products.isEmpty) {
+            return Center(child: Text('No products.'));
+          }
+          return ListView.builder(
+            itemCount: products.length,
+            itemBuilder: (ctx, index) {
+              final p = products[index];
+              final name = p.name ?? 'Unnamed';
+              final stock = p.stock ?? 0;
+              final price = p.price ?? 0.0;
+              return ListTile(
+                title: Text(name),
+                subtitle: Text('Stock: $stock • Price: \\${price.toString()}'),
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+}

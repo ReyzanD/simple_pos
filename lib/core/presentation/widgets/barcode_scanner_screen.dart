@@ -4,6 +4,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/theme.dart';
 import '../../../../core/utils/audio_feedback_helper.dart';
 
+// Import extracted scanner widgets
+import 'scanner/scanner_top_bar.dart';
+import 'scanner/scanner_bottom_bar.dart';
+import 'scanner/scanning_frame.dart';
+
 /// Scanner behavior modes
 enum ScannerMode {
   /// Automatically closes and returns result after scanning (no preview)
@@ -183,7 +188,10 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
 
     // Save history
     if (widget.enableHistory) {
-      await prefs.setStringList(_historyKey, _scanHistory.take(widget.maxHistoryItems).toList());
+      await prefs.setStringList(
+        _historyKey,
+        _scanHistory.take(widget.maxHistoryItems).toList(),
+      );
     }
   }
 
@@ -315,9 +323,7 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
           keyboardType: TextInputType.text,
           decoration: InputDecoration(
             labelText: 'Barcode',
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             prefixIcon: const Icon(Icons.barcode_reader),
           ),
         ),
@@ -332,9 +338,9 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
               if (barcode.isNotEmpty) {
                 Navigator.pop(dialogContext);
                 // Trigger the same flow as if scanned
-                _onBarcodeDetected(BarcodeCapture(
-                  barcodes: [Barcode(rawValue: barcode)],
-                ));
+                _onBarcodeDetected(
+                  BarcodeCapture(barcodes: [Barcode(rawValue: barcode)]),
+                );
               }
             },
             style: ElevatedButton.styleFrom(
@@ -367,10 +373,7 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
                   SizedBox(width: 12),
                   Text(
                     'Scan History',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                   ),
                   Spacer(),
                   IconButton(
@@ -397,7 +400,10 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
                 itemBuilder: (context, index) {
                   final barcode = _scanHistory[index];
                   return ListTile(
-                    leading: Icon(Icons.qr_code_2, color: AppTheme.primaryColor),
+                    leading: Icon(
+                      Icons.qr_code_2,
+                      color: AppTheme.primaryColor,
+                    ),
                     title: Text(
                       barcode,
                       style: TextStyle(fontWeight: FontWeight.w500),
@@ -406,9 +412,9 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
                     onTap: () {
                       Navigator.pop(context);
                       // Rescan this barcode
-                      _onBarcodeDetected(BarcodeCapture(
-                        barcodes: [Barcode(rawValue: barcode)],
-                      ));
+                      _onBarcodeDetected(
+                        BarcodeCapture(barcodes: [Barcode(rawValue: barcode)]),
+                      );
                     },
                   );
                 },
@@ -427,22 +433,22 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
       body: Stack(
         children: [
           // Full-screen camera view
-          MobileScanner(
-            controller: _controller,
-            onDetect: _onBarcodeDetected,
-          ),
+          MobileScanner(controller: _controller, onDetect: _onBarcodeDetected),
 
           // Centered scanning frame overlay
-          Center(
-            child: _buildScanningFrame(),
-          ),
+          Center(child: ScanningFrame(instruction: widget.instruction)),
 
           // Top bar with controls
           Positioned(
             top: 0,
             left: 0,
             right: 0,
-            child: _buildTopBar(),
+            child: ScannerTopBar(
+              title: widget.title,
+              onClose: () => Navigator.pop(context),
+              onToggleFlash: () => _controller.toggleTorch(),
+              isFlashOn: _controller.torchEnabled,
+            ),
           ),
 
           // Bottom bar with scan controls
@@ -450,7 +456,23 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
             bottom: 0,
             left: 0,
             right: 0,
-            child: _buildBottomBar(),
+            child: ScannerBottomBar(
+              mode: widget.mode.name,
+              scannedBarcodes: _scannedBarcodes,
+              scannedBarcode: _scannedBarcode,
+              validationError: _validationError,
+              detectedFormat: _detectedFormatName,
+              productInfo: _productInfo,
+              scanHistoryCount: _scanHistory.length,
+              enableManualEntry: widget.enableManualEntry,
+              enableHistory: widget.enableHistory,
+              onReset: _resetScanner,
+              onConfirm: _confirmScan,
+              onManualEntry: _showManualEntryDialog,
+              onShowHistory: _showHistorySheet,
+              onCompleteContinuous: _completeContinuousScan,
+              onFlipCamera: () => _controller.switchCamera(),
+            ),
           ),
         ],
       ),
@@ -469,10 +491,7 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [
-            Colors.black.withValues(alpha: 0.6),
-            Colors.transparent,
-          ],
+          colors: [Colors.black.withValues(alpha: 0.6), Colors.transparent],
         ),
       ),
       child: Row(
@@ -548,17 +567,15 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [
-            Colors.transparent,
-            Colors.black.withValues(alpha: 0.6),
-          ],
+          colors: [Colors.transparent, Colors.black.withValues(alpha: 0.6)],
         ),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           // Continuous mode scan list
-          if (widget.mode == ScannerMode.continuous && _scannedBarcodes.isNotEmpty)
+          if (widget.mode == ScannerMode.continuous &&
+              _scannedBarcodes.isNotEmpty)
             Container(
               height: 120,
               margin: const EdgeInsets.only(bottom: 12),
@@ -573,14 +590,20 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+                      borderRadius: BorderRadius.vertical(
+                        top: Radius.circular(12),
+                      ),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Row(
                           children: [
-                            Icon(Icons.qr_code_scanner, size: 16, color: AppTheme.primaryColor),
+                            Icon(
+                              Icons.qr_code_scanner,
+                              size: 16,
+                              color: AppTheme.primaryColor,
+                            ),
                             SizedBox(width: 6),
                             Text(
                               'Scanned: ${_scannedBarcodes.length}',
@@ -610,7 +633,10 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
                       itemBuilder: (context, index) {
                         final barcode = _scannedBarcodes[index];
                         return Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 4,
+                          ),
                           child: Row(
                             children: [
                               Container(
@@ -691,7 +717,11 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.shopping_cart, color: AppTheme.primaryColor, size: 16),
+                      Icon(
+                        Icons.shopping_cart,
+                        color: AppTheme.primaryColor,
+                        size: 16,
+                      ),
                       SizedBox(width: 6),
                       Text(
                         _productInfo!['name'] ?? 'Unknown Product',
@@ -709,7 +739,10 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
                         children: [
                           Text(
                             'Price: ',
-                            style: TextStyle(fontSize: 13, color: AppTheme.textSecondary),
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: AppTheme.textSecondary,
+                            ),
                           ),
                           Text(
                             _productInfo!['price']!,
@@ -740,7 +773,9 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
             ),
 
           // Scanned result display
-          if (_scannedBarcode != null && _validationError == null && widget.mode != ScannerMode.continuous)
+          if (_scannedBarcode != null &&
+              _validationError == null &&
+              widget.mode != ScannerMode.continuous)
             Container(
               padding: const EdgeInsets.all(12),
               margin: const EdgeInsets.only(bottom: 12),
@@ -775,9 +810,13 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
                       ),
                       Spacer(),
                       // Format badge
-                      if (_detectedFormatName != null && _detectedFormatName != 'Unknown')
+                      if (_detectedFormatName != null &&
+                          _detectedFormatName != 'Unknown')
                         Container(
-                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: AppTheme.infoColor.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
@@ -795,7 +834,9 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
                   ),
                   SizedBox(height: 4),
                   GestureDetector(
-                    onTap: widget.mode == ScannerMode.preview ? _confirmScan : null,
+                    onTap: widget.mode == ScannerMode.preview
+                        ? _confirmScan
+                        : null,
                     child: Text(
                       _scannedBarcode!,
                       style: TextStyle(
@@ -959,10 +1000,7 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
             padding: const EdgeInsets.all(20),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _buildCornerMarker(),
-                _buildCornerMarker(),
-              ],
+              children: [_buildCornerMarker(), _buildCornerMarker()],
             ),
           ),
 
@@ -991,10 +1029,7 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
             padding: const EdgeInsets.all(20),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _buildCornerMarker(),
-                _buildCornerMarker(),
-              ],
+              children: [_buildCornerMarker(), _buildCornerMarker()],
             ),
           ),
         ],

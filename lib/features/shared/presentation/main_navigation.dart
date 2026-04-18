@@ -14,7 +14,6 @@ import '../../settings/presentation/screens/settings_screen.dart';
 import '../../users/presentation/controllers/auth_controller.dart';
 import '../../users/presentation/screens/login_screen.dart';
 import '../../users/domain/entities/user_role.dart';
-import '../../backup/presentation/screens/backup_screen.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/neo_brutal_theme.dart';
 import '../../../../core/constants/app_constants.dart';
@@ -348,38 +347,10 @@ class MainNavigationState extends State<MainNavigation>
 
             const Divider(height: 1),
 
-            // Scrollable content
-            Expanded(
-              child: ListView(
-                padding: EdgeInsets.zero,
-                children: const [
-                  // Quick Categories Section
-                  DrawerCategoryChips(),
+            // Scrollable content - all drawer sections
+            const Expanded(child: DrawerSections()),
 
-                  // Store Stats Card
-                  DrawerStoreStats(),
-
-                  // Quick Actions
-                  DrawerLowStockItem(),
-                  DrawerDiscountItem(),
-                  const DrawerBackupItem(),
-                  DrawerExpensesItem(),
-                  DrawerShiftsItem(),
-                  DrawerUsersItem(),
-                  DrawerAnalyticsItem(),
-                  DrawerThemeToggle(),
-
-                  // Recent Products Section
-                  DrawerRecentProducts(),
-
-                  SizedBox(height: 8),
-                ],
-              ),
-            ),
-
-            // App Info Section (fixed at bottom)
-            const Divider(height: 1),
-            const DrawerAppInfo(),
+            // Logout Button
 
             // Logout Button
             ListTile(
@@ -421,14 +392,11 @@ class _GlassBottomNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: (isCompact ? 60 : 70) + MediaQuery.of(context).padding.bottom, // ✅ Proper touch targets (60/70px)
+      height: (isCompact ? 60 : 70) + MediaQuery.of(context).padding.bottom,
       decoration: BoxDecoration(
-        color: NeoBrutalTheme.blockYellow, // ✅ Bold yellow background
+        color: NeoBrutalTheme.blockYellow,
         borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium),
-        border: Border.all(
-          color: Colors.black,
-          width: 3, // ✅ Bold border
-        ),
+        border: Border.all(color: Colors.black, width: 3),
         boxShadow: NeoBrutalTheme.chunkyShadow,
       ),
       child: Row(
@@ -511,9 +479,7 @@ class _GlassBottomNav extends StatelessWidget {
                     child: Icon(
                       icon,
                       size: 22, // ✅ Proper icon size (was 18)
-                      color: isSelected
-                          ? NeoBrutalTheme.primary
-                          : Colors.black,
+                      color: isSelected ? NeoBrutalTheme.primary : Colors.black,
                     ),
                   ),
                 )
@@ -521,8 +487,14 @@ class _GlassBottomNav extends StatelessWidget {
                   builder: (context, constraints) {
                     // Proper sizing for good touch targets
                     final maxHeight = constraints.maxHeight;
-                    final iconSize = (maxHeight * 0.35).clamp(20.0, 26.0); // ✅ Larger icons
-                    final textSize = (maxHeight * 0.18).clamp(11.0, 13.0); // ✅ Readable text
+                    final iconSize = (maxHeight * 0.35).clamp(
+                      20.0,
+                      26.0,
+                    ); // ✅ Larger icons
+                    final textSize = (maxHeight * 0.18).clamp(
+                      11.0,
+                      13.0,
+                    ); // ✅ Readable text
                     final spacing = maxHeight * 0.08; // ✅ Proper spacing
 
                     return Column(
@@ -556,9 +528,9 @@ class _GlassBottomNav extends StatelessWidget {
                     );
                   },
                 ),
-          ),
         ),
-      );
+      ),
+    );
   }
 
   Widget _buildScannerButton() {
@@ -574,12 +546,18 @@ class _GlassBottomNav extends StatelessWidget {
             child: GestureDetector(
               onTap: onScannerPressed,
               child: Container(
-                width: isCompact ? 40 : 56,  // ✅ Proper touch targets (was 28/48)
-                height: isCompact ? 40 : 56, // ✅ Proper touch targets (was 28/48)
+                width: isCompact
+                    ? 40
+                    : 56, // ✅ Proper touch targets (was 28/48)
+                height: isCompact
+                    ? 40
+                    : 56, // ✅ Proper touch targets (was 28/48)
                 margin: EdgeInsets.symmetric(horizontal: isCompact ? 4 : 8),
                 decoration: BoxDecoration(
                   color: NeoBrutalTheme.secondary,
-                  borderRadius: BorderRadius.circular(isCompact ? 8 : NeoBrutalTheme.radiusMedium),
+                  borderRadius: BorderRadius.circular(
+                    isCompact ? 8 : NeoBrutalTheme.radiusMedium,
+                  ),
                   border: Border.all(
                     color: Colors.black,
                     width: isCompact ? 3 : 4, // ✅ Bold borders

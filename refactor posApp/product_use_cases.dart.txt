@@ -1,0 +1,73 @@
+import 'product_entity.dart';
+import 'product_repository.dart';
+
+class GetProductsUseCase {
+  final ProductRepository _repository;
+  GetProductsUseCase(this._repository);
+
+  Future<Result<List<Product>>> call() => _repository.getAllProducts();
+}
+
+class GetProductByIdUseCase {
+  final ProductRepository _repository;
+  GetProductByIdUseCase(this._repository);
+
+  Future<Result<Product>> call(int id) => _repository.getProductById(id);
+}
+
+class AddProductUseCase {
+  final ProductRepository _repository;
+  AddProductUseCase(this._repository);
+
+  Future<Result<int>> call({
+    required String name,
+    required double price,
+    String description = '',
+    int quantity = 0,
+    String? imageUrl,
+  }) {
+    if (name.trim().isEmpty) return Future.value(Result.failure('Name cannot be empty'));
+    if (price < 0) return Future.value(Result.failure('Price cannot be negative'));
+    if (quantity < 0) return Future.value(Result.failure('Quantity cannot be negative'));
+
+    final product = Product(
+      name: name.trim(),
+      price: price,
+      description: description.trim(),
+      quantity: quantity,
+      imageUrl: imageUrl,
+    );
+    return _repository.addProduct(product);
+  }
+}
+
+class UpdateProductUseCase {
+  final ProductRepository _repository;
+  UpdateProductUseCase(this._repository);
+
+  Future<Result<void>> call(Product product) {
+    if (product.id == null) return Future.value(Result.failure('Product ID is required'));
+    if (product.name.trim().isEmpty) return Future.value(Result.failure('Name cannot be empty'));
+    if (product.price < 0) return Future.value(Result.failure('Price cannot be negative'));
+    if (product.quantity < 0) return Future.value(Result.failure('Quantity cannot be negative'));
+
+    return _repository.updateProduct(product.copyWith(updatedAt: DateTime.now()));
+  }
+}
+
+class DeleteProductUseCase {
+  final ProductRepository _repository;
+  DeleteProductUseCase(this._repository);
+
+  Future<Result<void>> call(int id) => _repository.deleteProduct(id);
+}
+
+class SearchProductsUseCase {
+  final ProductRepository _repository;
+  SearchProductsUseCase(this._repository);
+
+  Future<Result<List<Product>>> call(String query) {
+    if (query.trim().isEmpty) return _repository.getAllProducts();
+    return _repository.searchProducts(query.trim());
+  }
+}
