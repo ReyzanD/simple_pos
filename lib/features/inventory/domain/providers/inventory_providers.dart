@@ -1,8 +1,8 @@
-import 'package:provider/provider.dart';
-import 'package:provider/single_child_widget.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Core dependency
 import 'package:simple_pos/core/database/database_helper.dart';
+import 'package:simple_pos/core/providers/core_providers.dart';
 
 // Inventory Data Layer
 import 'package:simple_pos/features/inventory/data/datasources/product_local_datasource_impl.dart';
@@ -27,158 +27,163 @@ import 'package:simple_pos/features/inventory/presentation/controllers/inventory
 import 'package:simple_pos/features/inventory/presentation/controllers/category_controller.dart';
 import 'package:simple_pos/features/inventory/presentation/controllers/supplier_controller.dart';
 
-/// Inventory feature providers
-///
-/// Manages all dependencies for inventory management:
-/// - Products (CRUD, search, import)
-/// - Categories (CRUD)
-/// - Suppliers (CRUD)
-List<SingleChildWidget> createInventoryProviders() {
-  return [
-    // Product data sources
-    ProxyProvider<DatabaseHelper, ProductLocalDataSourceImpl>(
-      update: (_, db, _) => ProductLocalDataSourceImpl(databaseHelper: db),
-    ),
-    ProxyProvider<ProductLocalDataSourceImpl, ProductRepositoryImpl>(
-      update: (_, dataSource, _) =>
-          ProductRepositoryImpl(localDataSource: dataSource),
-    ),
+// --- DATA LAYER (Product) ---
 
-    // Product use cases
-    ProxyProvider<ProductRepositoryImpl, GetProductsUseCase>(
-      update: (_, repo, _) => GetProductsUseCase(repository: repo),
-    ),
-    ProxyProvider<ProductRepositoryImpl, AddProductUseCase>(
-      update: (_, repo, _) => AddProductUseCase(repository: repo),
-    ),
-    ProxyProvider<ProductRepositoryImpl, UpdateProductUseCase>(
-      update: (_, repo, _) => UpdateProductUseCase(repository: repo),
-    ),
-    ProxyProvider<ProductRepositoryImpl, DeleteProductUseCase>(
-      update: (_, repo, _) => DeleteProductUseCase(repository: repo),
-    ),
-    ProxyProvider<ProductRepositoryImpl, SearchProductsUseCase>(
-      update: (_, repo, _) => SearchProductsUseCase(repository: repo),
-    ),
-    ProxyProvider<ProductRepositoryImpl, ImportProductsFromCsvUseCase>(
-      update: (_, repo, _) => ImportProductsFromCsvUseCase(productRepository: repo),
-    ),
+final productLocalDataSourceProvider = Provider<ProductLocalDataSourceImpl>((
+  ref,
+) {
+  final db = ref.watch(databaseHelperProvider);
+  return ProductLocalDataSourceImpl(databaseHelper: db);
+});
 
-    // Category data sources
-    ProxyProvider<DatabaseHelper, CategoryLocalDataSourceImpl>(
-      update: (_, db, _) => CategoryLocalDataSourceImpl(databaseHelper: db),
-    ),
-    ProxyProvider<CategoryLocalDataSourceImpl, CategoryRepositoryImpl>(
-      update: (_, dataSource, _) =>
-          CategoryRepositoryImpl(localDataSource: dataSource),
-    ),
+final productRepositoryProvider = Provider<ProductRepositoryImpl>((ref) {
+  return ProductRepositoryImpl(
+    localDataSource: ref.watch(productLocalDataSourceProvider),
+  );
+});
 
-    // Category use cases (from category_usecases.dart)
-    ProxyProvider<CategoryRepositoryImpl, GetCategoriesUseCase>(
-      update: (_, repo, _) => GetCategoriesUseCase(repository: repo),
-    ),
-    ProxyProvider<CategoryRepositoryImpl, AddCategoryUseCase>(
-      update: (_, repo, _) => AddCategoryUseCase(repository: repo),
-    ),
-    ProxyProvider<CategoryRepositoryImpl, UpdateCategoryUseCase>(
-      update: (_, repo, _) => UpdateCategoryUseCase(repository: repo),
-    ),
-    ProxyProvider<CategoryRepositoryImpl, DeleteCategoryUseCase>(
-      update: (_, repo, _) => DeleteCategoryUseCase(repository: repo),
-    ),
+// --- DATA LAYER (Category) ---
 
-    // Supplier data sources
-    ProxyProvider<DatabaseHelper, SupplierLocalDataSourceImpl>(
-      update: (_, db, _) => SupplierLocalDataSourceImpl(databaseHelper: db),
-    ),
-    ProxyProvider<SupplierLocalDataSourceImpl, SupplierRepositoryImpl>(
-      update: (_, dataSource, _) =>
-          SupplierRepositoryImpl(localDataSource: dataSource),
-    ),
+final categoryLocalDataSourceProvider = Provider<CategoryLocalDataSourceImpl>((
+  ref,
+) {
+  final db = ref.watch(databaseHelperProvider);
+  return CategoryLocalDataSourceImpl(databaseHelper: db);
+});
 
-    // Supplier use cases (from supplier_usecases.dart)
-    ProxyProvider<SupplierRepositoryImpl, GetSuppliersUseCase>(
-      update: (_, repo, _) => GetSuppliersUseCase(repository: repo),
-    ),
-    ProxyProvider<SupplierRepositoryImpl, AddSupplierUseCase>(
-      update: (_, repo, _) => AddSupplierUseCase(repository: repo),
-    ),
-    ProxyProvider<SupplierRepositoryImpl, UpdateSupplierUseCase>(
-      update: (_, repo, _) => UpdateSupplierUseCase(repository: repo),
-    ),
-    ProxyProvider<SupplierRepositoryImpl, DeleteSupplierUseCase>(
-      update: (_, repo, _) => DeleteSupplierUseCase(repository: repo),
-    ),
+final categoryRepositoryProvider = Provider<CategoryRepositoryImpl>((ref) {
+  return CategoryRepositoryImpl(
+    localDataSource: ref.watch(categoryLocalDataSourceProvider),
+  );
+});
 
-    // Controllers
-    ChangeNotifierProxyProvider6<
-      GetProductsUseCase,
-      AddProductUseCase,
-      UpdateProductUseCase,
-      DeleteProductUseCase,
-      SearchProductsUseCase,
-      ImportProductsFromCsvUseCase,
-      InventoryController
-    >(
-      create: (context) => InventoryController(
-        getProductsUseCase: context.read(),
-        addProductUseCase: context.read(),
-        updateProductUseCase: context.read(),
-        deleteProductUseCase: context.read(),
-        searchProductsUseCase: context.read(),
-        importProductsFromCsvUseCase: context.read(),
+// --- DATA LAYER (Supplier) ---
+
+final supplierLocalDataSourceProvider = Provider<SupplierLocalDataSourceImpl>((
+  ref,
+) {
+  final db = ref.watch(databaseHelperProvider);
+  return SupplierLocalDataSourceImpl(databaseHelper: db);
+});
+
+final supplierRepositoryProvider = Provider<SupplierRepositoryImpl>((ref) {
+  return SupplierRepositoryImpl(
+    localDataSource: ref.watch(supplierLocalDataSourceProvider),
+  );
+});
+
+// --- DOMAIN LAYER (Product Use Cases) ---
+
+final getProductsUseCaseProvider = Provider<GetProductsUseCase>((ref) {
+  return GetProductsUseCase(repository: ref.watch(productRepositoryProvider));
+});
+
+final addProductUseCaseProvider = Provider<AddProductUseCase>((ref) {
+  return AddProductUseCase(repository: ref.watch(productRepositoryProvider));
+});
+
+final updateProductUseCaseProvider = Provider<UpdateProductUseCase>((ref) {
+  return UpdateProductUseCase(repository: ref.watch(productRepositoryProvider));
+});
+
+final deleteProductUseCaseProvider = Provider<DeleteProductUseCase>((ref) {
+  return DeleteProductUseCase(repository: ref.watch(productRepositoryProvider));
+});
+
+final searchProductsUseCaseProvider = Provider<SearchProductsUseCase>((ref) {
+  return SearchProductsUseCase(
+    repository: ref.watch(productRepositoryProvider),
+  );
+});
+
+final importProductsFromCsvUseCaseProvider =
+    Provider<ImportProductsFromCsvUseCase>((ref) {
+      return ImportProductsFromCsvUseCase(
+        productRepository: ref.watch(productRepositoryProvider),
+      );
+    });
+
+// --- DOMAIN LAYER (Category Use Cases) ---
+
+final getCategoriesUseCaseProvider = Provider<GetCategoriesUseCase>((ref) {
+  return GetCategoriesUseCase(
+    repository: ref.watch(categoryRepositoryProvider),
+  );
+});
+
+final addCategoryUseCaseProvider = Provider<AddCategoryUseCase>((ref) {
+  return AddCategoryUseCase(repository: ref.watch(categoryRepositoryProvider));
+});
+
+final updateCategoryUseCaseProvider = Provider<UpdateCategoryUseCase>((ref) {
+  return UpdateCategoryUseCase(
+    repository: ref.watch(categoryRepositoryProvider),
+  );
+});
+
+final deleteCategoryUseCaseProvider = Provider<DeleteCategoryUseCase>((ref) {
+  return DeleteCategoryUseCase(
+    repository: ref.watch(categoryRepositoryProvider),
+  );
+});
+
+// --- DOMAIN LAYER (Supplier Use Cases) ---
+
+final getSuppliersUseCaseProvider = Provider<GetSuppliersUseCase>((ref) {
+  return GetSuppliersUseCase(repository: ref.watch(supplierRepositoryProvider));
+});
+
+final addSupplierUseCaseProvider = Provider<AddSupplierUseCase>((ref) {
+  return AddSupplierUseCase(repository: ref.watch(supplierRepositoryProvider));
+});
+
+final updateSupplierUseCaseProvider = Provider<UpdateSupplierUseCase>((ref) {
+  return UpdateSupplierUseCase(
+    repository: ref.watch(supplierRepositoryProvider),
+  );
+});
+
+final deleteSupplierUseCaseProvider = Provider<DeleteSupplierUseCase>((ref) {
+  return DeleteSupplierUseCase(
+    repository: ref.watch(supplierRepositoryProvider),
+  );
+});
+
+// --- PRESENTATION LAYER ---
+
+final inventoryControllerProvider = ChangeNotifierProvider<InventoryController>(
+  (ref) {
+    return InventoryController(
+      getProductsUseCase: ref.watch(getProductsUseCaseProvider),
+      addProductUseCase: ref.watch(addProductUseCaseProvider),
+      updateProductUseCase: ref.watch(updateProductUseCaseProvider),
+      deleteProductUseCase: ref.watch(deleteProductUseCaseProvider),
+      searchProductsUseCase: ref.watch(searchProductsUseCaseProvider),
+      importProductsFromCsvUseCase: ref.watch(
+        importProductsFromCsvUseCaseProvider,
       ),
-      update: (_, getProducts, add, update, delete, search, import, _) =>
-          InventoryController(
-        getProductsUseCase: getProducts,
-        addProductUseCase: add,
-        updateProductUseCase: update,
-        deleteProductUseCase: delete,
-        searchProductsUseCase: search,
-        importProductsFromCsvUseCase: import,
-      ),
-    ),
+    );
+  },
+);
 
-    ChangeNotifierProxyProvider4<
-      GetCategoriesUseCase,
-      AddCategoryUseCase,
-      UpdateCategoryUseCase,
-      DeleteCategoryUseCase,
-      CategoryController
-    >(
-      create: (context) => CategoryController(
-        getCategoriesUseCase: context.read(),
-        addCategoryUseCase: context.read(),
-        updateCategoryUseCase: context.read(),
-        deleteCategoryUseCase: context.read(),
-      ),
-      update: (_, get, add, update, delete, _) => CategoryController(
-        getCategoriesUseCase: get,
-        addCategoryUseCase: add,
-        updateCategoryUseCase: update,
-        deleteCategoryUseCase: delete,
-      ),
-    ),
+final categoryControllerProvider = ChangeNotifierProvider<CategoryController>((
+  ref,
+) {
+  return CategoryController(
+    getCategoriesUseCase: ref.watch(getCategoriesUseCaseProvider),
+    addCategoryUseCase: ref.watch(addCategoryUseCaseProvider),
+    updateCategoryUseCase: ref.watch(updateCategoryUseCaseProvider),
+    deleteCategoryUseCase: ref.watch(deleteCategoryUseCaseProvider),
+  );
+});
 
-    ChangeNotifierProxyProvider4<
-      GetSuppliersUseCase,
-      AddSupplierUseCase,
-      UpdateSupplierUseCase,
-      DeleteSupplierUseCase,
-      SupplierController
-    >(
-      create: (context) => SupplierController(
-        getSuppliersUseCase: context.read(),
-        addSupplierUseCase: context.read(),
-        updateSupplierUseCase: context.read(),
-        deleteSupplierUseCase: context.read(),
-      ),
-      update: (_, get, add, update, delete, _) => SupplierController(
-        getSuppliersUseCase: get,
-        addSupplierUseCase: add,
-        updateSupplierUseCase: update,
-        deleteSupplierUseCase: delete,
-      ),
-    ),
-  ];
-}
+final supplierControllerProvider = ChangeNotifierProvider<SupplierController>((
+  ref,
+) {
+  return SupplierController(
+    getSuppliersUseCase: ref.watch(getSuppliersUseCaseProvider),
+    addSupplierUseCase: ref.watch(addSupplierUseCaseProvider),
+    updateSupplierUseCase: ref.watch(updateSupplierUseCaseProvider),
+    deleteSupplierUseCase: ref.watch(deleteSupplierUseCaseProvider),
+  );
+});

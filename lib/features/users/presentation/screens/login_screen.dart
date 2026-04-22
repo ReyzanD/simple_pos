@@ -1,19 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../controllers/auth_controller.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../shared/presentation/providers.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/neo_brutal_theme.dart';
 
 /// Industrial Brutalist Login Screen - Bold, Confident, Unforgettable
-class LoginScreen extends StatefulWidget {
+class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen>
+class _LoginScreenState extends ConsumerState<LoginScreen>
     with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
@@ -51,7 +52,7 @@ class _LoginScreenState extends State<LoginScreen>
 
     setState(() => _isLoading = true);
 
-    final authController = context.read<AuthController>();
+    final authController = ref.read(authControllerProvider);
     final success = await authController.login(
       _usernameController.text.trim(),
       _passwordController.text,
@@ -132,9 +133,7 @@ class _LoginScreenState extends State<LoginScreen>
         ),
         child: Opacity(
           opacity: 0.03,
-          child: CustomPaint(
-            painter: _IndustrialPatternPainter(),
-          ),
+          child: CustomPaint(painter: _IndustrialPatternPainter()),
         ),
       ),
     );
@@ -143,190 +142,191 @@ class _LoginScreenState extends State<LoginScreen>
   /// Dramatic brutalist header with asymmetric layout
   Widget _buildBrutalHeader(BuildContext context) {
     return Column(
-      children: [
-        Row(
           children: [
-            // Dramatic logo icon
-            Container(
-              width: 100,
-              height: 100,
-              decoration: BoxDecoration(
-                color: NeoBrutalTheme.primary,
-                borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusLarge),
-                border: Border.all(
-                  color: Colors.black,
-                  width: 5,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.3),
-                    offset: Offset(8, 8),
-                    blurRadius: 0,
-                  ),
-                  BoxShadow(
-                    color: NeoBrutalTheme.primary.withValues(alpha: 0.5),
-                    offset: Offset(4, 4),
-                    blurRadius: 8,
-                  ),
-                ],
-              ),
-              child: Center(
-                child: AnimatedBuilder(
-                  animation: _pulseAnimation,
-                  builder: (context, child) {
-                    return Transform.scale(
-                      scale: 0.9 + (_pulseAnimation.value * 0.1),
-                      child: Icon(
-                        Icons.storefront_rounded,
-                        size: 50,
-                        color: Colors.white,
+            Row(
+              children: [
+                // Dramatic logo icon
+                Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    color: NeoBrutalTheme.primary,
+                    borderRadius: BorderRadius.circular(
+                      NeoBrutalTheme.radiusLarge,
+                    ),
+                    border: Border.all(color: Colors.black, width: 5),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.3),
+                        offset: Offset(8, 8),
+                        blurRadius: 0,
                       ),
-                    );
-                  },
+                      BoxShadow(
+                        color: NeoBrutalTheme.primary.withValues(alpha: 0.5),
+                        offset: Offset(4, 4),
+                        blurRadius: 8,
+                      ),
+                    ],
+                  ),
+                  child: Center(
+                    child: AnimatedBuilder(
+                      animation: _pulseAnimation,
+                      builder: (context, child) {
+                        return Transform.scale(
+                          scale: 0.9 + (_pulseAnimation.value * 0.1),
+                          child: Icon(
+                            Icons.storefront_rounded,
+                            size: 50,
+                            color: Colors.white,
+                          ),
+                        );
+                      },
+                    ),
+                  ),
                 ),
-              ),
-            ),
-            SizedBox(width: NeoBrutalTheme.spaceMD),
+                SizedBox(width: NeoBrutalTheme.spaceMD),
 
-            // App title with bold typography
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'SIMPLE',
-                    style: TextStyle(
-                      fontSize: 48,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 8,
-                      color: Colors.black,
-                      height: 0.9,
-                    ),
+                // App title with bold typography
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'SIMPLE',
+                        style: TextStyle(
+                          fontSize: 48,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 8,
+                          color: Colors.black,
+                          height: 0.9,
+                        ),
+                      ),
+                      Text(
+                        'POS',
+                        style: TextStyle(
+                          fontSize: 56,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 12,
+                          color: NeoBrutalTheme.primary,
+                          height: 0.85,
+                        ),
+                      ),
+                      SizedBox(height: NeoBrutalTheme.spaceXS),
+                      Text(
+                        'SISTEM KASIR INDUSTRI',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 2,
+                          color: AppTheme.getTextSecondaryColor(context),
+                        ),
+                      ),
+                    ],
                   ),
-                  Text(
-                    'POS',
-                    style: TextStyle(
-                      fontSize: 56,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 12,
-                      color: NeoBrutalTheme.primary,
-                      height: 0.85,
-                    ),
-                  ),
-                  SizedBox(height: NeoBrutalTheme.spaceXS),
-                  Text(
-                    'SISTEM KASIR INDUSTRI',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 2,
-                      color: AppTheme.getTextSecondaryColor(context),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ],
-        ),
-      ],
-    ).animate().fadeIn(duration: 600.ms).slideX(
-      begin: -50,
-      duration: 800.ms,
-      curve: Curves.easeOut,
-    );
+        )
+        .animate()
+        .fadeIn(duration: 600.ms)
+        .slideX(begin: -50, duration: 800.ms, curve: Curves.easeOut);
   }
 
   /// Brutalist login form card with dramatic shadows
   Widget _buildLoginFormCard(BuildContext context) {
     return Container(
-      padding: EdgeInsets.all(NeoBrutalTheme.spaceLG),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusLarge),
-        border: Border.all(
-          color: Colors.black,
-          width: 5,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.4),
-            offset: Offset(12, 12),
-            blurRadius: 0,
+          padding: EdgeInsets.all(NeoBrutalTheme.spaceLG),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusLarge),
+            border: Border.all(color: Colors.black, width: 5),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.4),
+                offset: Offset(12, 12),
+                blurRadius: 0,
+              ),
+              BoxShadow(
+                color: NeoBrutalTheme.primary.withValues(alpha: 0.3),
+                offset: Offset(6, 6),
+                blurRadius: 12,
+              ),
+            ],
           ),
-          BoxShadow(
-            color: NeoBrutalTheme.primary.withValues(alpha: 0.3),
-            offset: Offset(6, 6),
-            blurRadius: 12,
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Form title
-          Text(
-            'LOGIN KASIR',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 4,
-              color: Colors.black,
-            ),
-          ),
-          SizedBox(height: NeoBrutalTheme.spaceMD),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Form title
+              Text(
+                'LOGIN KASIR',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 4,
+                  color: Colors.black,
+                ),
+              ),
+              SizedBox(height: NeoBrutalTheme.spaceMD),
 
-          // Username field with brutal styling
-          _buildBrutalTextField(
-            context,
-            controller: _usernameController,
-            labelText: 'USERNAME',
-            icon: Icons.person_outline_rounded,
-            hintText: 'admin',
-            textInputAction: TextInputAction.next,
-            validator: (value) {
-              if (value == null || value.trim().isEmpty) {
-                return 'Username wajib diisi';
-              }
-              return null;
-            },
-            onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
-          ),
-          SizedBox(height: NeoBrutalTheme.spaceMD),
+              // Username field with brutal styling
+              _buildBrutalTextField(
+                context,
+                controller: _usernameController,
+                labelText: 'USERNAME',
+                icon: Icons.person_outline_rounded,
+                hintText: 'admin',
+                textInputAction: TextInputAction.next,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Username wajib diisi';
+                  }
+                  return null;
+                },
+                onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
+              ),
+              SizedBox(height: NeoBrutalTheme.spaceMD),
 
-          // Password field with brutal styling
-          _buildBrutalPasswordField(
-            context,
-            controller: _passwordController,
-            labelText: 'PASSWORD',
-            hintText: '•••••••••',
-            textInputAction: TextInputAction.done,
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Password wajib diisi';
-              }
-              return null;
-            },
-            onFieldSubmitted: (_) => _handleLogin(),
-          ),
-          SizedBox(height: NeoBrutalTheme.spaceLG),
+              // Password field with brutal styling
+              _buildBrutalPasswordField(
+                context,
+                controller: _passwordController,
+                labelText: 'PASSWORD',
+                hintText: '•••••••••',
+                textInputAction: TextInputAction.done,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Password wajib diisi';
+                  }
+                  return null;
+                },
+                onFieldSubmitted: (_) => _handleLogin(),
+              ),
+              SizedBox(height: NeoBrutalTheme.spaceLG),
 
-          // Brutal login button
-          Consumer<AuthController>(
-            builder: (context, auth, child) {
-              final isAuthLoading = auth.isLoading;
-              return BrutalLoginButton(
-                onPressed: (_isLoading || isAuthLoading) ? null : _handleLogin,
-                isLoading: _isLoading || isAuthLoading,
-              );
-            },
+              // Brutal login button
+              Consumer(
+                builder: (context, ref, child) {
+                  final auth = ref.watch(authControllerProvider);
+                  final isAuthLoading = auth.isLoading;
+                  return BrutalLoginButton(
+                    onPressed: (_isLoading || isAuthLoading)
+                        ? null
+                        : _handleLogin,
+                    isLoading: _isLoading || isAuthLoading,
+                  );
+                },
+              ),
+            ],
           ),
-        ],
-      ),
-    ).animate().fadeIn(duration: 400.ms).scale(
-      begin: const Offset(0.95, 0.95),
-      duration: 400.ms,
-      curve: Curves.easeOut,
-    );
+        )
+        .animate()
+        .fadeIn(duration: 400.ms)
+        .scale(
+          begin: const Offset(0.95, 0.95),
+          duration: 400.ms,
+          curve: Curves.easeOut,
+        );
   }
 
   /// Brutalist text field with bold styling
@@ -371,16 +371,9 @@ class _LoginScreenState extends State<LoginScreen>
           decoration: BoxDecoration(
             color: NeoBrutalTheme.primary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
-            border: Border.all(
-              color: Colors.black,
-              width: 2,
-            ),
+            border: Border.all(color: Colors.black, width: 2),
           ),
-          child: Icon(
-            icon,
-            color: NeoBrutalTheme.primary,
-            size: 22,
-          ),
+          child: Icon(icon, color: NeoBrutalTheme.primary, size: 22),
         ),
         filled: true,
         fillColor: Colors.white,
@@ -404,17 +397,11 @@ class _LoginScreenState extends State<LoginScreen>
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium),
-          borderSide: BorderSide(
-            color: NeoBrutalTheme.primary,
-            width: 3,
-          ),
+          borderSide: BorderSide(color: NeoBrutalTheme.primary, width: 3),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium),
-          borderSide: BorderSide(
-            color: AppTheme.errorColor,
-            width: 3,
-          ),
+          borderSide: BorderSide(color: AppTheme.errorColor, width: 3),
         ),
       ),
     );
@@ -462,10 +449,7 @@ class _LoginScreenState extends State<LoginScreen>
           decoration: BoxDecoration(
             color: NeoBrutalTheme.primary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
-            border: Border.all(
-              color: Colors.black,
-              width: 2,
-            ),
+            border: Border.all(color: Colors.black, width: 2),
           ),
           child: Icon(
             Icons.lock_outline_rounded,
@@ -517,17 +501,11 @@ class _LoginScreenState extends State<LoginScreen>
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium),
-          borderSide: BorderSide(
-            color: NeoBrutalTheme.primary,
-            width: 3,
-          ),
+          borderSide: BorderSide(color: NeoBrutalTheme.primary, width: 3),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium),
-          borderSide: BorderSide(
-            color: AppTheme.errorColor,
-            width: 3,
-          ),
+          borderSide: BorderSide(color: AppTheme.errorColor, width: 3),
         ),
       ),
     );
@@ -557,20 +535,14 @@ class BrutalLoginButton extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: isLoading
-              ? [
-                  Colors.grey.shade400,
-                  Colors.grey.shade300,
-                ]
+              ? [Colors.grey.shade400, Colors.grey.shade300]
               : [
                   NeoBrutalTheme.primary,
                   NeoBrutalTheme.primary.withValues(alpha: 0.8),
                 ],
         ),
         borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium),
-        border: Border.all(
-          color: Colors.black,
-          width: 4,
-        ),
+        border: Border.all(color: Colors.black, width: 4),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.4),
@@ -621,8 +593,7 @@ class BrutalLoginButton extends StatelessWidget {
 class _IndustrialPatternPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.black.withValues(alpha: 0.03);
+    final paint = Paint()..color = Colors.black.withValues(alpha: 0.03);
 
     // Draw geometric pattern - diagonal lines
     final lineSpacing = 40.0;

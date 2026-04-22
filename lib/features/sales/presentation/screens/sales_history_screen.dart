@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/transaction.dart';
 import '../../domain/entities/payment_method.dart';
 import '../../domain/entities/payment_status.dart';
@@ -11,6 +11,8 @@ import '../../../../core/theme/neo_brutal_theme.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../shared/presentation/main_navigation.dart';
 import '../../../../core/widgets/brutal_inputs.dart';
+import '../../../shared/presentation/providers.dart';
+import '../../../shared/presentation/providers.dart';
 
 /// Modern Material 3 screen showing sales history with filters
 class SalesHistoryScreen extends StatelessWidget {
@@ -18,15 +20,17 @@ class SalesHistoryScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<SalesHistoryController>(
-      builder: (context, controller, _) {
+    return Consumer(
+      builder: (context, ref, _) {
+        final controller = ref.watch(salesHistoryControllerProvider);
         return Scaffold(
           appBar: AppBar(
             leading: IconButton(
               icon: const Icon(Icons.menu),
               onPressed: () {
-                final mainNavState = context.findAncestorStateOfType<MainNavigationState>();
-                mainNavState?.openDrawer();
+                context
+                    .findAncestorStateOfType<MainNavigationState>()
+                    ?.openDrawer();
               },
             ),
             title: const Text('Riwayat Penjualan'),
@@ -36,11 +40,10 @@ class SalesHistoryScreen extends StatelessWidget {
                 child: Container(
                   decoration: BoxDecoration(
                     color: NeoBrutalTheme.secondary.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
-                    border: Border.all(
-                      color: Colors.black,
-                      width: 2,
+                    borderRadius: BorderRadius.circular(
+                      NeoBrutalTheme.radiusSmall,
                     ),
+                    border: Border.all(color: Colors.black, width: 2),
                   ),
                   child: IconButton(
                     icon: Icon(
@@ -81,7 +84,7 @@ class SalesHistoryScreen extends StatelessWidget {
                     Expanded(
                       child: controller.filteredTransactions.isEmpty
                           ? _buildEmptyState(controller)
-                          : _buildTransactionsList(controller),
+                          : _buildTransactionsList(ref, controller),
                     ),
                   ],
                 ),
@@ -90,7 +93,10 @@ class SalesHistoryScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSummaryCards(BuildContext context, SalesHistoryController controller) {
+  Widget _buildSummaryCards(
+    BuildContext context,
+    SalesHistoryController controller,
+  ) {
     return Container(
       padding: EdgeInsets.all(NeoBrutalTheme.spaceMD),
       color: NeoBrutalTheme.surface,
@@ -147,7 +153,8 @@ class SalesHistoryScreen extends StatelessWidget {
           color: Colors.black,
           width: 4, // ✅ Bold 4px border - matches brutal standard
         ),
-        boxShadow: NeoBrutalTheme.chunkyShadow, // ✅ Chunky shadow - matches brutal standard
+        boxShadow: NeoBrutalTheme
+            .chunkyShadow, // ✅ Chunky shadow - matches brutal standard
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -160,17 +167,16 @@ class SalesHistoryScreen extends StatelessWidget {
                 height: 36,
                 decoration: BoxDecoration(
                   color: iconColor,
-                  borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
+                  borderRadius: BorderRadius.circular(
+                    NeoBrutalTheme.radiusSmall,
+                  ),
                   border: Border.all(
                     color: Colors.black,
-                    width: 3, // ✅ Bold 3px icon border - matches brutal standard
+                    width:
+                        3, // ✅ Bold 3px icon border - matches brutal standard
                   ),
                 ),
-                child: Icon(
-                  icon,
-                  color: Colors.white,
-                  size: 18,
-                ),
+                child: Icon(icon, color: Colors.white, size: 18),
               ),
             ],
           ),
@@ -180,7 +186,8 @@ class SalesHistoryScreen extends StatelessWidget {
             style: NeoBrutalTheme.displayLarge.copyWith(
               fontSize: 24,
               color: Colors.black,
-              fontWeight: FontWeight.w900, // ✅ Extra bold - matches brutal aesthetic
+              fontWeight:
+                  FontWeight.w900, // ✅ Extra bold - matches brutal aesthetic
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -191,7 +198,8 @@ class SalesHistoryScreen extends StatelessWidget {
             style: NeoBrutalTheme.labelSmall.copyWith(
               color: Colors.black87,
               letterSpacing: 1,
-              fontWeight: FontWeight.w700, // ✅ Bold uppercase - matches brutal aesthetic
+              fontWeight: FontWeight
+                  .w700, // ✅ Bold uppercase - matches brutal aesthetic
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -201,7 +209,10 @@ class SalesHistoryScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSearchBar(BuildContext context, SalesHistoryController controller) {
+  Widget _buildSearchBar(
+    BuildContext context,
+    SalesHistoryController controller,
+  ) {
     return Padding(
       padding: EdgeInsets.all(NeoBrutalTheme.spaceMD),
       child: BrutalSearchField(
@@ -217,11 +228,7 @@ class SalesHistoryScreen extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.receipt_long,
-            size: 64,
-            color: AppTheme.textTertiary,
-          ),
+          Icon(Icons.receipt_long, size: 64, color: AppTheme.textTertiary),
           const SizedBox(height: 16),
           Text(
             'Tidak ada transaksi',
@@ -233,20 +240,21 @@ class SalesHistoryScreen extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            controller.searchQuery.isNotEmpty || controller.selectedPaymentMethod != null
+            controller.searchQuery.isNotEmpty ||
+                    controller.selectedPaymentMethod != null
                 ? 'Coba ubah filter atau pencarian'
                 : 'Mulai transaksi untuk melihat riwayat',
-            style: TextStyle(
-              fontSize: 14,
-              color: AppTheme.textTertiary,
-            ),
+            style: TextStyle(fontSize: 14, color: AppTheme.textTertiary),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildTransactionsList(SalesHistoryController controller) {
+  Widget _buildTransactionsList(
+    WidgetRef ref,
+    SalesHistoryController controller,
+  ) {
     return RefreshIndicator(
       onRefresh: controller.refresh,
       color: AppTheme.primaryColor,
@@ -262,13 +270,17 @@ class SalesHistoryScreen extends StatelessWidget {
         itemCount: controller.filteredTransactions.length,
         itemBuilder: (context, index) {
           final transaction = controller.filteredTransactions[index];
-          return _buildTransactionCard(context, transaction);
+          return _buildTransactionCard(context, ref, transaction);
         },
       ),
     );
   }
 
-  Widget _buildTransactionCard(BuildContext context, Transaction transaction) {
+  Widget _buildTransactionCard(
+    BuildContext context,
+    WidgetRef ref,
+    Transaction transaction,
+  ) {
     final isRefundable = transaction.isRefundable;
 
     return Card(
@@ -293,7 +305,9 @@ class SalesHistoryScreen extends StatelessWidget {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: _getPaymentColor(transaction.paymentMethod).withValues(alpha: 0.1),
+              color: _getPaymentColor(
+                transaction.paymentMethod,
+              ).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
@@ -321,17 +335,11 @@ class SalesHistoryScreen extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 _formatDate(transaction.transactionDate),
-                style: TextStyle(
-                  fontSize: 12,
-                  color: AppTheme.textSecondary,
-                ),
+                style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
               ),
               Text(
                 '${transaction.totalItems} item',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: AppTheme.textSecondary,
-                ),
+                style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
               ),
             ],
           ),
@@ -347,7 +355,8 @@ class SalesHistoryScreen extends StatelessWidget {
                   color: transaction.paymentStatus == PaymentStatus.refunded
                       ? AppTheme.textTertiary
                       : AppTheme.primaryColor,
-                  decoration: transaction.paymentStatus == PaymentStatus.refunded
+                  decoration:
+                      transaction.paymentStatus == PaymentStatus.refunded
                       ? TextDecoration.lineThrough
                       : null,
                 ),
@@ -368,51 +377,61 @@ class SalesHistoryScreen extends StatelessWidget {
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                   ),
                   const SizedBox(height: 12),
-                  ...transaction.items.map((item) => Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: Text(
-                                item.productName,
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: transaction.paymentStatus == PaymentStatus.refunded
-                                      ? AppTheme.textTertiary
-                                      : null,
-                                ),
-                              ),
-                            ),
-                            Text(
-                              '${item.quantity}x ${CurrencyFormatter.format(item.unitPrice)}',
+                  ...transaction.items.map(
+                    (item) => Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              item.productName,
                               style: TextStyle(
                                 fontSize: 13,
-                                color: transaction.paymentStatus == PaymentStatus.refunded
+                                color:
+                                    transaction.paymentStatus ==
+                                        PaymentStatus.refunded
                                     ? AppTheme.textTertiary
                                     : null,
                               ),
                             ),
-                            const SizedBox(width: 12),
-                            Text(
-                              CurrencyFormatter.format(item.subtotal),
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
-                                color: transaction.paymentStatus == PaymentStatus.refunded
-                                    ? AppTheme.textTertiary
-                                    : null,
-                              ),
+                          ),
+                          Text(
+                            '${item.quantity}x ${CurrencyFormatter.format(item.unitPrice)}',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color:
+                                  transaction.paymentStatus ==
+                                      PaymentStatus.refunded
+                                  ? AppTheme.textTertiary
+                                  : null,
                             ),
-                          ],
-                        ),
-                      )),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            CurrencyFormatter.format(item.subtotal),
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color:
+                                  transaction.paymentStatus ==
+                                      PaymentStatus.refunded
+                                  ? AppTheme.textTertiary
+                                  : null,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 12),
                   const Divider(height: 1),
                   const SizedBox(height: 12),
                   _buildTotalsRow('Subtotal', transaction.subtotal),
-                  if (transaction.tax > 0) _buildTotalsRow('Pajak', transaction.tax),
-                  if (transaction.discount > 0) _buildTotalsRow('Diskon', -transaction.discount),
+                  if (transaction.tax > 0)
+                    _buildTotalsRow('Pajak', transaction.tax),
+                  if (transaction.discount > 0)
+                    _buildTotalsRow('Diskon', -transaction.discount),
                   _buildTotalsRow(
                     'Total',
                     transaction.totalAmount,
@@ -427,7 +446,8 @@ class SalesHistoryScreen extends StatelessWidget {
                     SizedBox(
                       width: double.infinity,
                       child: OutlinedButton.icon(
-                        onPressed: () => _handleRefund(context, transaction),
+                        onPressed: () =>
+                            _handleRefund(context, ref, transaction),
                         icon: const Icon(Icons.assignment_return, size: 18),
                         label: const Text('Refund Transaksi'),
                         style: OutlinedButton.styleFrom(
@@ -557,7 +577,10 @@ class SalesHistoryScreen extends StatelessWidget {
     );
   }
 
-  void _showFilterDialog(BuildContext context, SalesHistoryController controller) {
+  void _showFilterDialog(
+    BuildContext context,
+    SalesHistoryController controller,
+  ) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -570,7 +593,10 @@ class SalesHistoryScreen extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Metode Pembayaran:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            const Text(
+              'Metode Pembayaran:',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            ),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
@@ -585,27 +611,41 @@ class SalesHistoryScreen extends StatelessWidget {
                   },
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
-                    side: BorderSide(color: AppTheme.getBorderColor(context), width: 0.5),
+                    side: BorderSide(
+                      color: AppTheme.getBorderColor(context),
+                      width: 0.5,
+                    ),
                   ),
                 ),
                 ...PaymentMethod.values.map((method) {
                   return FilterChip(
-                    label: Text(method.displayNameId, style: const TextStyle(fontSize: 13)),
+                    label: Text(
+                      method.displayNameId,
+                      style: const TextStyle(fontSize: 13),
+                    ),
                     selected: controller.selectedPaymentMethod == method,
                     onSelected: (selected) {
-                      controller.setPaymentMethodFilter(selected ? method : null);
+                      controller.setPaymentMethodFilter(
+                        selected ? method : null,
+                      );
                       Navigator.pop(context);
                     },
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
-                      side: BorderSide(color: AppTheme.getBorderColor(context), width: 0.5),
+                      side: BorderSide(
+                        color: AppTheme.getBorderColor(context),
+                        width: 0.5,
+                      ),
                     ),
                   );
                 }),
               ],
             ),
             const SizedBox(height: 16),
-            const Text('Rentang Tanggal:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            const Text(
+              'Rentang Tanggal:',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            ),
             const SizedBox(height: 8),
             Row(
               children: [
@@ -613,9 +653,11 @@ class SalesHistoryScreen extends StatelessWidget {
                   child: OutlinedButton.icon(
                     onPressed: () => _selectDate(context, controller, true),
                     icon: const Icon(Icons.calendar_today, size: 16),
-                    label: Text(controller.startDate == null
-                        ? 'Dari'
-                        : '${controller.startDate!.day}/${controller.startDate!.month}/${controller.startDate!.year}'),
+                    label: Text(
+                      controller.startDate == null
+                          ? 'Dari'
+                          : '${controller.startDate!.day}/${controller.startDate!.month}/${controller.startDate!.year}',
+                    ),
                     style: OutlinedButton.styleFrom(
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -628,9 +670,11 @@ class SalesHistoryScreen extends StatelessWidget {
                   child: OutlinedButton.icon(
                     onPressed: () => _selectDate(context, controller, false),
                     icon: const Icon(Icons.calendar_today, size: 16),
-                    label: Text(controller.endDate == null
-                        ? 'Sampai'
-                        : '${controller.endDate!.day}/${controller.endDate!.month}/${controller.endDate!.year}'),
+                    label: Text(
+                      controller.endDate == null
+                          ? 'Sampai'
+                          : '${controller.endDate!.day}/${controller.endDate!.month}/${controller.endDate!.year}',
+                    ),
                     style: OutlinedButton.styleFrom(
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -674,7 +718,11 @@ class SalesHistoryScreen extends StatelessWidget {
     );
   }
 
-  Future<void> _selectDate(BuildContext context, SalesHistoryController controller, bool isStartDate) async {
+  Future<void> _selectDate(
+    BuildContext context,
+    SalesHistoryController controller,
+    bool isStartDate,
+  ) async {
     final picked = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
@@ -721,7 +769,11 @@ class SalesHistoryScreen extends StatelessWidget {
     return '${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
   }
 
-  Future<void> _handleRefund(BuildContext context, Transaction transaction) async {
+  Future<void> _handleRefund(
+    BuildContext context,
+    WidgetRef ref,
+    Transaction transaction,
+  ) async {
     // Show confirmation dialog
     final confirmed = await showRefundConfirmationDialog(
       context: context,
@@ -731,8 +783,8 @@ class SalesHistoryScreen extends StatelessWidget {
     if (confirmed != true || !context.mounted) return;
 
     // Get controllers
-    final refundController = context.read<RefundController>();
-    final historyController = context.read<SalesHistoryController>();
+    final refundController = ref.read(refundControllerProvider);
+    final historyController = ref.read(salesHistoryControllerProvider);
 
     // Process refund
     final success = await refundController.refundTransaction(transaction.id!);

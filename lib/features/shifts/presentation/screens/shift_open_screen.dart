@@ -54,7 +54,7 @@ class _ShiftOpenScreenState extends State<ShiftOpenScreen> {
         elevation: 0,
       ),
       body: SafeArea(
-        child: Consumer<ShiftController>(
+        child: Consumer(
           builder: (context, controller, _) {
             if (controller.hasError) {
               WidgetsBinding.instance.addPostFrameCallback((_) {

@@ -132,7 +132,7 @@ class _ProductVariantScreenState extends State<ProductVariantScreen> {
           ),
         ],
       ),
-      body: Consumer<ProductVariantController>(
+      body: Consumer(
         builder: (context, controller, _) {
           if (controller.isLoading && controller.variants.isEmpty) {
             return const Center(child: CircularProgressIndicator());

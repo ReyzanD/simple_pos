@@ -24,7 +24,7 @@ class _ExpenseCategoriesTabState extends State<ExpenseCategoriesTab> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<ExpenseController>(
+    return Consumer(
       builder: (context, controller, _) {
         if (controller.isLoading) {
           return const Center(

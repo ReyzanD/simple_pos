@@ -51,7 +51,7 @@ class _ExpenseListTabState extends State<ExpenseListTab> {
           onClearFilters: widget.controller.clearFilters,
         ),
         Expanded(
-          child: Consumer<ExpenseController>(
+          child: Consumer(
             builder: (context, controller, _) {
               if (controller.isLoading) {
                 return const Center(

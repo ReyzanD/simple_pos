@@ -15,7 +15,7 @@ class DrawerRecentProducts extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<InventoryController>(
+    return Consumer(
       builder: (context, controller, _) {
         final products = controller.allProducts;
 

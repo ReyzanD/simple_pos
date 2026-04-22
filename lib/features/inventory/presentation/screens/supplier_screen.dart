@@ -191,7 +191,7 @@ class _SupplierScreenState extends State<SupplierScreen> {
   }
 
   Widget _buildSupplierCard(BuildContext context, Supplier supplier, int productCount) {
-    return Consumer<SupplierController>(
+    return Consumer(
       builder: (context, controller, _) {
         return Card(
           margin: const EdgeInsets.only(bottom: UIConstants.spacingSmall),

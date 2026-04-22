@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../inventory/presentation/controllers/inventory_controller.dart';
 import '../../inventory/presentation/screens/inventory_screen.dart';
 import '../../pos/presentation/screens/pos_screen.dart';
@@ -11,7 +11,6 @@ import '../../sales/presentation/screens/sales_report_screen.dart';
 import '../../sales/presentation/controllers/sales_history_controller.dart';
 import '../../sales/presentation/controllers/sales_report_controller.dart';
 import '../../settings/presentation/screens/settings_screen.dart';
-import '../../users/presentation/controllers/auth_controller.dart';
 import '../../users/presentation/screens/login_screen.dart';
 import '../../users/domain/entities/user_role.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -20,19 +19,21 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/animations/animation_constants.dart';
 import '../../../../core/utils/haptic_helper.dart';
 import '../../../../core/utils/responsive_helper.dart';
+import 'providers.dart';
 import 'drawer_header.dart';
 import 'drawer_sections.dart';
+import '../../users/presentation/controllers/auth_controller.dart';
 
 /// Main navigation widget with floating glassmorphic bottom tab bar
 /// Shows login screen if not authenticated, otherwise shows main app
-class MainNavigation extends StatefulWidget {
+class MainNavigation extends ConsumerStatefulWidget {
   const MainNavigation({super.key});
 
   @override
-  State<MainNavigation> createState() => MainNavigationState();
+  ConsumerState<MainNavigation> createState() => MainNavigationState();
 }
 
-class MainNavigationState extends State<MainNavigation>
+class MainNavigationState extends ConsumerState<MainNavigation>
     with TickerProviderStateMixin {
   int _currentIndex = 0;
   late AnimationController _scannerPulseController;
@@ -41,10 +42,22 @@ class MainNavigationState extends State<MainNavigation>
   late Animation<Offset> _navSlideAnimation;
   final GlobalKey<POSScreenState> _posScreenKey = GlobalKey();
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey();
+  late final List<Widget> _screens;
 
   @override
   void initState() {
     super.initState();
+
+    _screens = [
+      POSScreen(
+        key: _posScreenKey,
+        onCheckoutSuccess: () => _refreshAllScreens(),
+      ),
+      const InventoryScreen(),
+      const SalesHistoryScreen(),
+      const SalesReportScreen(),
+      const SettingsScreen(),
+    ];
     // Scanner button pulse animation
     _scannerPulseController = AnimationController(
       vsync: this,
@@ -79,14 +92,6 @@ class MainNavigationState extends State<MainNavigation>
     super.dispose();
   }
 
-  late final List<Widget> _screens = [
-    POSScreen(key: _posScreenKey, onCheckoutSuccess: _refreshAllScreens),
-    const InventoryScreen(),
-    const SalesHistoryScreen(),
-    const SalesReportScreen(),
-    const SettingsScreen(),
-  ];
-
   void navigateToSettings() {
     setState(() {
       _currentIndex = 4;
@@ -103,18 +108,18 @@ class MainNavigationState extends State<MainNavigation>
     if (!mounted) return;
 
     // Get controllers before any async operations to avoid BuildContext across async gaps
-    final inventoryController = context.read<InventoryController>();
+    final inventoryController = ref.read(inventoryControllerProvider);
     SalesHistoryController? salesHistoryController;
     SalesReportController? salesReportController;
 
     try {
-      salesHistoryController = context.read<SalesHistoryController>();
+      salesHistoryController = ref.read(salesHistoryControllerProvider);
     } catch (_) {
       // Controller may not be initialized yet
     }
 
     try {
-      salesReportController = context.read<SalesReportController>();
+      salesReportController = ref.read(salesReportControllerProvider);
     } catch (_) {
       // Controller may not be initialized yet
     }
@@ -150,12 +155,14 @@ class MainNavigationState extends State<MainNavigation>
         }
         break;
       case 1: // Inventory
-        final inventoryController = context.read<InventoryController>();
+        final inventoryController = ref.read(inventoryControllerProvider);
         await inventoryController.loadProducts();
         break;
       case 2: // Sales History
         try {
-          final salesHistoryController = context.read<SalesHistoryController>();
+          final salesHistoryController = ref.read(
+            salesHistoryControllerProvider,
+          );
           await salesHistoryController.refresh();
         } catch (_) {
           // Controller may not be initialized yet
@@ -163,7 +170,7 @@ class MainNavigationState extends State<MainNavigation>
         break;
       case 3: // Sales Report
         try {
-          final salesReportController = context.read<SalesReportController>();
+          final salesReportController = ref.read(salesReportControllerProvider);
           await salesReportController.refresh();
         } catch (_) {
           // Controller may not be initialized yet
@@ -176,12 +183,12 @@ class MainNavigationState extends State<MainNavigation>
     // Smart scanner that adapts based on current screen
     switch (_currentIndex) {
       case 0: // POS - Full-screen scan mode
-        final posController = context.read<POSController>();
+        final posController = ref.read(posControllerProvider);
         posController.enterScanMode();
         break;
 
       case 1: // Inventory - Preview with validation
-        final inventoryController = context.read<InventoryController>();
+        final inventoryController = ref.read(inventoryControllerProvider);
         final result = await Navigator.push(
           context,
           MaterialPageRoute(
@@ -277,25 +284,24 @@ class MainNavigationState extends State<MainNavigation>
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<AuthController>(
-      builder: (context, auth, _) {
-        // Show login screen if not authenticated
-        if (!auth.isAuthenticated) {
-          return const LoginScreen();
-        }
+    final auth = ref.watch(authControllerProvider);
 
-        // Show main app if authenticated
-        return Scaffold(
-          key: _scaffoldKey,
-          body: IndexedStack(index: _currentIndex, children: _screens),
-          extendBody: true,
-          bottomNavigationBar: _buildFloatingBottomNav(),
-          drawer: _buildDrawer(context, auth),
-        );
-      },
+    // Show login screen if not authenticated
+    if (!auth.isAuthenticated) {
+      return const LoginScreen();
+    }
+
+    // Show main app if authenticated
+    return Scaffold(
+      key: _scaffoldKey,
+      body: IndexedStack(index: _currentIndex, children: _screens),
+      extendBody: true,
+      bottomNavigationBar: _buildFloatingBottomNav(),
+      drawer: _buildDrawer(context, auth),
     );
   }
 
+  // EVERYTHING BELOW HERE IS IDENTICAL - DON'T TOUCH!
   Widget _buildFloatingBottomNav() {
     final isVerySmall = ResponsiveHelper.isVerySmallScreen(context);
 
@@ -349,8 +355,6 @@ class MainNavigationState extends State<MainNavigation>
 
             // Scrollable content - all drawer sections
             const Expanded(child: DrawerSections()),
-
-            // Logout Button
 
             // Logout Button
             ListTile(

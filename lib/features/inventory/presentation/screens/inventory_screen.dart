@@ -68,7 +68,9 @@ class InventoryScreen extends ConsumerWidget {
               padding: EdgeInsets.all(NeoBrutalTheme.spaceMD),
               child: GridView.builder(
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: MediaQuery.of(context).size.width > 600 ? 4 : 2,
+                  crossAxisCount: MediaQuery.of(context).size.width > 600
+                      ? 4
+                      : 2,
                   mainAxisSpacing: NeoBrutalTheme.spaceMD,
                   crossAxisSpacing: NeoBrutalTheme.spaceMD,
                   mainAxisExtent: 280,
@@ -100,11 +102,7 @@ class InventoryScreen extends ConsumerWidget {
       ),
       child: Row(
         children: [
-          const Icon(
-            Icons.search,
-            color: AppTheme.textSecondary,
-            size: 24,
-          ),
+          const Icon(Icons.search, color: AppTheme.textSecondary, size: 24),
           SizedBox(width: NeoBrutalTheme.spaceSM),
           Expanded(
             child: TextField(
@@ -116,10 +114,7 @@ class InventoryScreen extends ConsumerWidget {
                   fontSize: 16,
                 ),
               ),
-              style: const TextStyle(
-                color: AppTheme.textPrimary,
-                fontSize: 16,
-              ),
+              style: const TextStyle(color: AppTheme.textPrimary, fontSize: 16),
               onChanged: (query) {
                 ref.read(inventoryProvider.notifier).searchProducts(query);
               },
@@ -137,7 +132,11 @@ class InventoryScreen extends ConsumerWidget {
     ).animate().fadeIn(duration: 300.ms);
   }
 
-  Widget _buildProductCard(BuildContext context, WidgetRef ref, Product product) {
+  Widget _buildProductCard(
+    BuildContext context,
+    WidgetRef ref,
+    Product product,
+  ) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -225,8 +224,8 @@ class InventoryScreen extends ConsumerWidget {
                           color: product.isLowStock
                               ? AppTheme.warningColor
                               : product.isOutOfStock
-                                  ? AppTheme.errorColor
-                                  : AppTheme.successColor,
+                              ? AppTheme.errorColor
+                              : AppTheme.successColor,
                           borderRadius: BorderRadius.circular(
                             NeoBrutalTheme.radiusSmall,
                           ),
@@ -346,24 +345,15 @@ class InventoryScreen extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
                 border: Border.all(color: Colors.black, width: 3),
               ),
-              child: Icon(
-                icon,
-                color: Colors.white,
-              ),
+              child: Icon(icon, color: Colors.white),
             ),
             SizedBox(width: NeoBrutalTheme.spaceMD),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    title,
-                    style: NeoBrutalTheme.headlineSmall,
-                  ),
-                  Text(
-                    subtitle,
-                    style: NeoBrutalTheme.bodySmall,
-                  ),
+                  Text(title, style: NeoBrutalTheme.headlineSmall),
+                  Text(subtitle, style: NeoBrutalTheme.bodySmall),
                 ],
               ),
             ),
@@ -402,9 +392,7 @@ class _ProductDetailScreen extends StatelessWidget {
         flexibleSpace: Container(
           decoration: BoxDecoration(
             color: NeoBrutalTheme.blockYellow,
-            border: Border(
-              bottom: BorderSide(color: Colors.black, width: 6),
-            ),
+            border: Border(bottom: BorderSide(color: Colors.black, width: 6)),
           ),
         ),
       ),
@@ -460,9 +448,21 @@ class _ProductDetailScreen extends StatelessWidget {
 
             _buildInfoRow('Nama', product.name),
             _buildInfoRow('Harga', CurrencyFormatter.format(product.price)),
-            _buildInfoRow('Harga Pokok', CurrencyFormatter.format(product.costPrice)),
-            _buildInfoRow('Stok', product.stock.toString(), valueColor: product.isLowStock ? AppTheme.warningColor : product.isOutOfStock ? AppTheme.errorColor : AppTheme.successColor),
-            if (product.barcode != null) _buildInfoRow('Barcode', product.barcode!),
+            _buildInfoRow(
+              'Harga Pokok',
+              CurrencyFormatter.format(product.costPrice),
+            ),
+            _buildInfoRow(
+              'Stok',
+              product.stock.toString(),
+              valueColor: product.isLowStock
+                  ? AppTheme.warningColor
+                  : product.isOutOfStock
+                  ? AppTheme.errorColor
+                  : AppTheme.successColor,
+            ),
+            if (product.barcode != null)
+              _buildInfoRow('Barcode', product.barcode!),
             SizedBox(height: NeoBrutalTheme.spaceLG),
 
             // Status Badges
@@ -476,16 +476,14 @@ class _ProductDetailScreen extends StatelessWidget {
                     ),
                     decoration: BoxDecoration(
                       color: AppTheme.warningColor,
-                      borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
+                      borderRadius: BorderRadius.circular(
+                        NeoBrutalTheme.radiusSmall,
+                      ),
                       border: Border.all(color: Colors.black, width: 2),
                     ),
                     child: const Row(
                       children: [
-                        Icon(
-                          Icons.warning,
-                          color: Colors.white,
-                          size: 16,
-                        ),
+                        Icon(Icons.warning, color: Colors.white, size: 16),
                         SizedBox(width: NeoBrutalTheme.spaceXS),
                         Text(
                           'Stok Rendah',
@@ -508,16 +506,14 @@ class _ProductDetailScreen extends StatelessWidget {
                     ),
                     decoration: BoxDecoration(
                       color: AppTheme.errorColor,
-                      borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
+                      borderRadius: BorderRadius.circular(
+                        NeoBrutalTheme.radiusSmall,
+                      ),
                       border: Border.all(color: Colors.black, width: 2),
                     ),
                     child: const Row(
                       children: [
-                        Icon(
-                          Icons.block,
-                          color: Colors.white,
-                          size: 16,
-                        ),
+                        Icon(Icons.block, color: Colors.white, size: 16),
                         SizedBox(width: NeoBrutalTheme.spaceXS),
                         Text(
                           'Habis',

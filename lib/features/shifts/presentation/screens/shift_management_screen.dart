@@ -67,7 +67,7 @@ class _ShiftManagementScreenState extends State<ShiftManagementScreen> {
           ),
         ),
       ),
-      body: Consumer<ShiftController>(
+      body: Consumer(
         builder: (context, controller, _) {
           if (controller.isLoading && controller.shiftHistory.isEmpty) {
             return const Center(child: CircularProgressIndicator());

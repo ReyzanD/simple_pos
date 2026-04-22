@@ -12,7 +12,7 @@ class DrawerLowStockItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<InventoryController>(
+    return Consumer(
       builder: (context, controller, _) {
         final lowStockCount = controller.allProducts
             .where((p) => p.isLowStock || p.isOutOfStock)

@@ -130,7 +130,7 @@ class _HeldOrdersScreenState extends State<HeldOrdersScreen> {
         backgroundColor: AppTheme.primaryColor,
         foregroundColor: Colors.white,
       ),
-      body: Consumer<POSController>(
+      body: Consumer(
         builder: (context, controller, _) {
           if (controller.isLoadingHeldCarts) {
             return const Center(

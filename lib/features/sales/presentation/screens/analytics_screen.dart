@@ -39,7 +39,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<AnalyticsController>(
+    return Consumer(
       builder: (context, controller, _) {
         return Scaffold(
           backgroundColor: NeoBrutalTheme.background,

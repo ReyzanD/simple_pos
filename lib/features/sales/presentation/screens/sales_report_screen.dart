@@ -17,7 +17,7 @@ class SalesReportScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<SalesReportController>(
+    return Consumer(
       builder: (context, controller, _) {
         return Scaffold(
           backgroundColor: NeoBrutalTheme.background,

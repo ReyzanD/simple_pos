@@ -43,7 +43,7 @@ class _DailySalesTrend extends StatelessWidget {
   Widget build(BuildContext context) {
     final dailyData = report.dailyBreakdown;
 
-    return Consumer<SalesReportController>(
+    return Consumer(
       builder: (context, controller, _) {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,

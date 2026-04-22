@@ -11,7 +11,7 @@ class SalesHistoryController extends ChangeNotifier {
 
   SalesHistoryController({
     required GetTransactionsUseCase getTransactionsUseCase,
-  })  : _getTransactionsUseCase = getTransactionsUseCase {
+  }) : _getTransactionsUseCase = getTransactionsUseCase {
     loadTransactions();
   }
 
@@ -39,25 +39,18 @@ class SalesHistoryController extends ChangeNotifier {
   String get searchQuery => _searchQuery;
 
   int get transactionCount => _filteredTransactions.length;
-  double get totalRevenue => _filteredTransactions.fold<double>(
-        0,
-        (sum, t) => sum + t.totalAmount,
-      );
-  double get averageTransaction => transactionCount > 0
-      ? totalRevenue / transactionCount
-      : 0.0;
+  double get totalRevenue =>
+      _filteredTransactions.fold<double>(0, (sum, t) => sum + t.totalAmount);
+  double get averageTransaction =>
+      transactionCount > 0 ? totalRevenue / transactionCount : 0.0;
 
   /// Get total profit from filtered transactions (revenue - cost of goods sold)
-  double get totalProfit => _filteredTransactions.fold<double>(
-        0,
-        (sum, t) => sum + t.profit,
-      );
+  double get totalProfit =>
+      _filteredTransactions.fold<double>(0, (sum, t) => sum + t.profit);
 
   /// Get total items sold from filtered transactions
-  int get totalItemsSold => _filteredTransactions.fold<int>(
-        0,
-        (sum, t) => sum + t.totalItems,
-      );
+  int get totalItemsSold =>
+      _filteredTransactions.fold<int>(0, (sum, t) => sum + t.totalItems);
 
   /// Get today's transactions
   List<Transaction> get todayTransactions {
@@ -67,15 +60,13 @@ class SalesHistoryController extends ChangeNotifier {
 
     return _transactions.where((t) {
       return !t.transactionDate.isBefore(startOfDay) &&
-             !t.transactionDate.isAfter(endOfDay);
+          !t.transactionDate.isAfter(endOfDay);
     }).toList();
   }
 
   /// Get today's revenue
-  double get todayRevenue => todayTransactions.fold<double>(
-        0,
-        (sum, t) => sum + t.totalAmount,
-      );
+  double get todayRevenue =>
+      todayTransactions.fold<double>(0, (sum, t) => sum + t.totalAmount);
 
   /// Get today's transaction count
   int get todayTransactionCount => todayTransactions.length;
@@ -98,16 +89,21 @@ class SalesHistoryController extends ChangeNotifier {
       // Calculate and cache today's items sold
       final now = DateTime.now();
       final startOfDay = DateTime(now.year, now.month, now.day);
-      final todayTx = _transactions.where((t) =>
-        !t.transactionDate.isBefore(startOfDay)
-      ).toList();
-      _cachedTodayItemsSold = todayTx.fold<int>(0, (sum, t) => sum + t.totalItems);
+      final todayTx = _transactions
+          .where((t) => !t.transactionDate.isBefore(startOfDay))
+          .toList();
+      _cachedTodayItemsSold = todayTx.fold<int>(
+        0,
+        (sum, t) => sum + t.totalItems,
+      );
 
       _applyFilters();
 
       // Calculate today's stats for debugging
       AppLogger.info('Loaded ${_transactions.length} total transactions');
-      AppLogger.info('Today\'s transactions: ${todayTx.length}, revenue: $todayRevenue');
+      AppLogger.info(
+        'Today\'s transactions: ${todayTx.length}, revenue: $todayRevenue',
+      );
       AppLogger.info('todayTransactionCount: $todayTransactionCount');
     } catch (e, stackTrace) {
       _isLoading = false;
@@ -131,11 +127,19 @@ class SalesHistoryController extends ChangeNotifier {
       }
 
       // Date range filter
-      if (_startDate != null && transaction.transactionDate.isBefore(_startDate!)) {
+      if (_startDate != null &&
+          transaction.transactionDate.isBefore(_startDate!)) {
         return false;
       }
       if (_endDate != null) {
-        final endOfDay = DateTime(_endDate!.year, _endDate!.month, _endDate!.day, 23, 59, 59);
+        final endOfDay = DateTime(
+          _endDate!.year,
+          _endDate!.month,
+          _endDate!.day,
+          23,
+          59,
+          59,
+        );
         if (transaction.transactionDate.isAfter(endOfDay)) {
           return false;
         }
@@ -144,9 +148,11 @@ class SalesHistoryController extends ChangeNotifier {
       // Search filter
       if (_searchQuery.isNotEmpty) {
         final query = _searchQuery.toLowerCase();
-        return transaction.items.any((item) =>
-            item.productName.toLowerCase().contains(query) ||
-            transaction.id.toString().contains(query));
+        return transaction.items.any(
+          (item) =>
+              item.productName.toLowerCase().contains(query) ||
+              transaction.id.toString().contains(query),
+        );
       }
 
       return true;
@@ -186,5 +192,11 @@ class SalesHistoryController extends ChangeNotifier {
   /// Refresh transactions
   Future<void> refresh() async {
     await loadTransactions();
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    AppLogger.info('Disposing SalesHistoryController');
   }
 }

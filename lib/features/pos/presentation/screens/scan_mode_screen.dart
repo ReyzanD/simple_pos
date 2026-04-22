@@ -34,7 +34,7 @@ class _ScanModeScreenState extends State<ScanModeScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<POSController>(
+    return Consumer(
       builder: (context, controller, _) {
         final cart = controller.cart;
 

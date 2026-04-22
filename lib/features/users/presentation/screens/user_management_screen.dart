@@ -121,7 +121,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
           ),
         ],
       ),
-      body: Consumer<AuthController>(
+      body: Consumer(
         builder: (context, authController, _) {
           // For demo, show the current admin user
           final currentUser = authController.currentUser;

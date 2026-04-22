@@ -153,16 +153,21 @@ class POSController extends ChangeNotifier {
 
     // Filter by category
     if (_selectedCategory != null) {
-      filtered = filtered.where((p) => p.categoryId == _selectedCategory!.id).toList();
+      filtered = filtered
+          .where((p) => p.categoryId == _selectedCategory!.id)
+          .toList();
     }
 
     // Filter by search query
     if (_searchQuery.isNotEmpty) {
       final query = _searchQuery.toLowerCase();
-      filtered = filtered.where((p) =>
-        p.name.toLowerCase().contains(query) ||
-        (p.barcode?.toLowerCase().contains(query) ?? false)
-      ).toList();
+      filtered = filtered
+          .where(
+            (p) =>
+                p.name.toLowerCase().contains(query) ||
+                (p.barcode?.toLowerCase().contains(query) ?? false),
+          )
+          .toList();
     }
 
     // Filter by stock availability
@@ -173,10 +178,14 @@ class POSController extends ChangeNotifier {
     // Apply sorting
     switch (_sortOption) {
       case SortOption.nameAsc:
-        filtered.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+        filtered.sort(
+          (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+        );
         break;
       case SortOption.nameDesc:
-        filtered.sort((a, b) => b.name.toLowerCase().compareTo(a.name.toLowerCase()));
+        filtered.sort(
+          (a, b) => b.name.toLowerCase().compareTo(a.name.toLowerCase()),
+        );
         break;
       case SortOption.priceAsc:
         filtered.sort((a, b) => a.price.compareTo(b.price));
@@ -212,12 +221,14 @@ class POSController extends ChangeNotifier {
       _setError(e);
       AppLogger.error('Failed to load products - POSController', error: e);
     } catch (e, stackTrace) {
-      _setError(DatabaseException(
-        'Gagal memuat produk',
-        operation: 'loadProducts',
-        originalError: e,
-        stackTrace: stackTrace,
-      ));
+      _setError(
+        DatabaseException(
+          'Gagal memuat produk',
+          operation: 'loadProducts',
+          originalError: e,
+          stackTrace: stackTrace,
+        ),
+      );
       AppLogger.error(
         'Unexpected error loading products - POSController',
         error: e,
@@ -257,12 +268,14 @@ class POSController extends ChangeNotifier {
       AppLogger.error('Failed to add to cart - POSController', error: e);
       return false;
     } catch (e, stackTrace) {
-      _setError(DatabaseException(
-        'Gagal menambahkan ke keranjang',
-        operation: 'addToCart',
-        originalError: e,
-        stackTrace: stackTrace,
-      ));
+      _setError(
+        DatabaseException(
+          'Gagal menambahkan ke keranjang',
+          operation: 'addToCart',
+          originalError: e,
+          stackTrace: stackTrace,
+        ),
+      );
       AppLogger.error(
         'Unexpected error adding to cart - POSController',
         error: e,
@@ -275,7 +288,10 @@ class POSController extends ChangeNotifier {
   }
 
   /// Add product to cart with a specific variant
-  Future<bool> addToCartWithVariant(Product product, ProductVariant variant) async {
+  Future<bool> addToCartWithVariant(
+    Product product,
+    ProductVariant variant,
+  ) async {
     // Prevent concurrent cart modifications
     if (_isModifyingCart) {
       AppLogger.warning('Cart modification in progress, ignoring add request');
@@ -294,8 +310,10 @@ class POSController extends ChangeNotifier {
       );
 
       // Check if item with same product and variant already exists
-      final existingIndex = _cart.indexWhere((item) =>
-          item.product.id == product.id && item.variant?.id == variant.id);
+      final existingIndex = _cart.indexWhere(
+        (item) =>
+            item.product.id == product.id && item.variant?.id == variant.id,
+      );
 
       if (existingIndex != -1) {
         // Update quantity of existing item
@@ -305,10 +323,7 @@ class POSController extends ChangeNotifier {
             quantity: existing.quantity + 1,
           );
         } else {
-          throw ValidationException(
-            'Stok tidak mencukupui',
-            field: 'Stok',
-          );
+          throw ValidationException('Stok tidak mencukupui', field: 'Stok');
         }
       } else {
         // Add new cart item
@@ -327,12 +342,14 @@ class POSController extends ChangeNotifier {
       AppLogger.error('Failed to add to cart - POSController', error: e);
       return false;
     } catch (e, stackTrace) {
-      _setError(DatabaseException(
-        'Gagal menambahkan ke keranjang',
-        operation: 'addToCartWithVariant',
-        originalError: e,
-        stackTrace: stackTrace,
-      ));
+      _setError(
+        DatabaseException(
+          'Gagal menambahkan ke keranjang',
+          operation: 'addToCartWithVariant',
+          originalError: e,
+          stackTrace: stackTrace,
+        ),
+      );
       AppLogger.error(
         'Unexpected error adding to cart - POSController',
         error: e,
@@ -356,7 +373,9 @@ class POSController extends ChangeNotifier {
       );
 
       if (_lastRemovedCartItem == null) {
-        AppLogger.warning('Cart item not found for removal: Product ID ${product.id}');
+        AppLogger.warning(
+          'Cart item not found for removal: Product ID ${product.id}',
+        );
         return;
       }
 
@@ -456,15 +475,15 @@ class POSController extends ChangeNotifier {
       _clearError();
 
       // Process checkout with default cash payment
-      final result = await checkoutUseCase.executeWithCashPayment(
-        cart: _cart,
-      );
+      final result = await checkoutUseCase.executeWithCashPayment(cart: _cart);
 
       if (!result.success) {
-        _setError(DatabaseException(
-          result.message ?? 'Checkout gagal',
-          operation: 'checkout',
-        ));
+        _setError(
+          DatabaseException(
+            result.message ?? 'Checkout gagal',
+            operation: 'checkout',
+          ),
+        );
         return false;
       }
 
@@ -479,12 +498,14 @@ class POSController extends ChangeNotifier {
       AppLogger.error('Checkout failed - POSController', error: e);
       return false;
     } catch (e, stackTrace) {
-      _setError(DatabaseException(
-        'Gagal memproses checkout',
-        operation: 'checkout',
-        originalError: e,
-        stackTrace: stackTrace,
-      ));
+      _setError(
+        DatabaseException(
+          'Gagal memproses checkout',
+          operation: 'checkout',
+          originalError: e,
+          stackTrace: stackTrace,
+        ),
+      );
       AppLogger.error(
         'Unexpected error during checkout - POSController',
         error: e,
@@ -508,7 +529,10 @@ class POSController extends ChangeNotifier {
     }
 
     try {
-      AppLogger.ui('Processing checkout with $paymentMethod', details: 'POSController');
+      AppLogger.ui(
+        'Processing checkout with $paymentMethod',
+        details: 'POSController',
+      );
       _setCheckingOut(true);
       _clearError();
 
@@ -521,10 +545,12 @@ class POSController extends ChangeNotifier {
       );
 
       if (!result.success) {
-        _setError(DatabaseException(
-          result.message ?? 'Checkout gagal',
-          operation: 'checkout',
-        ));
+        _setError(
+          DatabaseException(
+            result.message ?? 'Checkout gagal',
+            operation: 'checkout',
+          ),
+        );
         return false;
       }
 
@@ -559,12 +585,14 @@ class POSController extends ChangeNotifier {
       AppLogger.error('Checkout failed - POSController', error: e);
       return false;
     } catch (e, stackTrace) {
-      _setError(DatabaseException(
-        'Gagal memproses checkout',
-        operation: 'checkout',
-        originalError: e,
-        stackTrace: stackTrace,
-      ));
+      _setError(
+        DatabaseException(
+          'Gagal memproses checkout',
+          operation: 'checkout',
+          originalError: e,
+          stackTrace: stackTrace,
+        ),
+      );
       AppLogger.error(
         'Unexpected error during checkout - POSController',
         error: e,
@@ -745,12 +773,14 @@ class POSController extends ChangeNotifier {
       _setError(e);
       AppLogger.error('Failed to load held carts - POSController', error: e);
     } catch (e, stackTrace) {
-      _setError(DatabaseException(
-        'Gagal memuat pesanan tertahan',
-        operation: 'loadHeldCarts',
-        originalError: e,
-        stackTrace: stackTrace,
-      ));
+      _setError(
+        DatabaseException(
+          'Gagal memuat pesanan tertahan',
+          operation: 'loadHeldCarts',
+          originalError: e,
+          stackTrace: stackTrace,
+        ),
+      );
       AppLogger.error(
         'Unexpected error loading held carts - POSController',
         error: e,
@@ -828,12 +858,14 @@ class POSController extends ChangeNotifier {
       AppLogger.error('Failed to delete held cart - POSController', error: e);
       return false;
     } catch (e, stackTrace) {
-      _setError(DatabaseException(
-        'Gagal menghapus pesanan tertahan',
-        operation: 'deleteHeldCart',
-        originalError: e,
-        stackTrace: stackTrace,
-      ));
+      _setError(
+        DatabaseException(
+          'Gagal menghapus pesanan tertahan',
+          operation: 'deleteHeldCart',
+          originalError: e,
+          stackTrace: stackTrace,
+        ),
+      );
       AppLogger.error(
         'Unexpected error deleting held cart - POSController',
         error: e,

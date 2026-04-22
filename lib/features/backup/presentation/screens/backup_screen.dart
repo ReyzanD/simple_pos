@@ -52,7 +52,7 @@ class _BackupScreenState extends State<BackupScreen>
     return Scaffold(
       backgroundColor: NeoBrutalTheme.background,
       appBar: _buildAppBar(),
-      body: Consumer<BackupController>(
+      body: Consumer(
         builder: (context, controller, _) {
           if (controller.isLoading && controller.backups.isEmpty) {
             return const Center(child: CircularProgressIndicator());
@@ -140,7 +140,7 @@ class _BackupScreenState extends State<BackupScreen>
   }
 
   Widget _buildFAB() {
-    return Consumer<BackupController>(
+    return Consumer(
       builder: (context, controller, _) {
         if (controller.isProcessing) return const SizedBox.shrink();
         return FloatingActionButton.extended(

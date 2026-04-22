@@ -10,7 +10,7 @@ class CategoryDiscountsTabWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<CategoryController>(
+    return Consumer(
       builder: (context, controller, _) {
         if (controller.isLoading) {
           return const Center(child: CircularProgressIndicator());

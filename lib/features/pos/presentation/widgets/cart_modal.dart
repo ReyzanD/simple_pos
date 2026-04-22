@@ -124,7 +124,7 @@ class CartModalState extends State<CartModal> {
   Widget build(BuildContext context) {
     final height = MediaQuery.of(context).size.height * 0.75;
 
-    return Consumer<POSController>(
+    return Consumer(
       builder: (context, controller, _) {
         final cartItems = controller.cart;
 

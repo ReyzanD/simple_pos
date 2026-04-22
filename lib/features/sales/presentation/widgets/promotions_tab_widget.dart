@@ -11,7 +11,7 @@ class PromotionsTabWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<DiscountController>(
+    return Consumer(
       builder: (context, controller, _) {
         final content = _buildContent(controller);
 

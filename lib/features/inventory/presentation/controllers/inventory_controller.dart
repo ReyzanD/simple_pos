@@ -11,19 +11,10 @@ import '../../../../core/utils/logger.dart';
 import '../../../../core/utils/csv_import_helper.dart';
 
 /// Sort options for product listing
-enum ProductSortOption {
-  nameAsc,
-  nameDesc,
-  priceAsc,
-  priceDesc,
-  stockLevel,
-}
+enum ProductSortOption { nameAsc, nameDesc, priceAsc, priceDesc, stockLevel }
 
 /// View mode for product listing
-enum ProductViewMode {
-  list,
-  grid,
-}
+enum ProductViewMode { list, grid }
 
 /// Controller for managing inventory state and operations
 class InventoryController extends ChangeNotifier {
@@ -93,14 +84,19 @@ class InventoryController extends ChangeNotifier {
       AppLogger.info('Products loaded successfully - InventoryController');
     } on AppException catch (e) {
       _setError(e);
-      AppLogger.error('Failed to load products - InventoryController', error: e);
+      AppLogger.error(
+        'Failed to load products - InventoryController',
+        error: e,
+      );
     } catch (e, stackTrace) {
-      _setError(DatabaseException(
-        'Gagal memuat produk',
-        operation: 'loadProducts',
-        originalError: e,
-        stackTrace: stackTrace,
-      ));
+      _setError(
+        DatabaseException(
+          'Gagal memuat produk',
+          operation: 'loadProducts',
+          originalError: e,
+          stackTrace: stackTrace,
+        ),
+      );
       AppLogger.error(
         'Unexpected error loading products - InventoryController',
         error: e,
@@ -154,12 +150,14 @@ class InventoryController extends ChangeNotifier {
       AppLogger.error('Failed to add product - InventoryController', error: e);
       return false;
     } catch (e, stackTrace) {
-      _setError(DatabaseException(
-        'Gagal menambahkan produk',
-        operation: 'addProduct',
-        originalError: e,
-        stackTrace: stackTrace,
-      ));
+      _setError(
+        DatabaseException(
+          'Gagal menambahkan produk',
+          operation: 'addProduct',
+          originalError: e,
+          stackTrace: stackTrace,
+        ),
+      );
       AppLogger.error(
         'Unexpected error adding product - InventoryController',
         error: e,
@@ -191,15 +189,20 @@ class InventoryController extends ChangeNotifier {
       return true;
     } on AppException catch (e) {
       _setError(e);
-      AppLogger.error('Failed to update product - InventoryController', error: e);
+      AppLogger.error(
+        'Failed to update product - InventoryController',
+        error: e,
+      );
       return false;
     } catch (e, stackTrace) {
-      _setError(DatabaseException(
-        'Gagal mengupdate produk',
-        operation: 'updateProduct',
-        originalError: e,
-        stackTrace: stackTrace,
-      ));
+      _setError(
+        DatabaseException(
+          'Gagal mengupdate produk',
+          operation: 'updateProduct',
+          originalError: e,
+          stackTrace: stackTrace,
+        ),
+      );
       AppLogger.error(
         'Unexpected error updating product - InventoryController',
         error: e,
@@ -252,19 +255,26 @@ class InventoryController extends ChangeNotifier {
         _applySearch();
       }
 
-      AppLogger.info('Product fields updated successfully - InventoryController');
+      AppLogger.info(
+        'Product fields updated successfully - InventoryController',
+      );
       return true;
     } on AppException catch (e) {
       _setError(e);
-      AppLogger.error('Failed to update product fields - InventoryController', error: e);
+      AppLogger.error(
+        'Failed to update product fields - InventoryController',
+        error: e,
+      );
       return false;
     } catch (e, stackTrace) {
-      _setError(DatabaseException(
-        'Gagal mengupdate produk',
-        operation: 'updateProductFields',
-        originalError: e,
-        stackTrace: stackTrace,
-      ));
+      _setError(
+        DatabaseException(
+          'Gagal mengupdate produk',
+          operation: 'updateProductFields',
+          originalError: e,
+          stackTrace: stackTrace,
+        ),
+      );
       AppLogger.error(
         'Unexpected error updating product fields - InventoryController',
         error: e,
@@ -295,15 +305,20 @@ class InventoryController extends ChangeNotifier {
       return true;
     } on AppException catch (e) {
       _setError(e);
-      AppLogger.error('Failed to delete product - InventoryController', error: e);
+      AppLogger.error(
+        'Failed to delete product - InventoryController',
+        error: e,
+      );
       return false;
     } catch (e, stackTrace) {
-      _setError(DatabaseException(
-        'Gagal menghapus produk',
-        operation: 'deleteProduct',
-        originalError: e,
-        stackTrace: stackTrace,
-      ));
+      _setError(
+        DatabaseException(
+          'Gagal menghapus produk',
+          operation: 'deleteProduct',
+          originalError: e,
+          stackTrace: stackTrace,
+        ),
+      );
       AppLogger.error(
         'Unexpected error deleting product - InventoryController',
         error: e,
@@ -341,19 +356,26 @@ class InventoryController extends ChangeNotifier {
         _lastDeletedProduct = null;
       }
 
-      AppLogger.info('Product deletion undone successfully - InventoryController');
+      AppLogger.info(
+        'Product deletion undone successfully - InventoryController',
+      );
       return success;
     } on AppException catch (e) {
       _setError(e);
-      AppLogger.error('Failed to undo product deletion - InventoryController', error: e);
+      AppLogger.error(
+        'Failed to undo product deletion - InventoryController',
+        error: e,
+      );
       return false;
     } catch (e, stackTrace) {
-      _setError(DatabaseException(
-        'Gagal memulihkan produk',
-        operation: 'undoDeleteProduct',
-        originalError: e,
-        stackTrace: stackTrace,
-      ));
+      _setError(
+        DatabaseException(
+          'Gagal memulihkan produk',
+          operation: 'undoDeleteProduct',
+          originalError: e,
+          stackTrace: stackTrace,
+        ),
+      );
       AppLogger.error(
         'Unexpected error undoing product deletion - InventoryController',
         error: e,
@@ -366,19 +388,14 @@ class InventoryController extends ChangeNotifier {
   }
 
   /// Add stock to a product
-  Future<bool> addStock({
-    required int productId,
-    required int quantity,
-  }) async {
+  Future<bool> addStock({required int productId, required int quantity}) async {
     try {
       AppLogger.ui('Adding stock to product', details: 'InventoryController');
       _setLoading(true);
       _clearError();
 
       // Find the product
-      final product = _products.firstWhere(
-        (p) => p.id == productId,
-      );
+      final product = _products.firstWhere((p) => p.id == productId);
 
       // Update stock using updateProductFields
       final newStock = product.stock + quantity;
@@ -400,12 +417,14 @@ class InventoryController extends ChangeNotifier {
 
       return success;
     } catch (e, stackTrace) {
-      _setError(DatabaseException(
-        'Gagal menambah stok',
-        operation: 'addStock',
-        originalError: e,
-        stackTrace: stackTrace,
-      ));
+      _setError(
+        DatabaseException(
+          'Gagal menambah stok',
+          operation: 'addStock',
+          originalError: e,
+          stackTrace: stackTrace,
+        ),
+      );
       AppLogger.error(
         'Failed to add stock - InventoryController',
         error: e,
@@ -426,14 +445,20 @@ class InventoryController extends ChangeNotifier {
 
   /// Filter products by category
   void filterByCategory(int? categoryId) {
-    AppLogger.ui('Filtering by category', details: 'InventoryController: $categoryId');
+    AppLogger.ui(
+      'Filtering by category',
+      details: 'InventoryController: $categoryId',
+    );
     _filterCategoryId = categoryId;
     _applySearch();
   }
 
   /// Filter products by supplier
   void filterBySupplier(int? supplierId) {
-    AppLogger.ui('Filtering by supplier', details: 'InventoryController: $supplierId');
+    AppLogger.ui(
+      'Filtering by supplier',
+      details: 'InventoryController: $supplierId',
+    );
     _filterSupplierId = supplierId;
     _applySearch();
   }
@@ -447,7 +472,10 @@ class InventoryController extends ChangeNotifier {
 
   /// Set sort option
   void setSortOption(ProductSortOption option) {
-    AppLogger.ui('Setting sort option', details: 'InventoryController: $option');
+    AppLogger.ui(
+      'Setting sort option',
+      details: 'InventoryController: $option',
+    );
     _sortOption = option;
     _applySearch();
   }
@@ -512,21 +540,25 @@ class InventoryController extends ChangeNotifier {
   void _applySearch() {
     _filteredProducts = _products.where((product) {
       // Search query filter
-      bool matchesSearch = _searchQuery.isEmpty ||
+      bool matchesSearch =
+          _searchQuery.isEmpty ||
           product.name.toLowerCase().contains(_searchQuery.toLowerCase());
 
       // Category filter
-      bool matchesCategory = _filterCategoryId == null ||
-          product.categoryId == _filterCategoryId;
+      bool matchesCategory =
+          _filterCategoryId == null || product.categoryId == _filterCategoryId;
 
       // Supplier filter
-      bool matchesSupplier = _filterSupplierId == null ||
-          product.supplierId == _filterSupplierId;
+      bool matchesSupplier =
+          _filterSupplierId == null || product.supplierId == _filterSupplierId;
 
       // In-stock only filter
       bool matchesStock = !_inStockOnly || product.stock > 0;
 
-      return matchesSearch && matchesCategory && matchesSupplier && matchesStock;
+      return matchesSearch &&
+          matchesCategory &&
+          matchesSupplier &&
+          matchesStock;
     }).toList();
 
     // Apply sorting
@@ -538,10 +570,14 @@ class InventoryController extends ChangeNotifier {
         _filteredProducts.sort((a, b) => b.name.compareTo(a.name));
         break;
       case ProductSortOption.priceAsc:
-        _filteredProducts.sort((a, b) => a.effectivePrice.compareTo(b.effectivePrice));
+        _filteredProducts.sort(
+          (a, b) => a.effectivePrice.compareTo(b.effectivePrice),
+        );
         break;
       case ProductSortOption.priceDesc:
-        _filteredProducts.sort((a, b) => b.effectivePrice.compareTo(a.effectivePrice));
+        _filteredProducts.sort(
+          (a, b) => b.effectivePrice.compareTo(a.effectivePrice),
+        );
         break;
       case ProductSortOption.stockLevel:
         _filteredProducts.sort((a, b) => b.stock.compareTo(a.stock));
@@ -576,12 +612,14 @@ class InventoryController extends ChangeNotifier {
       _setError(e);
       rethrow;
     } catch (e, stackTrace) {
-      _setError(DatabaseException(
-        'Gagal mengimpor produk',
-        operation: 'importProductsFromCsv',
-        originalError: e,
-        stackTrace: stackTrace,
-      ));
+      _setError(
+        DatabaseException(
+          'Gagal mengimpor produk',
+          operation: 'importProductsFromCsv',
+          originalError: e,
+          stackTrace: stackTrace,
+        ),
+      );
       rethrow;
     } finally {
       _setLoading(false);

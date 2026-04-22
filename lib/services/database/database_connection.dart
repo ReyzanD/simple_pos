@@ -26,7 +26,12 @@ class DatabaseConnection {
 
   // Retry configuration
   static const int _maxRetries = 4;
-  static const List<int> _retryDelays = [1000, 2000, 4000, 8000]; // Exponential backoff
+  static const List<int> _retryDelays = [
+    1000,
+    2000,
+    4000,
+    8000,
+  ]; // Exponential backoff
 
   // Queue for managing database operations during initialization
   final List<Completer<Database>> _pendingRequests = [];
@@ -44,7 +49,9 @@ class DatabaseConnection {
 
     // If initialization is in progress, queue the request
     if (_isInitialized) {
-      AppLogger.database('Database initialization in progress, queueing request');
+      AppLogger.database(
+        'Database initialization in progress, queueing request',
+      );
       final completer = Completer<Database>();
       _pendingRequests.add(completer);
       return completer.future;
@@ -104,9 +111,7 @@ class DatabaseConnection {
         // If this is not the last attempt, wait before retrying
         if (attempt < _maxRetries - 1) {
           final delay = _retryDelays[attempt];
-          AppLogger.database(
-            'Retrying after ${delay}ms delay',
-          );
+          AppLogger.database('Retrying after ${delay}ms delay');
           await Future.delayed(Duration(milliseconds: delay));
         }
       } catch (e, stackTrace) {
@@ -121,9 +126,7 @@ class DatabaseConnection {
         // If this is not the last attempt, wait before retrying
         if (attempt < _maxRetries - 1) {
           final delay = _retryDelays[attempt];
-          AppLogger.database(
-            'Retrying after ${delay}ms delay',
-          );
+          AppLogger.database('Retrying after ${delay}ms delay');
           await Future.delayed(Duration(milliseconds: delay));
         }
       }
@@ -184,7 +187,7 @@ class DatabaseConnection {
     // Enable foreign keys
     await db.execute('PRAGMA foreign_keys = ON');
     // Set WAL mode for better concurrency
-    await db.execute('PRAGMA journal_mode = WAL');
+    await db.rawQuery('PRAGMA journal_mode = WAL');
     AppLogger.database('Database configured with foreign keys and WAL mode');
   }
 

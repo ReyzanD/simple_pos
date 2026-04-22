@@ -4,13 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/constants/app_constants.dart';
 import 'core/theme/app_theme.dart';
 import 'features/shared/presentation/main_navigation.dart';
+import 'features/shared/presentation/providers.dart';
 
 void main() {
-  runApp(
-    const ProviderScope(
-      child: POSApp(),
-    ),
-  );
+  runApp(const ProviderScope(child: POSApp()));
 }
 
 class POSApp extends ConsumerWidget {

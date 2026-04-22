@@ -1,7 +1,8 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import '../../domain/entities/sales_report.dart';
-import '../../domain/usecases/get_sales_report_usecase.dart' show GetSalesReportUseCase, ReportPeriod;
+import '../../domain/usecases/get_sales_report_usecase.dart'
+    show GetSalesReportUseCase, ReportPeriod;
 import '../../domain/usecases/export_sales_to_csv_usecase.dart';
 import '../../../expenses/domain/usecases/get_profit_report_usecase.dart';
 import '../../../expenses/domain/entities/profit_report.dart';
@@ -26,9 +27,9 @@ class SalesReportController extends ChangeNotifier {
     required GetSalesReportUseCase getSalesReportUseCase,
     required ExportSalesToCsvUseCase exportSalesToCsvUseCase,
     GetProfitReportUseCase? getProfitReportUseCase,
-  })  : _getSalesReportUseCase = getSalesReportUseCase,
-        _exportSalesToCsvUseCase = exportSalesToCsvUseCase,
-        _getProfitReportUseCase = getProfitReportUseCase {
+  }) : _getSalesReportUseCase = getSalesReportUseCase,
+       _exportSalesToCsvUseCase = exportSalesToCsvUseCase,
+       _getProfitReportUseCase = getProfitReportUseCase {
     loadReport();
   }
 
@@ -88,7 +89,9 @@ class SalesReportController extends ChangeNotifier {
           );
           AppLogger.info('Profit report loaded successfully');
         } catch (e) {
-          AppLogger.warning('Failed to load profit report, continuing without it: $e');
+          AppLogger.warning(
+            'Failed to load profit report, continuing without it: $e',
+          );
           // Continue without profit data - not a critical failure
         }
       }
@@ -238,6 +241,12 @@ class SalesReportController extends ChangeNotifier {
     _chartPeriod = period;
     notifyListeners();
   }
+
+  @override
+  void dispose() {
+    super.dispose();
+    AppLogger.info('Disposing SalesReportController');
+  }
 }
 
 /// Date range preset for quick selection
@@ -252,22 +261,10 @@ enum DateRangePreset {
 }
 
 /// Chart type for visualization
-enum ChartType {
-  line,
-  bar,
-  area,
-}
+enum ChartType { line, bar, area }
 
 /// Metric to display on chart
-enum ChartMetric {
-  revenue,
-  profit,
-  transactions,
-}
+enum ChartMetric { revenue, profit, transactions }
 
 /// Period for chart grouping
-enum ChartPeriod {
-  daily,
-  weekly,
-  monthly,
-}
+enum ChartPeriod { daily, weekly, monthly }

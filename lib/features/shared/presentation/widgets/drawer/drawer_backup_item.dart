@@ -12,7 +12,7 @@ class DrawerBackupItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<BackupController>(
+    return Consumer(
       builder: (context, controller, _) {
         final backupCount = controller.backups.length;
 

@@ -1,9 +1,8 @@
-import 'package:provider/provider.dart';
-import 'package:provider/single_child_widget.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Core & Sales Dependencies
-import '../../../../core/database/database_helper.dart';
-import '../../../sales/data/repositories/transaction_repository_impl.dart';
+import 'package:simple_pos/core/providers/core_providers.dart';
+import 'package:simple_pos/features/sales/domain/providers/sales_providers.dart';
 
 // Expense Data & Domain
 import '../../data/datasources/expense_local_datasource_impl.dart';
@@ -19,62 +18,75 @@ import '../../domain/usecases/get_profit_report_usecase.dart';
 // Expense Controller
 import '../../presentation/controllers/expense_controller.dart';
 
-List<SingleChildWidget> createExpensesProviders() {
-  return [
-    // --- DATA LAYER ---
-    ProxyProvider<DatabaseHelper, ExpenseLocalDataSourceImpl>(
-      update: (_, db, _) => ExpenseLocalDataSourceImpl(databaseHelper: db),
-    ),
+// --- DATA LAYER ---
 
-    // --- REPOSITORY LAYER ---
-    ProxyProvider<ExpenseLocalDataSourceImpl, ExpenseRepositoryImpl>(
-      update: (_, ds, _) => ExpenseRepositoryImpl(localDataSource: ds),
-    ),
+final expenseLocalDataSourceProvider = Provider<ExpenseLocalDataSourceImpl>((
+  ref,
+) {
+  final db = ref.watch(databaseHelperProvider);
+  return ExpenseLocalDataSourceImpl(databaseHelper: db);
+});
 
-    // --- DOMAIN LAYER ---
-    ProxyProvider<ExpenseRepositoryImpl, AddExpenseUseCase>(
-      update: (_, repo, _) => AddExpenseUseCase(repo),
-    ),
-    ProxyProvider<ExpenseRepositoryImpl, GetExpensesUseCase>(
-      update: (_, repo, _) => GetExpensesUseCase(repo),
-    ),
-    ProxyProvider<ExpenseRepositoryImpl, UpdateExpenseUseCase>(
-      update: (_, repo, _) => UpdateExpenseUseCase(repo),
-    ),
-    ProxyProvider<ExpenseRepositoryImpl, DeleteExpenseUseCase>(
-      update: (_, repo, _) => DeleteExpenseUseCase(repo),
-    ),
-    ProxyProvider<ExpenseRepositoryImpl, GetExpenseSummaryUseCase>(
-      update: (_, repo, _) => GetExpenseSummaryUseCase(repo),
-    ),
-    ProxyProvider<ExpenseRepositoryImpl, GetExpenseCountByCategoryUseCase>(
-      update: (_, repo, _) =>
-          GetExpenseCountByCategoryUseCase(repository: repo),
-    ),
+// --- REPOSITORY LAYER ---
 
-    // Profit Report: Depends on both Expenses and Sales repositories
-    ProxyProvider2<
-      ExpenseRepositoryImpl,
-      TransactionRepositoryImpl,
-      GetProfitReportUseCase
-    >(
-      update: (_, expenseRepo, transactionRepo, _) => GetProfitReportUseCase(
-        expenseRepository: expenseRepo,
-        transactionRepository: transactionRepo,
-      ),
-    ),
+final expenseRepositoryProvider = Provider<ExpenseRepositoryImpl>((ref) {
+  return ExpenseRepositoryImpl(
+    localDataSource: ref.watch(expenseLocalDataSourceProvider),
+  );
+});
 
-    // --- PRESENTATION LAYER ---
-    ChangeNotifierProvider<ExpenseController>(
-      create: (context) => ExpenseController(
-        addExpenseUseCase: context.read<AddExpenseUseCase>(),
-        getExpensesUseCase: context.read<GetExpensesUseCase>(),
-        updateExpenseUseCase: context.read<UpdateExpenseUseCase>(),
-        deleteExpenseUseCase: context.read<DeleteExpenseUseCase>(),
-        getExpenseSummaryUseCase: context.read<GetExpenseSummaryUseCase>(),
-        getExpenseCountByCategoryUseCase: context
-            .read<GetExpenseCountByCategoryUseCase>(),
-      ),
+// --- DOMAIN LAYER ---
+
+final addExpenseUseCaseProvider = Provider<AddExpenseUseCase>((ref) {
+  return AddExpenseUseCase(ref.watch(expenseRepositoryProvider));
+});
+
+final getExpensesUseCaseProvider = Provider<GetExpensesUseCase>((ref) {
+  return GetExpensesUseCase(ref.watch(expenseRepositoryProvider));
+});
+
+final updateExpenseUseCaseProvider = Provider<UpdateExpenseUseCase>((ref) {
+  return UpdateExpenseUseCase(ref.watch(expenseRepositoryProvider));
+});
+
+final deleteExpenseUseCaseProvider = Provider<DeleteExpenseUseCase>((ref) {
+  return DeleteExpenseUseCase(ref.watch(expenseRepositoryProvider));
+});
+
+final getExpenseSummaryUseCaseProvider = Provider<GetExpenseSummaryUseCase>((
+  ref,
+) {
+  return GetExpenseSummaryUseCase(ref.watch(expenseRepositoryProvider));
+});
+
+final getExpenseCountByCategoryUseCaseProvider =
+    Provider<GetExpenseCountByCategoryUseCase>((ref) {
+      return GetExpenseCountByCategoryUseCase(
+        repository: ref.watch(expenseRepositoryProvider),
+      );
+    });
+
+// Profit Report: depends on both Expense and Transaction repositories
+final getProfitReportUseCaseProvider = Provider<GetProfitReportUseCase>((ref) {
+  return GetProfitReportUseCase(
+    expenseRepository: ref.watch(expenseRepositoryProvider),
+    transactionRepository: ref.watch(transactionRepositoryProvider),
+  );
+});
+
+// --- PRESENTATION LAYER ---
+
+final expenseControllerProvider = ChangeNotifierProvider<ExpenseController>((
+  ref,
+) {
+  return ExpenseController(
+    addExpenseUseCase: ref.watch(addExpenseUseCaseProvider),
+    getExpensesUseCase: ref.watch(getExpensesUseCaseProvider),
+    updateExpenseUseCase: ref.watch(updateExpenseUseCaseProvider),
+    deleteExpenseUseCase: ref.watch(deleteExpenseUseCaseProvider),
+    getExpenseSummaryUseCase: ref.watch(getExpenseSummaryUseCaseProvider),
+    getExpenseCountByCategoryUseCase: ref.watch(
+      getExpenseCountByCategoryUseCaseProvider,
     ),
-  ];
-}
+  );
+});

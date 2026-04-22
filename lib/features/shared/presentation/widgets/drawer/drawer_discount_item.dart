@@ -12,7 +12,7 @@ class DrawerDiscountItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<DiscountController>(
+    return Consumer(
       builder: (context, controller, _) {
         return ListTile(
           contentPadding: EdgeInsets.symmetric(

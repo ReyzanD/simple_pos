@@ -11,7 +11,7 @@ class DrawerThemeToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<ThemeController>(
+    return Consumer(
       builder: (context, themeController, _) {
         return ListTile(
           contentPadding: EdgeInsets.symmetric(

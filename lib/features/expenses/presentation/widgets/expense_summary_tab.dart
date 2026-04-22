@@ -44,7 +44,7 @@ class _ExpenseSummaryTabState extends State<ExpenseSummaryTab> {
           },
         ),
         Expanded(
-          child: Consumer<ExpenseController>(
+          child: Consumer(
             builder: (context, controller, _) {
               if (controller.isLoading) {
                 return const Center(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../shared/presentation/providers.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../controllers/pos_controller.dart';
 import '../../../inventory/presentation/controllers/category_controller.dart';
@@ -37,16 +38,16 @@ import '../widgets/pos/product_grid_widget.dart';
 import '../widgets/pos/pos_shimmer_loading_grid.dart';
 
 /// Point of Sale screen with modern design
-class POSScreen extends StatefulWidget {
+class POSScreen extends ConsumerStatefulWidget {
   final Future<void> Function()? onCheckoutSuccess;
 
   const POSScreen({super.key, this.onCheckoutSuccess});
 
   @override
-  State<POSScreen> createState() => POSScreenState();
+  ConsumerState<POSScreen> createState() => POSScreenState();
 }
 
-class POSScreenState extends State<POSScreen>
+class POSScreenState extends ConsumerState<POSScreen>
     with WidgetsBindingObserver, AutomaticKeepAliveClientMixin {
   final GlobalKey<CartFloatingButtonState> _cartIconKey = GlobalKey();
   final List<OverlayEntry> _overlayEntries = [];
@@ -69,10 +70,10 @@ class POSScreenState extends State<POSScreen>
       _checkActiveShift();
       // Auto-switch to list view on very small screens
       if (mounted && ResponsiveHelper.isVerySmallScreen(context)) {
-        context.read<POSController>().setViewMode(ViewMode.list);
+        ref.read(posControllerProvider).setViewMode(ViewMode.list);
       }
-      context.read<POSController>().loadProducts();
-      context.read<CategoryController>().loadCategories();
+      ref.read(posControllerProvider).loadProducts();
+      ref.read(categoryControllerProvider).loadCategories();
       _hasLoadedInitially = true;
       _lastRefreshTime = DateTime.now();
     });
@@ -80,7 +81,7 @@ class POSScreenState extends State<POSScreen>
 
   /// Check for active shift and prompt to open if none exists
   Future<void> _checkActiveShift() async {
-    final shiftController = context.read<ShiftController>();
+    final shiftController = ref.read(shiftControllerProvider);
     await shiftController.loadCurrentShift();
 
     if (!shiftController.hasActiveShift) {
@@ -114,7 +115,7 @@ class POSScreenState extends State<POSScreen>
     // Refresh if more than 2 seconds have passed since last refresh
     if (_lastRefreshTime != null &&
         now.difference(_lastRefreshTime!).inSeconds >= 2) {
-      context.read<POSController>().loadProducts();
+      ref.read(posControllerProvider).loadProducts();
       _lastRefreshTime = now;
     }
   }
@@ -122,7 +123,7 @@ class POSScreenState extends State<POSScreen>
   /// Public method to refresh products - can be called from MainNavigation
   void refreshProducts() {
     if (_hasLoadedInitially) {
-      context.read<POSController>().loadProducts();
+      ref.read(posControllerProvider).loadProducts();
       _lastRefreshTime = DateTime.now();
     }
   }
@@ -147,7 +148,7 @@ class POSScreenState extends State<POSScreen>
   @override
   Widget build(BuildContext context) {
     super.build(context); // Required for AutomaticKeepAliveClientMixin
-    final controller = context.watch<POSController>();
+    final controller = ref.watch(posControllerProvider);
 
     // Show scan mode if active
     if (controller.isInScanMode) {
@@ -203,8 +204,9 @@ class POSScreenState extends State<POSScreen>
         padding: EdgeInsets.only(
           bottom: ResponsiveHelper.isVerySmallScreen(context) ? 80 : 90,
         ), // ✅ Updated for new navbar height
-        child: Consumer<POSController>(
-          builder: (context, controller, _) {
+        child: Consumer(
+          builder: (context, ref, _) {
+            final controller = ref.watch(posControllerProvider);
             final itemCount = controller.cartItemCount;
             return BrutalFab(
               label: itemCount > 0 ? 'Cart ($itemCount)' : 'Cart',
@@ -216,8 +218,11 @@ class POSScreenState extends State<POSScreen>
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-      body: Consumer3<POSController, CategoryController, SalesHistoryController>(
-        builder: (context, posController, categoryController, salesController, _) {
+      body: Consumer(
+        builder: (context, ref, _) {
+          final posController = ref.watch(posControllerProvider);
+          final categoryController = ref.watch(categoryControllerProvider);
+          final salesController = ref.watch(salesHistoryControllerProvider);
           // Show shimmer loading grid
           if (posController.isLoading && posController.products.isEmpty) {
             return const POSShimmerLoadingGrid();
@@ -323,10 +328,10 @@ class POSScreenState extends State<POSScreen>
   }
 
   void _handleAddToCart(BuildContext context, Product product) async {
-    final controller = context.read<POSController>();
+    final controller = ref.read(posControllerProvider);
 
     if (product.hasVariants) {
-      final variantController = context.read<ProductVariantController>();
+      final variantController = ref.read(productVariantControllerProvider);
       await variantController.loadVariants(product.id!);
 
       if (!mounted) return; // ✅
@@ -446,7 +451,7 @@ class POSScreenState extends State<POSScreen>
     if (context.mounted) {
       Navigator.of(context).pop();
     }
-    final salesController = context.read<SalesHistoryController>();
+    final salesController = ref.read(salesHistoryControllerProvider);
     final success = await showCheckoutDialog(
       context: context,
       cart: controller.cart,
@@ -517,7 +522,7 @@ class POSScreenState extends State<POSScreen>
     if (!mounted) {
       return; // ✅ top-level State.mounted guard covers everything below
     }
-    final controller = context.read<POSController>();
+    final controller = ref.read(posControllerProvider);
     final product = controller.products.firstWhere(
       (p) => p.barcode == barcode,
       orElse: () => controller.products.firstWhere(

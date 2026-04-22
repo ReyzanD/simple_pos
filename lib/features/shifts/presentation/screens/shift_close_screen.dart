@@ -85,7 +85,7 @@ class _ShiftCloseScreenState extends State<ShiftCloseScreen> {
         elevation: 0,
       ),
       body: SafeArea(
-        child: Consumer<ShiftController>(
+        child: Consumer(
           builder: (context, controller, _) {
             final shift = controller.currentShift;
 

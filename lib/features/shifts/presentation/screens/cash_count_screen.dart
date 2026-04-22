@@ -46,7 +46,7 @@ class _CashCountScreenState extends State<CashCountScreen> {
         foregroundColor: Colors.white,
         elevation: 0,
       ),
-      body: Consumer<ShiftController>(
+      body: Consumer(
         builder: (context, controller, _) {
           return Column(
             children: [

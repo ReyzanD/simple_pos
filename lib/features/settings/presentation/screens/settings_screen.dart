@@ -16,7 +16,7 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Consumer<SettingsController>(
+    return Consumer(
       builder: (context, controller, _) {
         return Scaffold(
           appBar: AppBar(
@@ -85,7 +85,7 @@ class SettingsScreen extends StatelessWidget {
                       title: 'Tampilan',
                       icon: Icons.palette_outlined,
                       children: [
-                        Consumer<ThemeController>(
+                        Consumer(
                           builder: (context, themeController, _) {
                             return SwitchListTile(
                               title: const Text('Mode Gelap'),
