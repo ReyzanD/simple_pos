@@ -452,6 +452,9 @@ class POSScreenState extends ConsumerState<POSScreen>
   }
 
   void _handleCheckout(BuildContext context, POSController controller) async {
+    // Save ScaffoldMessenger reference before async operations
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+
     if (context.mounted) {
       Navigator.of(context).pop();
     }
@@ -492,7 +495,7 @@ class POSScreenState extends ConsumerState<POSScreen>
       }
     } else if (controller.hasError) {
       if (!mounted) return; // ✅ State.mounted guard
-      ScaffoldMessenger.of(context).showSnackBar(
+      scaffoldMessenger.showSnackBar(
         SnackBar(
           content: Text(controller.error!.userMessage),
           backgroundColor: AppTheme.errorColor,

@@ -5,7 +5,6 @@ import 'package:simple_pos/core/exceptions/app_exceptions.dart';
 import 'package:simple_pos/features/inventory/domain/entities/product.dart';
 import 'package:simple_pos/features/inventory/domain/usecases/get_products_usecase.dart';
 import 'package:simple_pos/features/inventory/domain/repositories/product_repository.dart';
-import '../../../../helpers/test_constants.dart';
 
 // Generate mocks
 @GenerateMocks([ProductRepository])

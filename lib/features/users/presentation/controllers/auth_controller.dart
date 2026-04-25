@@ -297,9 +297,4 @@ class AuthController extends ChangeNotifier {
   void _clearError() {
     _errorMessage = null;
   }
-
-  @override
-  void dispose() {
-    super.dispose();
-  }
 }

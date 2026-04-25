@@ -2,7 +2,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:simple_pos/core/exceptions/app_exceptions.dart' as app_exceptions;
 import 'package:simple_pos/services/database/database_connection.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
-import 'package:path/path.dart' as p;
 
 void main() {
   // Setup FFI for testing

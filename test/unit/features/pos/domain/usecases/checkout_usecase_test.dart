@@ -1,7 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:mockito/annotations.dart';
-import 'package:simple_pos/core/exceptions/app_exceptions.dart';
 import 'package:simple_pos/features/inventory/domain/entities/product.dart';
 import 'package:simple_pos/features/inventory/domain/repositories/product_repository.dart';
 import 'package:simple_pos/features/pos/domain/entities/cart_item.dart';

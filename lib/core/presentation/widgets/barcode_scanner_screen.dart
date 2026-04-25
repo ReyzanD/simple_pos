@@ -5,6 +5,7 @@ import '../../../../core/theme.dart';
 import '../../../../core/theme/neo_brutal_theme.dart';
 import '../../../../core/utils/responsive_helper.dart';
 import '../../../../core/utils/audio_feedback_helper.dart';
+import '../../../../core/utils/logger.dart' as logger;
 
 // Import extracted scanner widgets
 import 'scanner/scanner_top_bar.dart';
@@ -95,6 +96,10 @@ class BarcodeScannerScreen extends StatefulWidget {
   /// Callback for batch complete (only used in continuous mode)
   final Function(List<String> barcodes)? onBatchComplete;
 
+  /// Callback when user confirms a scanned item in preview mode
+  /// Returns true to close scanner, false to keep it open
+  final Function(String barcode, Map<String, String>? productInfo)? onConfirmWithProduct;
+
   /// Scanner behavior mode
   final ScannerMode mode;
 
@@ -124,6 +129,7 @@ class BarcodeScannerScreen extends StatefulWidget {
     super.key,
     this.onScanned,
     this.onBatchComplete,
+    this.onConfirmWithProduct,
     this.mode = ScannerMode.preview,
     this.title = 'Scan Barcode',
     this.instruction = 'Align barcode within frame',
@@ -138,7 +144,7 @@ class BarcodeScannerScreen extends StatefulWidget {
   State<BarcodeScannerScreen> createState() => _BarcodeScannerScreenState();
 }
 
-class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
+class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> with WidgetsBindingObserver {
   final MobileScannerController _controller = MobileScannerController();
   bool _isScanning = true;
   String? _scannedBarcode;
@@ -160,6 +166,8 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
   @override
   void initState() {
     super.initState();
+    logger.AppLogger.info('BarcodeScannerScreen: initState called', tag: 'CAMERA');
+    WidgetsBinding.instance.addObserver(this);
     AudioFeedbackHelper.instance.init();
     _loadSettings();
     _loadHistory();
@@ -167,22 +175,71 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
 
   @override
   void dispose() {
+    logger.AppLogger.info('BarcodeScannerScreen: dispose called', tag: 'CAMERA');
+    logger.AppLogger.info('Note: BufferQueue abandonment errors are expected during camera stop and can be ignored', tag: 'CAMERA');
+    WidgetsBinding.instance.removeObserver(this);
     _saveSettings();
-    // Let MobileScanner widget handle its own cleanup
-    // Manual stop can cause race conditions with the widget's lifecycle
+    // Properly dispose the camera controller to prevent resource leaks
+    // BufferQueue abandonment errors are expected when stopping a camera that's processing frames
+    try {
+      logger.AppLogger.debug('Disposing camera controller...', tag: 'CAMERA');
+      _controller.dispose();
+      logger.AppLogger.info('Camera controller disposed successfully', tag: 'CAMERA');
+    } catch (e) {
+      logger.AppLogger.error('Error disposing camera controller', error: e, tag: 'CAMERA');
+    }
     super.dispose();
   }
 
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    logger.AppLogger.info('App lifecycle changed to: $state', tag: 'CAMERA');
+
+    switch (state) {
+      case AppLifecycleState.resumed:
+        logger.AppLogger.info('App resumed, camera should be active', tag: 'CAMERA');
+        break;
+      case AppLifecycleState.inactive:
+      case AppLifecycleState.paused:
+      case AppLifecycleState.detached:
+        logger.AppLogger.warning('App inactive/paused/detached, stopping camera', tag: 'CAMERA');
+        try {
+          _controller.stop();
+          logger.AppLogger.info('Camera stopped due to app lifecycle change', tag: 'CAMERA');
+        } catch (e) {
+          logger.AppLogger.error('Error stopping camera on lifecycle change', error: e, tag: 'CAMERA');
+        }
+        break;
+      case AppLifecycleState.hidden:
+        logger.AppLogger.warning('App hidden, stopping camera', tag: 'CAMERA');
+        try {
+          _controller.stop();
+          logger.AppLogger.info('Camera stopped due to app hidden', tag: 'CAMERA');
+        } catch (e) {
+          logger.AppLogger.error('Error stopping camera on app hidden', error: e, tag: 'CAMERA');
+        }
+        break;
+    }
+
+    super.didChangeAppLifecycleState(state);
+  }
+
   Future<void> _loadSettings() async {
+    logger.AppLogger.debug('Loading camera settings...', tag: 'CAMERA');
     final prefs = await SharedPreferences.getInstance();
     final useFrontCamera = prefs.getBool(_cameraFacingKey) ?? false;
+    logger.AppLogger.debug('Front camera preference: $useFrontCamera', tag: 'CAMERA');
+
     // Set camera facing after a brief delay to ensure camera is ready
     if (useFrontCamera) {
       await Future.delayed(const Duration(milliseconds: 100));
       if (mounted) {
         try {
+          logger.AppLogger.debug('Switching to front camera during init...', tag: 'CAMERA');
           _controller.switchCamera();
+          logger.AppLogger.info('Front camera set successfully', tag: 'CAMERA');
         } catch (e) {
+          logger.AppLogger.error('Error switching to front camera during init', error: e, tag: 'CAMERA');
           // Ignore camera switch errors during initialization
         }
       }
@@ -225,12 +282,15 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
   }
 
   void _onBarcodeDetected(BarcodeCapture capture) {
+    logger.AppLogger.debug('_onBarcodeDetected called, isScanning: $_isScanning', tag: 'CAMERA');
+
     if (!_isScanning) return;
 
     final barcode = capture.barcodes.first;
     if (barcode.rawValue != null && barcode.rawValue!.isNotEmpty) {
       // Detect format
       final formatName = barcode.getFormatName();
+      logger.AppLogger.info('Barcode detected: ${barcode.rawValue} (format: $formatName)', tag: 'CAMERA');
 
       setState(() {
         _scannedBarcode = barcode.rawValue;
@@ -245,6 +305,7 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
       if (widget.onValidate != null) {
         final error = widget.onValidate!(barcode.rawValue!);
         if (error != null) {
+          logger.AppLogger.warning('Barcode validation failed: $error', tag: 'CAMERA');
           setState(() {
             _validationError = error;
             _isScanning = true; // Allow scanning again
@@ -262,22 +323,44 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
         setState(() {
           _productInfo = productInfo;
         });
+        logger.AppLogger.debug('Product lookup result: $productInfo', tag: 'CAMERA');
       }
 
       // Handle based on mode
       if (widget.mode == ScannerMode.instant) {
-        // Instant mode: return immediately after short delay
-        Future.delayed(const Duration(milliseconds: 300), () {
-          if (mounted) {
-            widget.onScanned?.call(barcode.rawValue!);
-            Navigator.pop(context, barcode.rawValue);
-          }
+        logger.AppLogger.info('Instant mode: stopping camera and returning', tag: 'CAMERA');
+
+        // Disable scanning immediately to prevent race condition
+        setState(() {
+          _isScanning = false;
         });
+        logger.AppLogger.info('Scanning disabled in instant mode', tag: 'CAMERA');
+
+        // Instant mode: stop camera and return immediately
+        try {
+          logger.AppLogger.debug('Stopping camera in instant mode...', tag: 'CAMERA');
+          _controller.stop();
+          logger.AppLogger.info('Camera stopped in instant mode', tag: 'CAMERA');
+        } catch (e) {
+          logger.AppLogger.error('Error stopping camera in instant mode', error: e, tag: 'CAMERA');
+          // Continue anyway - camera will be disposed
+        }
+
+        // Call the callback and let IT handle navigation
+        // This prevents double navigation issues
+        logger.AppLogger.info('Instant mode: calling onScanned callback', tag: 'CAMERA');
+        widget.onScanned?.call(barcode.rawValue!);
+        logger.AppLogger.info('Instant mode: waiting for callback to handle navigation (BufferQueue errors are expected)', tag: 'CAMERA');
       } else if (widget.mode == ScannerMode.continuous) {
+        logger.AppLogger.info('Continuous mode: adding barcode to list', tag: 'CAMERA');
         // Continuous mode: add to list and keep scanning
         _addContinuousScan(barcode.rawValue!);
+      } else {
+        logger.AppLogger.info('Preview mode: waiting for user confirmation', tag: 'CAMERA');
       }
       // Preview mode: wait for user confirmation (tap on scan result)
+    } else {
+      logger.AppLogger.warning('Barcode detected but value is null or empty', tag: 'CAMERA');
     }
   }
 
@@ -304,16 +387,95 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
   }
 
   void _confirmScan() {
+    logger.AppLogger.info('_confirmScan called with barcode: $_scannedBarcode', tag: 'CAMERA');
+
     if (_scannedBarcode != null) {
-      widget.onScanned?.call(_scannedBarcode!);
-      Navigator.pop(context, _scannedBarcode);
+      // Check if we have the new callback that keeps scanner open
+      if (widget.onConfirmWithProduct != null) {
+        logger.AppLogger.info('Using onConfirmWithProduct callback (scanner stays open)', tag: 'CAMERA');
+
+        // Call the callback with product info
+        final shouldClose = widget.onConfirmWithProduct!(_scannedBarcode!, _productInfo);
+        logger.AppLogger.info('onConfirmWithProduct returned: $shouldClose', tag: 'CAMERA');
+
+        if (shouldClose) {
+          // Close scanner if callback returns true
+          logger.AppLogger.info('Closing scanner per callback request', tag: 'CAMERA');
+          try {
+            Navigator.pop(context);
+          } catch (e) {
+            logger.AppLogger.error('Error closing scanner', error: e, tag: 'CAMERA');
+          }
+        } else {
+          // Keep scanner open and re-enable scanning
+          logger.AppLogger.info('Keeping scanner open, re-enabling scanning', tag: 'CAMERA');
+          setState(() {
+            _isScanning = true;
+            _scannedBarcode = null;
+            _productInfo = null;
+          });
+        }
+      } else {
+        // Original behavior - disable scanning and let callback handle navigation
+        logger.AppLogger.info('Using original onScanned callback (scanner may close)', tag: 'CAMERA');
+
+        // Disable scanning immediately to prevent race condition
+        setState(() {
+          _isScanning = false;
+        });
+        logger.AppLogger.info('Scanning disabled', tag: 'CAMERA');
+
+        // Stop camera before navigation to prevent BufferQueue errors
+        try {
+          logger.AppLogger.debug('Stopping camera before navigation...', tag: 'CAMERA');
+          _controller.stop();
+          logger.AppLogger.info('Camera stopped successfully', tag: 'CAMERA');
+        } catch (e) {
+          logger.AppLogger.error('Error stopping camera', error: e, tag: 'CAMERA');
+          // Continue anyway - camera will be disposed
+        }
+
+        // Call the callback and let IT handle navigation
+        widget.onScanned?.call(_scannedBarcode!);
+        logger.AppLogger.info('onScanned callback called', tag: 'CAMERA');
+
+        // Note: BufferQueue abandonment errors are expected and harmless during camera stop
+        logger.AppLogger.info('Waiting for callback to handle navigation (BufferQueue errors are expected)', tag: 'CAMERA');
+      }
+    } else {
+      logger.AppLogger.warning('_confirmScan called but no barcode available', tag: 'CAMERA');
     }
   }
 
   void _completeContinuousScan() {
+    logger.AppLogger.info('_completeContinuousScan called with ${_scannedBarcodes.length} barcodes', tag: 'CAMERA');
+
     if (_scannedBarcodes.isNotEmpty) {
+      // Disable scanning immediately to prevent race condition
+      setState(() {
+        _isScanning = false;
+      });
+      logger.AppLogger.info('Scanning disabled', tag: 'CAMERA');
+
+      // Stop camera before navigation to prevent BufferQueue errors
+      try {
+        logger.AppLogger.debug('Stopping camera before navigation...', tag: 'CAMERA');
+        _controller.stop();
+        logger.AppLogger.info('Camera stopped successfully', tag: 'CAMERA');
+      } catch (e) {
+        logger.AppLogger.error('Error stopping camera', error: e, tag: 'CAMERA');
+        // Continue anyway - camera will be disposed
+      }
+
+      // Call the callback and let IT handle navigation
+      // This prevents double navigation issues
       widget.onBatchComplete?.call(_scannedBarcodes);
-      Navigator.pop(context, _scannedBarcodes);
+      logger.AppLogger.info('onBatchComplete callback called', tag: 'CAMERA');
+
+      // Note: BufferQueue abandonment errors are expected and harmless during camera stop
+      logger.AppLogger.info('Waiting for callback to handle navigation (BufferQueue errors are expected)', tag: 'CAMERA');
+    } else {
+      logger.AppLogger.warning('_completeContinuousScan called but no barcodes available', tag: 'CAMERA');
     }
   }
 
@@ -456,8 +618,19 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
             right: 0,
             child: ScannerTopBar(
               title: widget.title,
-              onClose: () => Navigator.pop(context),
-              onToggleFlash: () => _controller.toggleTorch(),
+              onClose: () {
+                logger.AppLogger.info('Close button pressed, navigating back', tag: 'CAMERA');
+                Navigator.pop(context);
+              },
+              onToggleFlash: () {
+                logger.AppLogger.debug('Toggling flash...', tag: 'CAMERA');
+                try {
+                  _controller.toggleTorch();
+                  logger.AppLogger.debug('Flash toggled successfully', tag: 'CAMERA');
+                } catch (e) {
+                  logger.AppLogger.error('Error toggling flash', error: e, tag: 'CAMERA');
+                }
+              },
               isFlashOn: _controller.torchEnabled,
             ),
           ),
@@ -482,7 +655,15 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
               onManualEntry: _showManualEntryDialog,
               onShowHistory: _showHistorySheet,
               onCompleteContinuous: _completeContinuousScan,
-              onFlipCamera: () => _controller.switchCamera(),
+              onFlipCamera: () {
+                logger.AppLogger.info('Switching camera...', tag: 'CAMERA');
+                try {
+                  _controller.switchCamera();
+                  logger.AppLogger.info('Camera switched successfully', tag: 'CAMERA');
+                } catch (e) {
+                  logger.AppLogger.error('Error switching camera', error: e, tag: 'CAMERA');
+                }
+              },
             ),
           ),
         ],
@@ -493,7 +674,7 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
 
 /// Separate camera view widget that doesn't rebuild on state changes
 /// This prevents the camera from becoming choppy
-class _ScannerView extends StatelessWidget {
+class _ScannerView extends StatefulWidget {
   final MobileScannerController controller;
   final Function(BarcodeCapture) onDetect;
 
@@ -503,10 +684,22 @@ class _ScannerView extends StatelessWidget {
   });
 
   @override
+  State<_ScannerView> createState() => _ScannerViewState();
+}
+
+class _ScannerViewState extends State<_ScannerView> {
+  @override
   Widget build(BuildContext context) {
+    logger.AppLogger.debug('_ScannerView building...', tag: 'CAMERA');
     return MobileScanner(
-      controller: controller,
-      onDetect: onDetect,
+      controller: widget.controller,
+      onDetect: (capture) {
+        logger.AppLogger.debug('Barcode capture detected in _ScannerView', tag: 'CAMERA');
+        widget.onDetect(capture);
+      },
+      onDetectError: (error, stackTrace) {
+        logger.AppLogger.error('MobileScanner detection error occurred', error: error, stackTrace: stackTrace, tag: 'CAMERA');
+      },
     );
   }
 }

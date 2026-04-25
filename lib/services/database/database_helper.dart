@@ -372,6 +372,11 @@ class DatabaseHelper {
         await _migrateToV16(db);
       }
 
+      if (oldVersion < 17) {
+        // Migration from version 16 to 17 (add variant_id to transaction_items)
+        await _migrateToV17(db);
+      }
+
       AppLogger.database('Database upgrade completed successfully');
     } catch (e, stackTrace) {
       AppLogger.error(
@@ -978,6 +983,25 @@ class DatabaseHelper {
       // Don't throw - audit logs are important but not critical
       AppLogger.database('Continuing without audit logs');
     }
+  }
+
+  /// Migration from version 16 to 17
+  /// Add variant_id column to transaction_items table for product variants support
+  Future _migrateToV17(Database db) async {
+    AppLogger.database('Migrating database to v17 (adding variant_id to transaction_items)');
+
+    try {
+      // Add variant_id column to transaction_items table
+      await db.execute('''
+        ALTER TABLE transaction_items ADD COLUMN variant_id INTEGER DEFAULT 0
+      ''');
+      AppLogger.database('Added variant_id column to transaction_items table');
+    } catch (e) {
+      // Column might already exist, log but don't fail
+      AppLogger.database('variant_id column migration (may already exist): $e');
+    }
+
+    AppLogger.database('Database migration to v17 completed');
   }
 
   /// Simple password hash for demo purposes

@@ -537,7 +537,7 @@ class InventoryScreen extends ConsumerWidget {
 class _ProductDetailScreen extends StatelessWidget {
   final Product product;
 
-  const _ProductDetailScreen({super.key, required this.product});
+  const _ProductDetailScreen({required this.product});
 
   @override
   Widget build(BuildContext context) {

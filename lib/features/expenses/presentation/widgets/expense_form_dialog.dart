@@ -36,7 +36,6 @@ class _ExpenseFormDialogContent extends StatefulWidget {
   final dynamic controller;
 
   const _ExpenseFormDialogContent({
-    super.key,
     required this.expense,
     required this.controller,
   });

@@ -5,6 +5,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/modern_button.dart';
 import '../../domain/entities/cart_item.dart';
+import '../../../inventory/domain/entities/product.dart';
 import '../../../shared/presentation/providers.dart';
 
 /// Full-screen scan mode for rapid barcode scanning
@@ -235,18 +236,31 @@ class _ScanModeScreenState extends ConsumerState<ScanModeScreen>
     }
 
     // Find product by barcode
-    final product = controller.products.firstWhere(
-      (p) => p.barcode == barcode,
-      orElse: () => controller.products.first,
-    );
-
-    if (product.id != null) {
-      // Add to cart
-      controller.addToCart(product);
-
-      // Haptic feedback
-      HapticFeedback.lightImpact();
+    Product? product;
+    try {
+      product = controller.products.firstWhere((p) => p.barcode == barcode);
+    } catch (e) {
+      // Product not found - firstWhere throws StateError
+      product = null;
     }
+
+    if (product == null) {
+      // Product not found
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Produk tidak ditemukan'),
+          backgroundColor: Colors.orange,
+          duration: Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+
+    // Add to cart
+    controller.addToCart(product);
+
+    // Haptic feedback
+    HapticFeedback.lightImpact();
   }
 
   void _holdOrder(dynamic controller) {
@@ -261,8 +275,7 @@ class _ScanModeScreenState extends ConsumerState<ScanModeScreen>
   }
 
   void _checkout(dynamic controller) {
+    // Exit scan mode - POS screen will handle checkout
     controller.exitScanMode();
-    // Navigate to checkout
-    Navigator.pop(context);
   }
 }

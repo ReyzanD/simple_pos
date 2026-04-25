@@ -54,6 +54,15 @@ class _AddProductDialogState extends State<AddProductDialog> {
   bool _isSubmitting = false;
 
   @override
+  void initState() {
+    super.initState();
+    // Auto-fill barcode if provided
+    if (widget.initialBarcode != null) {
+      _barcodeController.text = widget.initialBarcode!;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Dialog(
       backgroundColor: Colors.transparent,

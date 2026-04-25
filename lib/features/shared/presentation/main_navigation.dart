@@ -17,10 +17,12 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/animations/animation_constants.dart';
 import '../../../../core/utils/haptic_helper.dart';
 import '../../../../core/utils/responsive_helper.dart';
+import '../../../../core/utils/logger.dart' as logger;
 import 'providers.dart';
 import 'drawer_header.dart';
 import 'drawer_sections.dart';
 import '../../users/presentation/controllers/auth_controller.dart';
+import '../../inventory/presentation/widgets/add_product_dialog.dart';
 
 /// Main navigation widget with floating glassmorphic bottom tab bar
 /// Shows login screen if not authenticated, otherwise shows main app
@@ -185,57 +187,163 @@ class MainNavigationState extends ConsumerState<MainNavigation>
         posController.enterScanMode();
         break;
 
-      case 1: // Inventory - Preview with validation
+      case 1: // Inventory - Show product details or add prompt
         final inventoryController = ref.read(inventoryControllerProvider);
-        final result = await Navigator.push(
+        await Navigator.push(
           context,
           MaterialPageRoute(
             builder: (ctx) => BarcodeScannerScreen(
-              title: 'Scan to Add Product',
-              instruction: 'Align barcode within frame to add new product',
+              title: 'Scan Product',
+              instruction: 'Align barcode within frame to scan product',
               mode: ScannerMode.preview,
               enableManualEntry: true,
               enableHistory: true,
-              onValidate: (barcode) {
-                final existing = inventoryController.allProducts
+              productLookup: (barcode) {
+                // Look up product in inventory
+                final product = inventoryController.allProducts
                     .where((p) => p.barcode == barcode)
                     .firstOrNull;
-                if (existing != null) {
-                  return 'Barcode sudah terdaftar untuk "${existing.name}"';
+                if (product != null) {
+                  return {
+                    'name': product.name,
+                    'price': product.price.toStringAsFixed(0),
+                    'stock': product.stock.toString(),
+                  };
                 }
-                return null;
+                return null; // Product not found
               },
-              onScanned: (barcode) {
-                Navigator.pop(ctx, barcode);
+              onConfirmWithProduct: (barcode, productInfo) async {
+                logger.AppLogger.info('Inventory confirm scan: $barcode, product: $productInfo', tag: 'INVENTORY');
+
+                if (productInfo != null) {
+                  // Product exists - show details and keep scanner open
+                  if (mounted) {
+                    final product = inventoryController.allProducts
+                        .where((p) => p.barcode == barcode)
+                        .firstOrNull;
+
+                    if (product != null) {
+                      // Show product details dialog without closing scanner
+                      await showDialog(
+                        context: context,
+                        builder: (dialogContext) => AlertDialog(
+                          title: const Text('Product Found'),
+                          content: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Name: ${product.name}'),
+                              Text('Price: Rp ${product.price.toStringAsFixed(0)}'),
+                              Text('Stock: ${product.stock}'),
+                              if (product.isLowStock)
+                                const Text(
+                                  '⚠️ Low Stock',
+                                  style: TextStyle(color: Colors.orange),
+                                ),
+                              if (product.isOutOfStock)
+                                const Text(
+                                  '❌ Out of Stock',
+                                  style: TextStyle(color: Colors.red),
+                                ),
+                            ],
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(dialogContext),
+                              child: const Text('Close'),
+                            ),
+                            ElevatedButton(
+                              onPressed: () {
+                                Navigator.pop(dialogContext);
+                                Navigator.pop(context, barcode); // Close scanner and return to inventory
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppTheme.primaryColor,
+                              ),
+                              child: const Text('View in Inventory'),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+                  }
+                  return false; // Keep scanner open
+                } else {
+                  // Product not found - show add product dialog
+                  if (mounted) {
+                    final shouldAdd = await showDialog<bool>(
+                      context: context,
+                      builder: (dialogContext) => AlertDialog(
+                        title: const Text('Product Not Found'),
+                        content: Text('Barcode $barcode is not in inventory.'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(dialogContext, false),
+                            child: const Text('Cancel'),
+                          ),
+                          ElevatedButton(
+                            onPressed: () {
+                              Navigator.pop(dialogContext, true);
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.primaryColor,
+                            ),
+                            child: const Text('Add Product'),
+                          ),
+                        ],
+                      ),
+                    );
+
+                    if (shouldAdd == true) {
+                      // Navigate to add product dialog
+                      final categoryController = ref.read(categoryControllerProvider);
+                      final supplierController = ref.read(supplierControllerProvider);
+
+                      if (!mounted) return false;
+
+                      await showDialog(
+                        context: context,
+                        builder: (dialogContext) => AddProductDialog(
+                          onAdd: ({
+                            required String name,
+                            required double price,
+                            required double costPrice,
+                            required int stock,
+                            int? categoryId,
+                            int? supplierId,
+                            String? barcode,
+                            String? imagePath,
+                            bool hasVariants = false,
+                          }) async {
+                            return await inventoryController.addProduct(
+                              name: name,
+                              price: price,
+                              costPrice: costPrice,
+                              stock: stock,
+                              categoryId: categoryId,
+                              supplierId: supplierId,
+                              barcode: barcode,
+                              imagePath: imagePath,
+                              hasVariants: hasVariants,
+                            );
+                          },
+                          categories: categoryController.categories,
+                          suppliers: supplierController.suppliers,
+                          initialBarcode: barcode,
+                        ),
+                      );
+
+                      // Reload inventory and close scanner
+                      await inventoryController.loadProducts();
+                      return true; // Close scanner
+                    }
+                  }
+                  return false; // Keep scanner open
+                }
               },
             ),
           ),
         );
-
-        if (result != null && result is String && mounted) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Barcode scanned: $result'),
-                action: SnackBarAction(
-                  label: 'Copy',
-                  textColor: AppTheme.primaryColor,
-                  onPressed: () async {
-                    await Clipboard.setData(ClipboardData(text: result));
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Copied to clipboard'),
-                          duration: Duration(seconds: 1),
-                        ),
-                      );
-                    }
-                  },
-                ),
-              ),
-            );
-          }
-        }
         break;
 
       default: // Other screens - Just scan and show result
