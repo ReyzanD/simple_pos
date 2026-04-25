@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../sales/domain/entities/payment_method.dart';
 import '../../../sales/domain/usecases/validate_payment_usecase.dart';
 import '../../../sales/presentation/widgets/payment_method_selector.dart';
@@ -9,9 +9,10 @@ import '../../../sales/presentation/controllers/discount_controller.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/constants/ui_constants.dart';
 import '../../../settings/presentation/controllers/settings_controller.dart';
+import '../../../shared/presentation/providers.dart';
 
 /// Dialog for checkout with payment processing
-class CheckoutDialog extends StatefulWidget {
+class CheckoutDialog extends ConsumerStatefulWidget {
   final List<CartItem> cart;
   final Future<bool> Function({
     required PaymentMethod paymentMethod,
@@ -26,10 +27,10 @@ class CheckoutDialog extends StatefulWidget {
   });
 
   @override
-  State<CheckoutDialog> createState() => _CheckoutDialogState();
+  ConsumerState<CheckoutDialog> createState() => _CheckoutDialogState();
 }
 
-class _CheckoutDialogState extends State<CheckoutDialog> {
+class _CheckoutDialogState extends ConsumerState<CheckoutDialog> {
   PaymentMethod _selectedPaymentMethod = PaymentMethod.cash;
   double? _cashReceived;
   String? _cardLast4Digits;
@@ -37,13 +38,12 @@ class _CheckoutDialogState extends State<CheckoutDialog> {
   String? _errorMessage;
   final ValidatePaymentUseCase _validatePaymentUseCase = ValidatePaymentUseCase();
 
-  double get _subtotal {
-    // Calculate subtotal with compound discounts
-    final categoryController = context.read<CategoryController>();
-    final discountController = context.read<DiscountController>();
-
-    return widget.cart.fold(0, (sum, item) {
-      // Get category discount
+  double _subtotal(
+    List<CartItem> cartItems,
+    CategoryController categoryController,
+    DiscountController discountController,
+  ) {
+    return cartItems.fold(0, (sum, item) {
       double? categoryDiscount;
       if (item.product.categoryId != null) {
         final category = categoryController.categories
@@ -54,7 +54,6 @@ class _CheckoutDialogState extends State<CheckoutDialog> {
         }
       }
 
-      // Get active promotion discount
       double? promotionDiscount;
       if (discountController.activePromotions.isNotEmpty) {
         promotionDiscount = discountController.activePromotions.first.discountPercentage;
@@ -67,13 +66,12 @@ class _CheckoutDialogState extends State<CheckoutDialog> {
     });
   }
 
-  double get _totalDiscount {
-    // Calculate total discount with compound discounts
-    final categoryController = context.read<CategoryController>();
-    final discountController = context.read<DiscountController>();
-
-    return widget.cart.fold(0, (sum, item) {
-      // Get category discount
+  double _totalDiscount(
+    List<CartItem> cartItems,
+    CategoryController categoryController,
+    DiscountController discountController,
+  ) {
+    return cartItems.fold(0, (sum, item) {
       double? categoryDiscount;
       if (item.product.categoryId != null) {
         final category = categoryController.categories
@@ -84,7 +82,6 @@ class _CheckoutDialogState extends State<CheckoutDialog> {
         }
       }
 
-      // Get active promotion discount
       double? promotionDiscount;
       if (discountController.activePromotions.isNotEmpty) {
         promotionDiscount = discountController.activePromotions.first.discountPercentage;
@@ -99,18 +96,24 @@ class _CheckoutDialogState extends State<CheckoutDialog> {
     });
   }
 
-  // Tax calculation (11% tax, only if enabled)
-  double get _tax {
-    final settingsController = context.read<SettingsController>();
+  double _tax(double subtotal, SettingsController settingsController) {
     if (!settingsController.taxEnabled) return 0;
-    return _subtotal * 0.11;
+    return subtotal * 0.11;
   }
 
-  // Total amount including tax (only if enabled)
-  double get _totalAmount => _subtotal + _tax;
+  double _totalAmount(double subtotal, double tax) => subtotal + tax;
 
   @override
   Widget build(BuildContext context) {
+    final categoryController = ref.watch(categoryControllerProvider);
+    final discountController = ref.watch(discountControllerProvider);
+    final settingsController = ref.watch(settingsControllerProvider);
+
+    final subtotal = _subtotal(widget.cart, categoryController, discountController);
+    final totalDiscount = _totalDiscount(widget.cart, categoryController, discountController);
+    final tax = _tax(subtotal, settingsController);
+    final totalAmount = _totalAmount(subtotal, tax);
+
     return AlertDialog(
       title: const Text('Konfirmasi Checkout'),
       content: SizedBox(
@@ -121,14 +124,14 @@ class _CheckoutDialogState extends State<CheckoutDialog> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
             // Order Summary
-            _buildOrderSummary(),
+            _buildOrderSummary(categoryController, discountController, subtotal, totalDiscount, tax, totalAmount),
             const Divider(height: UIConstants.spacingLarge),
             const SizedBox(height: UIConstants.spacingSmall),
 
             // Payment Method Selector
             PaymentMethodSelector(
               initialMethod: _selectedPaymentMethod,
-              totalAmount: _totalAmount,
+              totalAmount: totalAmount,
               onPaymentSelected: (method, {cashReceived, cardLast4Digits}) {
                 setState(() {
                   _selectedPaymentMethod = method;
@@ -137,7 +140,6 @@ class _CheckoutDialogState extends State<CheckoutDialog> {
                   _errorMessage = null;
                 });
               },
-              // Pass a callback to sync values when confirming
               onValueChange: (cashReceived) {
                 setState(() {
                   _cashReceived = cashReceived;
@@ -171,7 +173,7 @@ class _CheckoutDialogState extends State<CheckoutDialog> {
             ],
           ],
         ),
-        ),
+      ),
       ),
       actions: [
         TextButton(
@@ -199,7 +201,14 @@ class _CheckoutDialogState extends State<CheckoutDialog> {
     );
   }
 
-  Widget _buildOrderSummary() {
+  Widget _buildOrderSummary(
+    CategoryController categoryController,
+    DiscountController discountController,
+    double subtotal,
+    double totalDiscount,
+    double tax,
+    double totalAmount,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -220,10 +229,6 @@ class _CheckoutDialogState extends State<CheckoutDialog> {
             itemBuilder: (context, index) {
               final item = widget.cart[index];
 
-              // Get category discount
-              final categoryController = context.watch<CategoryController>();
-              final discountController = context.watch<DiscountController>();
-
               double? categoryDiscount;
               if (item.product.categoryId != null) {
                 final category = categoryController.categories
@@ -234,13 +239,11 @@ class _CheckoutDialogState extends State<CheckoutDialog> {
                 }
               }
 
-              // Get active promotion discount
               double? promotionDiscount;
               if (discountController.activePromotions.isNotEmpty) {
                 promotionDiscount = discountController.activePromotions.first.discountPercentage;
               }
 
-              // Check if has compound discount
               final hasCompoundDiscount = item.product.hasAnyDiscount(
                 categoryDiscount: categoryDiscount,
                 promotionDiscount: promotionDiscount,
@@ -253,7 +256,7 @@ class _CheckoutDialogState extends State<CheckoutDialog> {
                     )
                   : item.product.price;
 
-              final totalDiscount = hasCompoundDiscount
+              final itemTotalDiscount = hasCompoundDiscount
                   ? item.getCompoundDiscountBreakdown(
                       categoryDiscount: categoryDiscount,
                       promotionDiscount: promotionDiscount,
@@ -321,10 +324,9 @@ class _CheckoutDialogState extends State<CheckoutDialog> {
                               color: Colors.green,
                             ),
                           ),
-                          // Show discount amount
-                          if (totalDiscount > 0)
+                          if (itemTotalDiscount > 0)
                             Text(
-                              '-${CurrencyFormatter.format(totalDiscount)}',
+                              '-${CurrencyFormatter.format(itemTotalDiscount)}',
                               style: TextStyle(
                                 color: Colors.green.shade700,
                                 fontSize: UIConstants.fontSizeSmall,
@@ -348,21 +350,21 @@ class _CheckoutDialogState extends State<CheckoutDialog> {
         const Divider(height: UIConstants.spacingLarge),
 
         // Totals
-        _buildTotalRow('Subtotal', _subtotal),
-        if (_totalDiscount > 0) ...[
+        _buildTotalRow('Subtotal', subtotal),
+        if (totalDiscount > 0) ...[
           const SizedBox(height: UIConstants.spacingSmall),
           _buildTotalRow(
             'Diskon',
-            -_totalDiscount,
+            -totalDiscount,
             color: Colors.green,
           ),
         ],
         const SizedBox(height: UIConstants.spacingSmall),
-        if (_tax > 0) _buildTotalRow('Pajak (11%)', _tax),
+        if (tax > 0) _buildTotalRow('Pajak (11%)', tax),
         const SizedBox(height: UIConstants.spacingSmall),
         _buildTotalRow(
           'Total',
-          _totalAmount,
+          totalAmount,
           isBold: true,
           fontSize: UIConstants.fontSizeLarge,
         ),
@@ -395,10 +397,18 @@ class _CheckoutDialogState extends State<CheckoutDialog> {
   }
 
   Future<void> _handleConfirm() async {
+    final categoryController = ref.read(categoryControllerProvider);
+    final discountController = ref.read(discountControllerProvider);
+    final settingsController = ref.read(settingsControllerProvider);
+
+    final subtotal = _subtotal(widget.cart, categoryController, discountController);
+    final tax = _tax(subtotal, settingsController);
+    final totalAmount = _totalAmount(subtotal, tax);
+
     // Validate payment
     final validationResult = _validatePaymentUseCase.execute(
       paymentMethod: _selectedPaymentMethod,
-      totalAmount: _totalAmount,
+      totalAmount: totalAmount,
       cashReceived: _cashReceived,
       cardLast4Digits: _cardLast4Digits,
     );

@@ -6,13 +6,15 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/neo_brutal_theme.dart';
 import '../../../shared/presentation/main_navigation.dart';
 import '../../../../core/widgets/brutal_widgets.dart';
-import '../../../../core/widgets/modern_button.dart';
 import '../../../../core/utils/currency_formatter.dart';
-import '../providers/inventory_providers.dart';
+import '../../../../core/utils/responsive_helper.dart';
+import '../../../shared/presentation/providers.dart';
 
 // Import extracted inventory widgets
 import '../widgets/inventory/inventory_app_bar.dart';
 import '../widgets/inventory/inventory_empty_state.dart';
+import '../widgets/add_product_dialog.dart';
+import '../widgets/csv_import_dialog.dart';
 
 /// Inventory management screen using Riverpod
 class InventoryScreen extends ConsumerWidget {
@@ -20,8 +22,9 @@ class InventoryScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final products = ref.watch(inventoryProvider);
-    final isLoading = ref.read(inventoryProvider.notifier).isLoading;
+    final controller = ref.watch(inventoryControllerProvider);
+    final products = controller.products;
+    final isLoading = controller.isLoading;
 
     return Scaffold(
       backgroundColor: NeoBrutalTheme.background,
@@ -36,11 +39,17 @@ class InventoryScreen extends ConsumerWidget {
       body: products.isEmpty && !isLoading
           ? const InventoryEmptyState()
           : _buildInventoryContent(context, ref, products),
-      floatingActionButton: ModernButton(
-        text: 'Tambah Produk',
-        icon: Icons.add,
-        onPressed: () => _showAddProductOptions(context),
+      floatingActionButton: Padding(
+        padding: EdgeInsets.only(
+          bottom: ResponsiveHelper.getFABBottomOffset(context),
+        ),
+        child: BrutalFab(
+          label: 'Tambah Produk',
+          icon: Icons.add,
+          onPressed: () => _showAddProductOptions(context, ref),
+        ),
       ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 
@@ -50,7 +59,7 @@ class InventoryScreen extends ConsumerWidget {
     List<Product> products,
   ) {
     return RefreshIndicator(
-      onRefresh: () => ref.read(inventoryProvider.notifier).loadProducts(),
+      onRefresh: () => ref.read(inventoryControllerProvider).loadProducts(),
       color: NeoBrutalTheme.primary,
       backgroundColor: NeoBrutalTheme.blockYellow.withValues(alpha: 0.3),
       strokeWidth: 4,
@@ -58,22 +67,23 @@ class InventoryScreen extends ConsumerWidget {
         children: [
           // Simple search bar
           Padding(
-            padding: EdgeInsets.all(NeoBrutalTheme.spaceMD),
+            padding: ResponsiveHelper.getScreenPadding(context),
             child: _buildSimpleSearchBar(context, ref),
           ),
 
           // Products Grid
           Expanded(
             child: Padding(
-              padding: EdgeInsets.all(NeoBrutalTheme.spaceMD),
+              padding: ResponsiveHelper.getScreenPadding(context).copyWith(
+                top: 0,
+                bottom: 0,
+              ),
               child: GridView.builder(
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: MediaQuery.of(context).size.width > 600
-                      ? 4
-                      : 2,
-                  mainAxisSpacing: NeoBrutalTheme.spaceMD,
-                  crossAxisSpacing: NeoBrutalTheme.spaceMD,
-                  mainAxisExtent: 280,
+                  crossAxisCount: ResponsiveHelper.getGridColumns(context),
+                  mainAxisSpacing: ResponsiveHelper.getCardSpacing(context),
+                  crossAxisSpacing: ResponsiveHelper.getCardSpacing(context),
+                  mainAxisExtent: ResponsiveHelper.getProductCardHeight(context),
                 ),
                 itemCount: products.length,
                 itemBuilder: (context, index) {
@@ -91,19 +101,19 @@ class InventoryScreen extends ConsumerWidget {
   Widget _buildSimpleSearchBar(BuildContext context, WidgetRef ref) {
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: NeoBrutalTheme.spaceMD,
-        vertical: NeoBrutalTheme.spaceSM,
+        horizontal: ResponsiveHelper.getContainerPadding(context),
+        vertical: ResponsiveHelper.getContainerPadding(context) * 0.75,
       ),
       decoration: BoxDecoration(
         color: NeoBrutalTheme.background,
-        borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium),
+        borderRadius: BorderRadius.circular(ResponsiveHelper.getBorderRadius(context)),
         border: Border.all(color: Colors.black, width: 3),
         boxShadow: NeoBrutalTheme.chunkyShadow,
       ),
       child: Row(
         children: [
-          const Icon(Icons.search, color: AppTheme.textSecondary, size: 24),
-          SizedBox(width: NeoBrutalTheme.spaceSM),
+          Icon(Icons.search, color: AppTheme.textSecondary, size: ResponsiveHelper.getIconSize(context) + 4),
+          SizedBox(width: ResponsiveHelper.getCardSpacing(context) * 0.5),
           Expanded(
             child: TextField(
               decoration: const InputDecoration(
@@ -116,15 +126,15 @@ class InventoryScreen extends ConsumerWidget {
               ),
               style: const TextStyle(color: AppTheme.textPrimary, fontSize: 16),
               onChanged: (query) {
-                ref.read(inventoryProvider.notifier).searchProducts(query);
+                ref.read(inventoryControllerProvider).searchProducts(query);
               },
             ),
           ),
-          if (ref.read(inventoryProvider.notifier).searchQuery.isNotEmpty)
+          if (ref.read(inventoryControllerProvider).searchQuery.isNotEmpty)
             IconButton(
               icon: const Icon(Icons.clear),
               onPressed: () {
-                ref.read(inventoryProvider.notifier).clearSearch();
+                ref.read(inventoryControllerProvider).clearSearch();
               },
             ),
         ],
@@ -137,127 +147,220 @@ class InventoryScreen extends ConsumerWidget {
     WidgetRef ref,
     Product product,
   ) {
+    final isOutOfStock = product.isOutOfStock;
+    final isLowStock = product.isLowStock;
+
     return Container(
+      height: ResponsiveHelper.getValue(
+        context: context,
+        mobile: 80.0,
+        tablet: 85.0,
+        desktop: 90.0,
+      ),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isOutOfStock ? const Color(0xFFF3F4F6) : Colors.white,
         borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium),
-        border: Border.all(color: Colors.black, width: 3),
+        border: Border.all(
+          color: Colors.black,
+          width: 3,
+        ),
         boxShadow: NeoBrutalTheme.chunkyShadow,
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Product image or placeholder
-          if (product.imagePath != null) ...[
-            ClipRRect(
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(12),
-                topRight: Radius.circular(12),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _showProductDetails(context, product),
+          borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium),
+          child: Padding(
+            padding: EdgeInsets.all(
+              ResponsiveHelper.getValue(
+                context: context,
+                mobile: 10.0,
+                tablet: 12.0,
+                desktop: 14.0,
               ),
-              child: Image.network(
-                product.imagePath!,
-                height: 150,
-                width: double.infinity,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    height: 150,
-                    color: NeoBrutalTheme.blockYellow,
-                    child: const Icon(
-                      Icons.broken_image,
-                      size: 48,
-                      color: Colors.black,
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Compact product image (left side)
+                SizedBox(
+                  width: ResponsiveHelper.getValue(
+                    context: context,
+                    mobile: 50.0,
+                    tablet: 55.0,
+                    desktop: 60.0,
+                  ),
+                  height: ResponsiveHelper.getValue(
+                    context: context,
+                    mobile: 50.0,
+                    tablet: 55.0,
+                    desktop: 60.0,
+                  ),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: NeoBrutalTheme.primary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: NeoBrutalTheme.primary.withValues(alpha: 0.2),
+                        width: 2,
+                      ),
                     ),
-                  );
-                },
-              ),
-            ),
-          ] else ...[
-            Container(
-              height: 150,
-              color: NeoBrutalTheme.blockYellow,
-              child: const Icon(
-                Icons.inventory_2_outlined,
-                size: 64,
-                color: Colors.black,
-              ),
-            ),
-          ],
+                    child: product.imagePath != null && product.imagePath!.isNotEmpty
+                        ? ClipRRect(
+                            borderRadius: BorderRadius.circular(6),
+                            child: Image.network(
+                              product.imagePath!,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Icon(
+                                  Icons.inventory_2_outlined,
+                                  size: ResponsiveHelper.getIconSize(context),
+                                  color: NeoBrutalTheme.primary,
+                                );
+                              },
+                            ),
+                          )
+                        : Icon(
+                            Icons.inventory_2_outlined,
+                            size: ResponsiveHelper.getIconSize(context),
+                            color: NeoBrutalTheme.primary,
+                          ),
+                  ),
+                ),
 
-          // Product info
-          Expanded(
-            child: Padding(
-              padding: EdgeInsets.all(NeoBrutalTheme.spaceMD),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    product.name,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.textPrimary,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
+                SizedBox(
+                  width: ResponsiveHelper.getValue(
+                    context: context,
+                    mobile: 10.0,
+                    tablet: 12.0,
+                    desktop: 14.0,
                   ),
-                  SizedBox(height: NeoBrutalTheme.spaceSM),
-                  Text(
-                    CurrencyFormatter.format(product.price),
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: NeoBrutalTheme.primary,
-                    ),
-                  ),
-                  const Spacer(),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                ),
+
+                // Product info (center - more space)
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // Stock indicator
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: NeoBrutalTheme.spaceSM,
-                          vertical: NeoBrutalTheme.spaceXS,
-                        ),
-                        decoration: BoxDecoration(
-                          color: product.isLowStock
-                              ? AppTheme.warningColor
-                              : product.isOutOfStock
-                              ? AppTheme.errorColor
-                              : AppTheme.successColor,
-                          borderRadius: BorderRadius.circular(
-                            NeoBrutalTheme.radiusSmall,
+                      // Product name
+                      Text(
+                        product.name,
+                        style: TextStyle(
+                          fontSize: ResponsiveHelper.getFontSize(
+                            context,
+                            mobile: 15.0,
+                            tablet: 16.0,
+                            desktop: 17.0,
                           ),
+                          fontWeight: FontWeight.w700,
+                          color: isOutOfStock
+                              ? AppTheme.textTertiary
+                              : Colors.black,
+                          height: 1.2,
                         ),
-                        child: Text(
-                          '${product.stock} stok',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                          ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      SizedBox(
+                        height: ResponsiveHelper.getValue(
+                          context: context,
+                          mobile: 4.0,
+                          tablet: 5.0,
+                          desktop: 6.0,
                         ),
                       ),
-                      // View details button
-                      ModernButton(
-                        text: 'Detail',
-                        icon: Icons.visibility,
-                        onPressed: () => _showProductDetails(context, product),
-                        isFullWidth: false,
+                      // Price
+                      Text(
+                        CurrencyFormatter.format(product.price),
+                        style: TextStyle(
+                          fontSize: ResponsiveHelper.getFontSize(
+                            context,
+                            mobile: 17.0,
+                            tablet: 18.0,
+                            desktop: 19.0,
+                          ),
+                          fontWeight: FontWeight.w900,
+                          color: NeoBrutalTheme.primary,
+                          height: 1.1,
+                        ),
+                        maxLines: 1,
                       ),
                     ],
                   ),
-                ],
-              ),
+                ),
+
+                SizedBox(
+                  width: ResponsiveHelper.getValue(
+                    context: context,
+                    mobile: 8.0,
+                    tablet: 10.0,
+                    desktop: 12.0,
+                  ),
+                ),
+
+                // Stock indicator (right side)
+                _buildStockIndicator(context, isLowStock, isOutOfStock, product.stock),
+              ],
             ),
           ),
-        ],
+        ),
       ),
     ).animate().fadeIn(duration: 300.ms);
   }
 
-  void _showAddProductOptions(BuildContext context) {
+  Widget _buildStockIndicator(BuildContext context, bool isLowStock, bool isOutOfStock, int stock) {
+    final buttonSize = ResponsiveHelper.getValue(
+      context: context,
+      mobile: 36.0,
+      tablet: 40.0,
+      desktop: 44.0,
+    );
+    final iconSize = ResponsiveHelper.getValue(
+      context: context,
+      mobile: 18.0,
+      tablet: 20.0,
+      desktop: 22.0,
+    );
+
+    Color bgColor;
+    IconData iconData;
+
+    if (isOutOfStock) {
+      bgColor = AppTheme.errorColor;
+      iconData = Icons.block;
+    } else if (isLowStock) {
+      bgColor = AppTheme.warningColor;
+      iconData = Icons.warning;
+    } else {
+      bgColor = AppTheme.successColor;
+      iconData = Icons.check_circle;
+    }
+
+    return Container(
+      width: buttonSize,
+      height: buttonSize,
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.black, width: 2),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.2),
+            offset: const Offset(2, 2),
+          ),
+        ],
+      ),
+      child: Icon(
+        iconData,
+        size: iconSize,
+        color: Colors.white,
+      ),
+    );
+  }
+
+  void _showAddProductOptions(BuildContext context, WidgetRef ref) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -297,7 +400,7 @@ class InventoryScreen extends ConsumerWidget {
               color: NeoBrutalTheme.primary,
               onTap: () {
                 Navigator.pop(context);
-                // TODO: Show add product dialog when implemented
+                _showAddProductDialog(context, ref);
               },
             ),
             SizedBox(height: NeoBrutalTheme.spaceSM),
@@ -309,11 +412,68 @@ class InventoryScreen extends ConsumerWidget {
               color: NeoBrutalTheme.secondary,
               onTap: () {
                 Navigator.pop(context);
-                // TODO: Show CSV import dialog when implemented
+                _showCsvImportDialog(context, ref);
               },
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showAddProductDialog(BuildContext context, WidgetRef ref) {
+    final controller = ref.read(inventoryControllerProvider);
+    final categoryController = ref.read(categoryControllerProvider);
+    final supplierController = ref.read(supplierControllerProvider);
+
+    showDialog(
+      context: context,
+      builder: (context) => AddProductDialog(
+        onAdd: ({
+          required String name,
+          required double price,
+          required double costPrice,
+          required int stock,
+          int? categoryId,
+          int? supplierId,
+          String? barcode,
+          String? imagePath,
+          bool hasVariants = false,
+        }) async {
+          return await controller.addProduct(
+            name: name,
+            price: price,
+            costPrice: costPrice,
+            stock: stock,
+            categoryId: categoryId,
+            supplierId: supplierId,
+            barcode: barcode,
+            imagePath: imagePath,
+            hasVariants: hasVariants,
+          );
+        },
+        categories: categoryController.categories,
+        suppliers: supplierController.suppliers,
+      ),
+    ).then((result) {
+      if (result == true) {
+        controller.loadProducts();
+      }
+    });
+  }
+
+  void _showCsvImportDialog(BuildContext context, WidgetRef ref) {
+    final controller = ref.read(inventoryControllerProvider);
+
+    showDialog(
+      context: context,
+      builder: (context) => CsvImportDialog(
+        onImportConfirmed: (products) async {
+          return await controller.importProductsFromCsv(
+            products: products,
+            username: 'admin',
+          );
+        },
       ),
     );
   }

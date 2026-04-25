@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:simple_pos/core/theme/app_theme.dart';
+import 'package:simple_pos/core/theme/neo_brutal_theme.dart';
 import 'package:simple_pos/core/widgets/kpi_stats_dashboard.dart';
+import 'package:simple_pos/core/widgets/brutal_widgets.dart';
 
 /// KPI Dashboard widget for POS screen showing sales statistics
 class POSKPIDashboard extends StatelessWidget {
@@ -26,14 +27,36 @@ class POSKPIDashboard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return KPIStatsDashboard(
-      todayRevenue: todayRevenue,
-      todayTransactions: todayTransactions,
-      itemsSold: itemsSold,
-      isLoading: isLoading,
-      onRevenueTap: onRevenueTap,
-      onTransactionsTap: onTransactionsTap,
-      onItemsSoldTap: onItemsSoldTap,
-    ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.1, end: 0);
+    return Container(
+      padding: EdgeInsets.only(
+        left: NeoBrutalTheme.spaceMD,
+        right: NeoBrutalTheme.spaceMD,
+        top: NeoBrutalTheme.spaceMD,
+      ),
+
+      child:
+          BrutalCard(
+                padding: EdgeInsets.zero,
+                child: KPIStatsDashboard(
+                  todayRevenue: todayRevenue,
+                  todayTransactions: todayTransactions,
+                  itemsSold: itemsSold,
+                  isLoading: isLoading,
+                  onRevenueTap: onRevenueTap,
+                  onTransactionsTap: onTransactionsTap,
+                  onItemsSoldTap: onItemsSoldTap,
+                ),
+              )
+              .animate()
+              .fadeIn(duration: 400.ms, curve: Curves.easeOut)
+              .slideY(begin: 0.1, end: 0, curve: Curves.easeOut)
+              .then()
+              .scale(
+                begin: const Offset(0.95, 0.95),
+                end: const Offset(1.0, 1.0),
+                duration: 300.ms,
+                curve: Curves.elasticOut,
+              ),
+    );
   }
 }

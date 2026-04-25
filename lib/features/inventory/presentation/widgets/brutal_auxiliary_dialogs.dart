@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/neo_brutal_theme.dart';
 import '../../../inventory/domain/entities/category.dart' as entities;
 import '../../../inventory/domain/entities/supplier.dart';
-import '../controllers/category_controller.dart';
-import '../controllers/supplier_controller.dart';
+import '../../../shared/presentation/providers.dart';
 
-class BrutalAddCategoryDialog extends StatelessWidget {
+class BrutalAddCategoryDialog extends ConsumerWidget {
   final TextEditingController nameController;
   final TextEditingController descController;
   final GlobalKey<FormState> formKey;
@@ -19,14 +18,14 @@ class BrutalAddCategoryDialog extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return _BaseDialog(
       title: 'KATEGORI BARU',
       color: NeoBrutalTheme.primary,
       icon: Icons.category_rounded,
       onSave: () async {
         if (formKey.currentState!.validate()) {
-          final controller = context.read<CategoryController>();
+          final controller = ref.read(categoryControllerProvider);
           final success = await controller.addCategory(
             entities.Category(
               id: 0,
@@ -62,7 +61,7 @@ class BrutalAddCategoryDialog extends StatelessWidget {
   }
 }
 
-class BrutalAddSupplierDialog extends StatelessWidget {
+class BrutalAddSupplierDialog extends ConsumerWidget {
   final TextEditingController nameController;
   final TextEditingController contactController;
   final TextEditingController phoneController;
@@ -77,14 +76,14 @@ class BrutalAddSupplierDialog extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return _BaseDialog(
       title: 'PEMASOK BARU',
       color: NeoBrutalTheme.secondary,
       icon: Icons.local_shipping_rounded,
       onSave: () async {
         if (formKey.currentState!.validate()) {
-          final controller = context.read<SupplierController>();
+          final controller = ref.read(supplierControllerProvider);
           final success = await controller.addSupplier(
             Supplier(
               id: 0,

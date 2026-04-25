@@ -1,21 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../domain/entities/supplier.dart';
-import '../controllers/supplier_controller.dart';
-import '../controllers/inventory_controller.dart';
+import '../../../shared/presentation/providers.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/constants/ui_constants.dart';
 
 /// Screen for managing suppliers with search and contact actions
-class SupplierScreen extends StatefulWidget {
+class SupplierScreen extends ConsumerStatefulWidget {
   const SupplierScreen({super.key});
 
   @override
-  State<SupplierScreen> createState() => _SupplierScreenState();
+  ConsumerState<SupplierScreen> createState() => _SupplierScreenState();
 }
 
-class _SupplierScreenState extends State<SupplierScreen> {
+class _SupplierScreenState extends ConsumerState<SupplierScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
 
@@ -39,34 +38,32 @@ class _SupplierScreenState extends State<SupplierScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer2<SupplierController, InventoryController>(
-      builder: (context, supplierController, inventoryController, _) {
-        final filteredSuppliers = _filterSuppliers(supplierController.suppliers);
-        final products = inventoryController.allProducts;
+    final supplierController = ref.watch(supplierControllerProvider);
+    final inventoryController = ref.watch(inventoryControllerProvider);
+    final filteredSuppliers = _filterSuppliers(supplierController.suppliers);
+    final products = inventoryController.allProducts;
 
-        return Scaffold(
-          appBar: AppBar(
-            title: const Text('Pemasok'),
-          ),
-          body: supplierController.isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : supplierController.suppliers.isEmpty
-                  ? _buildEmptyState(context)
-                  : Column(
-                      children: [
-                        _buildSearchBar(),
-                        Expanded(child: _buildSupplierList(filteredSuppliers, products)),
-                      ],
-                    ),
-          floatingActionButton: FloatingActionButton(
-            heroTag: 'supplier_fab', // ✅ Unique hero tag
-            onPressed: () => _showAddEditDialog(context, supplierController),
-            tooltip: 'Tambah Pemasok',
-            backgroundColor: AppTheme.primaryColor,
-            child: const Icon(Icons.add),
-          ),
-        );
-      },
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Pemasok'),
+      ),
+      body: supplierController.isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : supplierController.suppliers.isEmpty
+              ? _buildEmptyState(context)
+              : Column(
+                  children: [
+                    _buildSearchBar(),
+                    Expanded(child: _buildSupplierList(filteredSuppliers, products)),
+                  ],
+                ),
+      floatingActionButton: FloatingActionButton(
+        heroTag: 'supplier_fab', // ✅ Unique hero tag
+        onPressed: () => _showAddEditDialog(context, supplierController),
+        tooltip: 'Tambah Pemasok',
+        backgroundColor: AppTheme.primaryColor,
+        child: const Icon(Icons.add),
+      ),
     );
   }
 
@@ -191,116 +188,113 @@ class _SupplierScreenState extends State<SupplierScreen> {
   }
 
   Widget _buildSupplierCard(BuildContext context, Supplier supplier, int productCount) {
-    return Consumer(
-      builder: (context, controller, _) {
-        return Card(
-          margin: const EdgeInsets.only(bottom: UIConstants.spacingSmall),
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: BorderSide(color: AppTheme.getBorderColor(context)),
-          ),
-          child: InkWell(
-            onTap: () => _showAddEditDialog(context, controller, supplier),
-            borderRadius: BorderRadius.circular(16),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+    final controller = ref.read(supplierControllerProvider);
+    return Card(
+      margin: const EdgeInsets.only(bottom: UIConstants.spacingSmall),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: AppTheme.getBorderColor(context)),
+      ),
+      child: InkWell(
+        onTap: () => _showAddEditDialog(context, controller, supplier),
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header with name and contact actions
+              Row(
                 children: [
-                  // Header with name and contact actions
-                  Row(
-                    children: [
-                      Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Icon(
-                          Icons.local_shipping,
-                          color: AppTheme.primaryColor,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              supplier.name,
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                                color: AppTheme.getTextPrimaryColor(context),
-                              ),
-                            ),
-                            if (supplier.contactPerson != null)
-                              Text(
-                                supplier.contactPerson!,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: AppTheme.getTextSecondaryColor(context),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                      // Contact action buttons
-                      if (supplier.phone != null)
-                        _buildContactButton(
-                          icon: Icons.phone_rounded,
-                          color: AppTheme.successColor,
-                          onTap: () => _callSupplier(supplier.phone!),
-                        ),
-                      if (supplier.email != null)
-                        _buildContactButton(
-                          icon: Icons.email_rounded,
-                          color: AppTheme.infoColor,
-                          onTap: () => _emailSupplier(supplier.email!),
-                        ),
-                      _buildEditButton(
-                        icon: Icons.edit,
-                        color: AppTheme.textSecondary,
-                        onTap: () => _showAddEditDialog(
-                          context,
-                          controller,
-                          supplier,
-                        ),
-                      ),
-                    ],
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      Icons.local_shipping,
+                      color: AppTheme.primaryColor,
+                    ),
                   ),
-                  const SizedBox(height: 12),
-                  // Contact info
-                  _buildContactInfo(context, supplier),
-                  const SizedBox(height: 8),
-                  // Action row
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.inventory_2_outlined,
-                        size: 16,
-                        color: AppTheme.textTertiary,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Produk: $productCount',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: AppTheme.textTertiary,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          supplier.name,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: AppTheme.getTextPrimaryColor(context),
+                          ),
                         ),
-                      ),
-                      const Spacer(),
-                      _buildDeleteButton(context, supplier, controller),
-                    ],
+                        if (supplier.contactPerson != null)
+                          Text(
+                            supplier.contactPerson!,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: AppTheme.getTextSecondaryColor(context),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  // Contact action buttons
+                  if (supplier.phone != null)
+                    _buildContactButton(
+                      icon: Icons.phone_rounded,
+                      color: AppTheme.successColor,
+                      onTap: () => _callSupplier(supplier.phone!),
+                    ),
+                  if (supplier.email != null)
+                    _buildContactButton(
+                      icon: Icons.email_rounded,
+                      color: AppTheme.infoColor,
+                      onTap: () => _emailSupplier(supplier.email!),
+                    ),
+                  _buildEditButton(
+                    icon: Icons.edit,
+                    color: AppTheme.textSecondary,
+                    onTap: () => _showAddEditDialog(
+                      context,
+                      controller,
+                      supplier,
+                    ),
                   ),
                 ],
               ),
-            ),
+              const SizedBox(height: 12),
+              // Contact info
+              _buildContactInfo(context, supplier),
+              const SizedBox(height: 8),
+              // Action row
+              Row(
+                children: [
+                  Icon(
+                    Icons.inventory_2_outlined,
+                    size: 16,
+                    color: AppTheme.textTertiary,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Produk: $productCount',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppTheme.textTertiary,
+                    ),
+                  ),
+                  const Spacer(),
+                  _buildDeleteButton(context, supplier, controller),
+                ],
+              ),
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
@@ -414,7 +408,7 @@ class _SupplierScreenState extends State<SupplierScreen> {
   Widget _buildDeleteButton(
     BuildContext context,
     Supplier supplier,
-    SupplierController controller,
+    dynamic controller,
   ) {
     return TextButton.icon(
       onPressed: () => _showDeleteDialog(context, supplier, controller),
@@ -468,7 +462,7 @@ class _SupplierScreenState extends State<SupplierScreen> {
 
   Future<void> _showAddEditDialog(
     BuildContext context,
-    SupplierController controller, [
+    dynamic controller, [
     Supplier? supplier,
   ]) async {
     final nameController = TextEditingController(text: supplier?.name ?? '');
@@ -629,7 +623,7 @@ class _SupplierScreenState extends State<SupplierScreen> {
   Future<void> _showDeleteDialog(
     BuildContext context,
     Supplier supplier,
-    SupplierController controller,
+    dynamic controller,
   ) async {
     final confirmed = await showDialog<bool>(
       context: context,

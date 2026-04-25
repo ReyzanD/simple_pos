@@ -1,21 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../controllers/auth_controller.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/user.dart';
 import '../../domain/entities/user_role.dart';
+import '../../../shared/presentation/providers.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/neo_brutal_theme.dart';
 import '../../../../core/widgets/brutal_widgets.dart';
 
 /// Screen for managing application users
-class UserManagementScreen extends StatefulWidget {
+class UserManagementScreen extends ConsumerStatefulWidget {
   const UserManagementScreen({super.key});
 
   @override
-  State<UserManagementScreen> createState() => _UserManagementScreenState();
+  ConsumerState<UserManagementScreen> createState() => _UserManagementScreenState();
 }
 
-class _UserManagementScreenState extends State<UserManagementScreen> {
+class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
   @override
   void initState() {
     super.initState();
@@ -24,7 +24,6 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
 
   Future<void> _loadUsers() async {
     // Users are loaded through AuthController
-    final authController = context.read<AuthController>();
     // Refresh user list if needed
   }
 
@@ -40,47 +39,6 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
       context: context,
       builder: (context) => _EditUserDialog(user: user),
     );
-  }
-
-  Future<void> _showDeleteConfirmDialog(User user) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        title: const Text('Hapus Pengguna'),
-        content: Text(
-          'Apakah Anda yakin ingin menghapus pengguna "${user.fullName}"?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Batal'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.errorColor,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Hapus'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true && mounted) {
-      // TODO: Implement delete user
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Fitur hapus pengguna akan segera tersedia'),
-            backgroundColor: AppTheme.warningColor,
-          ),
-        );
-      }
-    }
   }
 
   @override
@@ -121,71 +79,70 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
           ),
         ],
       ),
-      body: Consumer(
-        builder: (context, authController, _) {
-          // For demo, show the current admin user
-          final currentUser = authController.currentUser;
+      body: () {
+        final authController = ref.watch(authControllerProvider);
+        // For demo, show the current admin user
+        final currentUser = authController.currentUser;
 
-          if (currentUser == null) {
-            return const Center(
-              child: Text('Tidak ada data pengguna'),
-            );
-          }
-
-          return ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              // Admin user card
-              _buildUserCard(
-                context,
-                user: currentUser,
-                isCurrentUser: true,
-                onEdit: () => _showEditUserDialog(currentUser),
-                onDelete: () {},
-              ),
-
-              const SizedBox(height: 24),
-
-              // Info about demo
-              BrutalCard(
-                padding: EdgeInsets.all(NeoBrutalTheme.spaceMD),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: NeoBrutalTheme.primary, // ✅ Solid bold color
-                        borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
-                        border: Border.all(
-                          color: Colors.black,
-                          width: 3, // ✅ Bold 3px border
-                        ),
-                        boxShadow: NeoBrutalTheme.chunkyShadow,
-                      ),
-                      child: Icon(
-                        Icons.info_outline,
-                        color: Colors.white, // ✅ White icon
-                        size: 20,
-                      ),
-                    ),
-                    SizedBox(width: NeoBrutalTheme.spaceSM),
-                    Expanded(
-                      child: Text(
-                        'Gunakan login: admin / admin123',
-                        style: NeoBrutalTheme.bodySmall.copyWith(
-                          color: AppTheme.getTextSecondaryColor(context),
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+        if (currentUser == null) {
+          return const Center(
+            child: Text('Tidak ada data pengguna'),
           );
-        },
-      ),
+        }
+
+        return ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            // Admin user card
+            _buildUserCard(
+              context,
+              user: currentUser,
+              isCurrentUser: true,
+              onEdit: () => _showEditUserDialog(currentUser),
+              onDelete: () {},
+            ),
+
+            const SizedBox(height: 24),
+
+            // Info about demo
+            BrutalCard(
+              padding: EdgeInsets.all(NeoBrutalTheme.spaceMD),
+              child: Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: NeoBrutalTheme.primary, // ✅ Solid bold color
+                      borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
+                      border: Border.all(
+                        color: Colors.black,
+                        width: 3, // ✅ Bold 3px border
+                      ),
+                      boxShadow: NeoBrutalTheme.chunkyShadow,
+                    ),
+                    child: Icon(
+                      Icons.info_outline,
+                      color: Colors.white, // ✅ White icon
+                      size: 20,
+                    ),
+                  ),
+                  SizedBox(width: NeoBrutalTheme.spaceSM),
+                  Expanded(
+                    child: Text(
+                      'Gunakan login: admin / admin123',
+                      style: NeoBrutalTheme.bodySmall.copyWith(
+                        color: AppTheme.getTextSecondaryColor(context),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+      }(),
     );
   }
 

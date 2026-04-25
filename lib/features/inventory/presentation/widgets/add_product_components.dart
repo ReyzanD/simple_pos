@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/neo_brutal_theme.dart';
-import '../../../../core/theme/app_theme.dart';
 
 class AddProductHeader extends StatelessWidget {
   const AddProductHeader({super.key});

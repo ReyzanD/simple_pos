@@ -1,17 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../../sales/presentation/controllers/cart_controller.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'cart_item_tile.dart';
-import '../../../../core/theme/neo_brutal_theme.dart';
 import '../../../../core/utils/currency_formatter.dart';
+import '../../../shared/presentation/providers.dart';
 
-class CartSidebarSection extends StatelessWidget {
+class CartSidebarSection extends ConsumerWidget {
   const CartSidebarSection({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final cart = context.watch<CartController>();
-
+  Widget build(BuildContext context, WidgetRef ref) {
+    final cart = ref.watch(cartControllerProvider);
     return Container(
       decoration: const BoxDecoration(
         color: Color(0xFFF0F0F0),
@@ -29,7 +27,6 @@ class CartSidebarSection extends StatelessWidget {
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
             ),
           ),
-
           // ITEMS LIST
           Expanded(
             child: cart.items.isEmpty
@@ -41,15 +38,14 @@ class CartSidebarSection extends StatelessWidget {
                         CartItemTile(item: cart.items[index]),
                   ),
           ),
-
           // SUMMARY & CHECKOUT
-          _buildSummary(context, cart),
+          _buildSummary(context, ref, cart),
         ],
       ),
     );
   }
 
-  Widget _buildSummary(BuildContext context, CartController cart) {
+  Widget _buildSummary(BuildContext context, WidgetRef ref, cart) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: const BoxDecoration(
@@ -72,15 +68,13 @@ class CartSidebarSection extends StatelessWidget {
             isBold: true,
           ),
           const SizedBox(height: 16),
-
-          // CHECKOUT BUTTON
           SizedBox(
             width: double.infinity,
             height: 60,
             child: ElevatedButton(
               onPressed: cart.items.isEmpty
                   ? null
-                  : () => _handleCheckout(context, cart),
+                  : () => _handleCheckout(context, ref),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.greenAccent,
                 foregroundColor: Colors.black,
@@ -131,7 +125,7 @@ class CartSidebarSection extends StatelessWidget {
     );
   }
 
-  void _handleCheckout(BuildContext context, CartController cart) async {
+  void _handleCheckout(BuildContext context, WidgetRef ref) async {
     // Trigger checkout logic and show success/failure dialogs
   }
 

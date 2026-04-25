@@ -1,5 +1,4 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../../domain/usecases/category_usecases.dart';
 import '../../domain/entities/category.dart';
 
 part 'category_provider.g.dart';

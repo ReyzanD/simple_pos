@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:simple_pos/core/theme/neo_brutal_theme.dart';
 import 'package:simple_pos/core/theme/app_theme.dart';
-import 'package:simple_pos/core/widgets/modern_button.dart';
 
 /// Empty state widget for inventory screen
 class InventoryEmptyState extends StatelessWidget {

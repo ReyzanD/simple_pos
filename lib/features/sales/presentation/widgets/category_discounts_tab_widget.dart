@@ -1,72 +1,70 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../../inventory/presentation/controllers/category_controller.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../inventory/domain/entities/category.dart';
+import '../../../shared/presentation/providers.dart';
 import '../../../../core/theme.dart';
 
 /// Category Discounts Tab Widget - manages category-wide discounts
-class CategoryDiscountsTabWidget extends StatelessWidget {
+class CategoryDiscountsTabWidget extends ConsumerWidget {
   const CategoryDiscountsTabWidget({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Consumer(
-      builder: (context, controller, _) {
-        if (controller.isLoading) {
-          return const Center(child: CircularProgressIndicator());
-        }
+  Widget build(BuildContext context, WidgetRef ref) {
+    final controller = ref.watch(categoryControllerProvider);
 
-        if (controller.hasError) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.error_outline, size: 64, color: AppTheme.errorColor),
-                const SizedBox(height: 16),
-                Text(
-                  controller.errorMessage ?? 'Terjadi kesalahan',
-                  style: TextStyle(fontSize: 16, color: AppTheme.textSecondary),
-                ),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: () => controller.loadCategories(),
-                  child: const Text('Coba Lagi'),
-                ),
-              ],
+    if (controller.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (controller.hasError) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, size: 64, color: AppTheme.errorColor),
+            const SizedBox(height: 16),
+            Text(
+              controller.errorMessage ?? 'Terjadi kesalahan',
+              style: TextStyle(fontSize: 16, color: AppTheme.textSecondary),
             ),
-          );
-        }
-
-        if (controller.categories.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.category_outlined, size: 64, color: AppTheme.textTertiary),
-                const SizedBox(height: 16),
-                Text(
-                  'Belum ada kategori',
-                  style: TextStyle(fontSize: 18, color: AppTheme.textSecondary),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Buat kategori di Inventory untuk mengatur diskon',
-                  style: TextStyle(fontSize: 14, color: AppTheme.textTertiary),
-                ),
-              ],
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () => controller.loadCategories(),
+              child: const Text('Coba Lagi'),
             ),
-          );
-        }
+          ],
+        ),
+      );
+    }
 
-        return ListView.separated(
-          padding: const EdgeInsets.all(16),
-          itemCount: controller.categories.length,
-          separatorBuilder: (_, _) => const SizedBox(height: 12),
-          itemBuilder: (context, index) {
-            final category = controller.categories[index];
-            return _buildCategoryCard(context, category, controller);
-          },
-        );
+    if (controller.categories.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.category_outlined, size: 64, color: AppTheme.textTertiary),
+            const SizedBox(height: 16),
+            Text(
+              'Belum ada kategori',
+              style: TextStyle(fontSize: 18, color: AppTheme.textSecondary),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Buat kategori di Inventory untuk mengatur diskon',
+              style: TextStyle(fontSize: 14, color: AppTheme.textTertiary),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ListView.separated(
+      padding: const EdgeInsets.all(16),
+      itemCount: controller.categories.length,
+      separatorBuilder: (_, _) => const SizedBox(height: 12),
+      itemBuilder: (context, index) {
+        final category = controller.categories[index];
+        return _buildCategoryCard(context, category, controller);
       },
     );
   }
@@ -74,7 +72,7 @@ class CategoryDiscountsTabWidget extends StatelessWidget {
   Widget _buildCategoryCard(
     BuildContext context,
     Category category,
-    CategoryController controller,
+    dynamic controller,
   ) {
     final hasDiscount = category.hasDiscount;
 
@@ -194,7 +192,7 @@ class CategoryDiscountsTabWidget extends StatelessWidget {
   void _showEditDialog(
     BuildContext context,
     Category category,
-    CategoryController controller,
+    dynamic controller,
   ) {
     final discountController = TextEditingController(
       text: category.discountPercentage?.toString() ?? '',

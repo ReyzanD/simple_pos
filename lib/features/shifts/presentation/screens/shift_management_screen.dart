@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../controllers/shift_controller.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../shared/presentation/providers.dart';
 import 'shift_open_screen.dart';
 import 'shift_close_screen.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -8,20 +8,20 @@ import '../../../../core/theme/neo_brutal_theme.dart';
 import '../../../../core/widgets/brutal_widgets.dart';
 
 /// Screen for managing cashier shifts
-class ShiftManagementScreen extends StatefulWidget {
+class ShiftManagementScreen extends ConsumerStatefulWidget {
   const ShiftManagementScreen({super.key});
 
   @override
-  State<ShiftManagementScreen> createState() => _ShiftManagementScreenState();
+  ConsumerState<ShiftManagementScreen> createState() => _ShiftManagementScreenState();
 }
 
-class _ShiftManagementScreenState extends State<ShiftManagementScreen> {
+class _ShiftManagementScreenState extends ConsumerState<ShiftManagementScreen> {
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<ShiftController>().loadCurrentShift();
-      context.read<ShiftController>().loadShiftHistory();
+      ref.read(shiftControllerProvider).loadCurrentShift();
+      ref.read(shiftControllerProvider).loadShiftHistory();
     });
   }
 
@@ -31,8 +31,8 @@ class _ShiftManagementScreenState extends State<ShiftManagementScreen> {
       MaterialPageRoute(builder: (_) => const ShiftOpenScreen()),
     );
     if (result == true && mounted) {
-      context.read<ShiftController>().loadCurrentShift();
-      context.read<ShiftController>().loadShiftHistory();
+      ref.read(shiftControllerProvider).loadCurrentShift();
+      ref.read(shiftControllerProvider).loadShiftHistory();
     }
   }
 
@@ -44,13 +44,15 @@ class _ShiftManagementScreenState extends State<ShiftManagementScreen> {
       ),
     );
     if (result == true && mounted) {
-      context.read<ShiftController>().loadCurrentShift();
-      context.read<ShiftController>().loadShiftHistory();
+      ref.read(shiftControllerProvider).loadCurrentShift();
+      ref.read(shiftControllerProvider).loadShiftHistory();
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final controller = ref.watch(shiftControllerProvider);
+
     return Scaffold(
       backgroundColor: NeoBrutalTheme.background, // ✅ Brutal white background
       appBar: AppBar(
@@ -67,39 +69,37 @@ class _ShiftManagementScreenState extends State<ShiftManagementScreen> {
           ),
         ),
       ),
-      body: Consumer(
-        builder: (context, controller, _) {
-          if (controller.isLoading && controller.shiftHistory.isEmpty) {
-            return const Center(child: CircularProgressIndicator());
-          }
+      body: () {
+        if (controller.isLoading && controller.shiftHistory.isEmpty) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
-          return RefreshIndicator(
-            onRefresh: () async {
-              await controller.loadCurrentShift();
-              await controller.loadShiftHistory();
-            },
-            color: NeoBrutalTheme.primary, // ✅ Brutal primary color
-            backgroundColor: NeoBrutalTheme.blockYellow.withValues(alpha: 0.3),
-            strokeWidth: 4, // ✅ Thicker indicator
-            child: ListView(
-              padding: EdgeInsets.all(NeoBrutalTheme.spaceMD),
-              children: [
-                // Current Shift Section
-                _buildCurrentShiftSection(context, controller),
+        return RefreshIndicator(
+          onRefresh: () async {
+            await controller.loadCurrentShift();
+            await controller.loadShiftHistory();
+          },
+          color: NeoBrutalTheme.primary, // ✅ Brutal primary color
+          backgroundColor: NeoBrutalTheme.blockYellow.withValues(alpha: 0.3),
+          strokeWidth: 4, // ✅ Thicker indicator
+          child: ListView(
+            padding: EdgeInsets.all(NeoBrutalTheme.spaceMD),
+            children: [
+              // Current Shift Section
+              _buildCurrentShiftSection(context, controller),
 
-                SizedBox(height: NeoBrutalTheme.spaceLG),
+              SizedBox(height: NeoBrutalTheme.spaceLG),
 
-                // Shift History Section
-                _buildShiftHistorySection(context, controller),
-              ],
-            ),
-          );
-        },
-      ),
+              // Shift History Section
+              _buildShiftHistorySection(context, controller),
+            ],
+          ),
+        );
+      }(),
     );
   }
 
-  Widget _buildCurrentShiftSection(BuildContext context, ShiftController controller) {
+  Widget _buildCurrentShiftSection(BuildContext context, dynamic controller) {
     final hasActiveShift = controller.hasActiveShift;
     final currentShift = controller.currentShift;
     final statusColor = hasActiveShift ? AppTheme.successColor : AppTheme.warningColor;
@@ -278,7 +278,7 @@ class _ShiftManagementScreenState extends State<ShiftManagementScreen> {
     );
   }
 
-  Widget _buildShiftHistorySection(BuildContext context, ShiftController controller) {
+  Widget _buildShiftHistorySection(BuildContext context, dynamic controller) {
     final history = controller.shiftHistory;
 
     if (history.isEmpty) {

@@ -3,11 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../shared/presentation/providers.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../controllers/pos_controller.dart';
-import '../../../inventory/presentation/controllers/category_controller.dart';
-import '../../../inventory/presentation/controllers/product_variant_controller.dart';
 import '../../../inventory/domain/entities/product.dart';
-import '../../../sales/presentation/controllers/sales_history_controller.dart';
-import '../../../shifts/presentation/controllers/shift_controller.dart';
 import '../widgets/checkout_dialog.dart';
 import '../widgets/print_receipt_dialog.dart';
 import '../widgets/cart_modal.dart';
@@ -159,10 +155,11 @@ class POSScreenState extends ConsumerState<POSScreen>
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         leading: Container(
-          margin: const EdgeInsets.all(8),
+          margin: EdgeInsets.all(NeoBrutalTheme.spaceXS),
           decoration: BoxDecoration(
-            color: Colors.transparent,
-            borderRadius: BorderRadius.circular(12),
+            color: Colors.white.withValues(alpha: 0.2),
+            borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
+            border: Border.all(color: Colors.black, width: 2),
           ),
           child: IconButton(
             icon: const Icon(Icons.menu),
@@ -176,10 +173,11 @@ class POSScreenState extends ConsumerState<POSScreen>
         title: const Text('Checkout Cart'),
         actions: [
           Container(
-            margin: const EdgeInsets.all(8),
+            margin: EdgeInsets.all(NeoBrutalTheme.spaceXS),
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
+              border: Border.all(color: Colors.black, width: 2),
             ),
             child: IconButton(
               icon: const Icon(Icons.pause_circle_outline),
@@ -202,8 +200,8 @@ class POSScreenState extends ConsumerState<POSScreen>
       ),
       floatingActionButton: Padding(
         padding: EdgeInsets.only(
-          bottom: ResponsiveHelper.isVerySmallScreen(context) ? 80 : 90,
-        ), // ✅ Updated for new navbar height
+          bottom: ResponsiveHelper.getFABBottomOffset(context),
+        ),
         child: Consumer(
           builder: (context, ref, _) {
             final controller = ref.watch(posControllerProvider);
@@ -211,7 +209,7 @@ class POSScreenState extends ConsumerState<POSScreen>
             return BrutalFab(
               label: itemCount > 0 ? 'Cart ($itemCount)' : 'Cart',
               icon: Icons.shopping_cart,
-              heroTag: 'pos_cart_fab', // ✅ Unique hero tag
+              heroTag: 'pos_cart_fab',
               onPressed: () => _openCartModal(context, controller),
             );
           },
@@ -329,6 +327,12 @@ class POSScreenState extends ConsumerState<POSScreen>
 
   void _handleAddToCart(BuildContext context, Product product) async {
     final controller = ref.read(posControllerProvider);
+
+    // Check if product has valid ID
+    if (product.id == null) {
+      _showErrorSnackBar(context, 'Produk tidak valid - ID hilang');
+      return;
+    }
 
     if (product.hasVariants) {
       final variantController = ref.read(productVariantControllerProvider);

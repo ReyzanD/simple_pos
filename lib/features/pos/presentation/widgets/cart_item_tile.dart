@@ -1,19 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../sales/domain/entities/transaction_item.dart';
-import '../../../sales/presentation/controllers/cart_controller.dart';
 import '../../../../core/theme/neo_brutal_theme.dart';
 import '../../../../core/utils/currency_formatter.dart';
+import '../../../shared/presentation/providers.dart';
 
-class CartItemTile extends StatelessWidget {
+class CartItemTile extends ConsumerWidget {
   final TransactionItem item;
-
   const CartItemTile({super.key, required this.item});
 
   @override
-  Widget build(BuildContext context) {
-    final cart = context.read<CartController>();
-
+  Widget build(BuildContext context, WidgetRef ref) {
+    final cart = ref.read(cartControllerProvider);
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -66,7 +64,6 @@ class CartItemTile extends StatelessWidget {
                     fontSize: 16,
                   ),
                 ),
-                // QUANTITY CONTROLS
                 Container(
                   decoration: BoxDecoration(
                     border: Border.all(color: Colors.black, width: 2),

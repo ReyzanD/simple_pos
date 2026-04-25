@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simple_pos/features/inventory/presentation/controllers/category_controller.dart';
 import 'package:simple_pos/features/pos/presentation/controllers/pos_controller.dart';
 import 'package:simple_pos/features/pos/domain/entities/cart_item.dart' as domain;
@@ -9,9 +9,10 @@ import 'package:simple_pos/core/theme/app_theme.dart';
 import 'package:simple_pos/core/theme/neo_brutal_theme.dart';
 import 'package:simple_pos/core/utils/currency_formatter.dart';
 import 'package:simple_pos/core/utils/discount_calculator.dart';
+import 'package:simple_pos/features/shared/presentation/providers.dart';
 
 /// Individual cart item widget with brutal styling
-class CartModalItem extends StatefulWidget {
+class CartModalItem extends ConsumerWidget {
   final domain.CartItem item;
   final POSController controller;
   final Function(int quantity) onUpdateQuantity;
@@ -26,10 +27,43 @@ class CartModalItem extends StatefulWidget {
   });
 
   @override
-  State<CartModalItem> createState() => _CartModalItemState();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final categoryController = ref.watch(categoryControllerProvider);
+    final discountController = ref.watch(discountControllerProvider);
+
+    return _CartModalItemContent(
+      item: item,
+      controller: controller,
+      onUpdateQuantity: onUpdateQuantity,
+      onRemove: onRemove,
+      categoryController: categoryController,
+      discountController: discountController,
+    );
+  }
 }
 
-class _CartModalItemState extends State<CartModalItem> {
+class _CartModalItemContent extends StatefulWidget {
+  final domain.CartItem item;
+  final POSController controller;
+  final Function(int quantity) onUpdateQuantity;
+  final VoidCallback onRemove;
+  final CategoryController categoryController;
+  final DiscountController discountController;
+
+  const _CartModalItemContent({
+    required this.item,
+    required this.controller,
+    required this.onUpdateQuantity,
+    required this.onRemove,
+    required this.categoryController,
+    required this.discountController,
+  });
+
+  @override
+  State<_CartModalItemContent> createState() => _CartModalItemContentState();
+}
+
+class _CartModalItemContentState extends State<_CartModalItemContent> {
   bool _isRemoving = false;
 
   void _handleRemove() {
@@ -60,13 +94,9 @@ class _CartModalItemState extends State<CartModalItem> {
     final isLowStock = product.isLowStock && !canAddMore;
     final isOutOfStock = product.isOutOfStock;
 
-    // Get discounts
-    final categoryController = context.watch<CategoryController>();
-    final discountController = context.watch<DiscountController>();
-
     double? categoryDiscount;
     if (product.categoryId != null) {
-      final category = categoryController.categories
+      final category = widget.categoryController.categories
           .where((c) => c.id == product.categoryId)
           .firstOrNull;
       if (category != null && category.hasDiscount) {
@@ -75,8 +105,8 @@ class _CartModalItemState extends State<CartModalItem> {
     }
 
     double? promotionDiscount;
-    if (discountController.activePromotions.isNotEmpty) {
-      promotionDiscount = discountController.activePromotions.first.discountPercentage;
+    if (widget.discountController.activePromotions.isNotEmpty) {
+      promotionDiscount = widget.discountController.activePromotions.first.discountPercentage;
     }
 
     final hasCompoundDiscount = product.hasAnyDiscount(
@@ -116,7 +146,7 @@ class _CartModalItemState extends State<CartModalItem> {
           color: isOutOfStock
               ? NeoBrutalTheme.error
               : Colors.black,
-          width: isOutOfStock ? 5 : 4, // ✅ Bold borders
+          width: isOutOfStock ? 5 : 4,
         ),
         boxShadow: isOutOfStock
             ? []

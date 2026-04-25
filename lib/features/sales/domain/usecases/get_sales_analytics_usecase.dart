@@ -42,10 +42,8 @@ class GetSalesAnalyticsUseCase {
       }
 
       // Fetch data
-      final transactions = await transactionRepository.getTransactionsByDateRange(
-        startDate,
-        endDate,
-      );
+      final transactions = await transactionRepository
+          .getTransactionsByDateRange(startDate, endDate);
 
       final products = await productRepository.getProducts();
 
@@ -54,17 +52,11 @@ class GetSalesAnalyticsUseCase {
       final previousStartDate = startDate.subtract(Duration(days: daysInRange));
       final previousEndDate = startDate.subtract(const Duration(days: 1));
 
-      final previousTransactions = await transactionRepository.getTransactionsByDateRange(
-        previousStartDate,
-        previousEndDate,
-      );
+      final previousTransactions = await transactionRepository
+          .getTransactionsByDateRange(previousStartDate, previousEndDate);
 
       // Generate analytics components
-      final kpis = _calculateKPIs(
-        transactions,
-        products,
-        previousTransactions,
-      );
+      final kpis = _calculateKPIs(transactions, products, previousTransactions);
 
       final trendAnalysis = _analyzeTrends(
         transactions,
@@ -119,7 +111,11 @@ class GetSalesAnalyticsUseCase {
     } on AppException {
       rethrow;
     } catch (e, stackTrace) {
-      AppLogger.error('Failed to generate sales analytics', error: e, stackTrace: stackTrace);
+      AppLogger.error(
+        'Failed to generate sales analytics',
+        error: e,
+        stackTrace: stackTrace,
+      );
       throw DatabaseException(
         'Gagal membuat analitik penjualan',
         operation: 'GetSalesAnalyticsUseCase',
@@ -143,7 +139,8 @@ class GetSalesAnalyticsUseCase {
     // Revenue growth rate
     double revenueGrowthRate = 0;
     if (previousRevenue > 0) {
-      revenueGrowthRate = ((currentRevenue - previousRevenue) / previousRevenue * 100);
+      revenueGrowthRate =
+          ((currentRevenue - previousRevenue) / previousRevenue * 100);
     }
 
     // Profit margin
@@ -174,7 +171,9 @@ class GetSalesAnalyticsUseCase {
     final totalProducts = products.length;
     final activeProducts = products.where((p) => p.stock > 0).length;
     final lowStockThreshold = 10;
-    final lowStockProducts = products.where((p) => p.stock > 0 && p.stock <= lowStockThreshold).length;
+    final lowStockProducts = products
+        .where((p) => p.stock > 0 && p.stock <= lowStockThreshold)
+        .length;
     final outOfStockProducts = products.where((p) => p.stock == 0).length;
 
     // Inventory turnover (simplified)
@@ -187,7 +186,8 @@ class GetSalesAnalyticsUseCase {
       if (totalInventoryValue > 0) {
         // Annualized turnover rate
         final daysInRange = 30; // Default to 30 days
-        inventoryTurnover = (currentRevenue / totalInventoryValue) * (365 / daysInRange);
+        inventoryTurnover =
+            (currentRevenue / totalInventoryValue) * (365 / daysInRange);
       }
     }
 
@@ -201,7 +201,9 @@ class GetSalesAnalyticsUseCase {
     // Generate alerts
     final alerts = <String>[];
     if (profitMargin < 15) {
-      alerts.add('⚠️ Margin keuntungan rendah (${profitMargin.toStringAsFixed(1)}%)');
+      alerts.add(
+        '⚠️ Margin keuntungan rendah (${profitMargin.toStringAsFixed(1)}%)',
+      );
     }
     if (lowStockProducts > totalProducts * 0.2) {
       alerts.add('⚠️ ${lowStockProducts} produk dengan stok rendah');
@@ -210,7 +212,9 @@ class GetSalesAnalyticsUseCase {
       alerts.add('⚠️ $outOfStockProducts produk habis stok');
     }
     if (revenueGrowthRate < -10) {
-      alerts.add('⚠️ Penurunan pendapatan ${revenueGrowthRate.toStringAsFixed(1)}%');
+      alerts.add(
+        '⚠️ Penurunan pendapatan ${revenueGrowthRate.toStringAsFixed(1)}%',
+      );
     }
 
     // Generate achievements
@@ -246,13 +250,17 @@ class GetSalesAnalyticsUseCase {
 
   /// Analyze sales trends and generate forecast
   SalesTrendAnalysis _analyzeTrends(
-    List<Transaction> transactions,
-    {int forecastDays = 7,}
-  ) {
+    List<Transaction> transactions, {
+    int forecastDays = 7,
+  }) {
     // Group transactions by date
     final dailyData = <DateTime, List<dynamic>>{};
     for (final t in transactions) {
-      final date = DateTime(t.createdAt.year, t.createdAt.month, t.createdAt.day);
+      final date = DateTime(
+        t.createdAt.year,
+        t.createdAt.month,
+        t.createdAt.day,
+      );
       dailyData.putIfAbsent(date, () => []).add(t);
     }
 
@@ -260,8 +268,14 @@ class GetSalesAnalyticsUseCase {
     final sortedDates = dailyData.keys.toList()..sort();
     final trendData = sortedDates.map((date) {
       final dayTransactions = dailyData[date]!;
-      final revenue = dayTransactions.fold<double>(0, (sum, t) => sum + t.totalAmount);
-      final profit = dayTransactions.fold<double>(0, (sum, t) => sum + (t.profit ?? 0));
+      final revenue = dayTransactions.fold<double>(
+        0,
+        (sum, t) => sum + t.totalAmount,
+      );
+      final profit = dayTransactions.fold<double>(
+        0,
+        (sum, t) => sum + (t.profit ?? 0),
+      );
       final transactionsCount = dayTransactions.length;
       int itemsSold = 0;
       for (final t in dayTransactions) {
@@ -275,7 +289,9 @@ class GetSalesAnalyticsUseCase {
         revenue: revenue,
         profit: profit,
         transactions: transactionsCount,
-        averageTransactionValue: transactionsCount > 0 ? revenue / transactionsCount : 0,
+        averageTransactionValue: transactionsCount > 0
+            ? revenue / transactionsCount
+            : 0,
         itemsSold: itemsSold,
       );
     }).toList();
@@ -311,21 +327,36 @@ class GetSalesAnalyticsUseCase {
       // Calculate daily averages
       final dailyRevenueChange = lastData.revenue - secondLastData.revenue;
       final dailyProfitChange = lastData.profit - secondLastData.profit;
-      final dailyTransactionChange = lastData.transactions - secondLastData.transactions;
+      final dailyTransactionChange =
+          lastData.transactions - secondLastData.transactions;
 
       for (int i = 1; i <= forecastDays; i++) {
         final forecastDate = lastData.date.add(Duration(days: i));
-        final forecastTransactions = (lastData.transactions + dailyTransactionChange * i).round();
-        final forecastItemsSold = (lastData.itemsSold * (1 + dailyRevenueChange / lastData.revenue)).round();
+        final forecastTransactions =
+            (lastData.transactions + dailyTransactionChange * i).round();
+        final forecastItemsSold =
+            (lastData.itemsSold * (1 + dailyRevenueChange / lastData.revenue))
+                .round();
 
-        forecastData.add(SalesTrendData(
-          date: forecastDate,
-          revenue: (lastData.revenue + dailyRevenueChange * i).clamp(0, double.infinity),
-          profit: (lastData.profit + dailyProfitChange * i).clamp(0, double.infinity),
-          transactions: (forecastTransactions.clamp(0, double.infinity)).toInt(),
-          averageTransactionValue: lastData.averageTransactionValue,
-          itemsSold: (forecastItemsSold.clamp(0, double.infinity)).toInt(),
-        ));
+        forecastData.add(
+          SalesTrendData(
+            date: forecastDate,
+            revenue: (lastData.revenue + dailyRevenueChange * i).clamp(
+              0,
+              double.infinity,
+            ),
+            profit: (lastData.profit + dailyProfitChange * i).clamp(
+              0,
+              double.infinity,
+            ),
+            transactions: (forecastTransactions.clamp(
+              0,
+              double.infinity,
+            )).toInt(),
+            averageTransactionValue: lastData.averageTransactionValue,
+            itemsSold: (forecastItemsSold.clamp(0, double.infinity)).toInt(),
+          ),
+        );
       }
     }
 
@@ -336,13 +367,16 @@ class GetSalesAnalyticsUseCase {
         insight = 'Pendapatan menunjukkan tren peningkatan yang positif';
         break;
       case TrendDirection.down:
-        insight = 'Pendapatan menunjukkan tren penurunan, perlu evaluasi strategi';
+        insight =
+            'Pendapatan menunjukkan tren penurunan, perlu evaluasi strategi';
         break;
       case TrendDirection.stable:
-        insight = 'Pendapatan stabil, pertimbangkan strategi promosi untuk pertumbuhan';
+        insight =
+            'Pendapatan stabil, pertimbangkan strategi promosi untuk pertumbuhan';
         break;
       case TrendDirection.volatile:
-        insight = 'Pendapatan fluktuatif, analisis faktor penyebab variabilitas';
+        insight =
+            'Pendapatan fluktuatif, analisis faktor penyebab variabilitas';
         break;
     }
 
@@ -366,12 +400,15 @@ class GetSalesAnalyticsUseCase {
     for (final t in transactions) {
       for (final item in t.items) {
         final productId = item.productId;
-        productStats.putIfAbsent(productId, () => _ProductStats(
-          productId: productId,
-          productName: item.productName,
-          categoryId: 0,
-          categoryName: 'Uncategorized',
-        ));
+        productStats.putIfAbsent(
+          productId,
+          () => _ProductStats(
+            productId: productId,
+            productName: item.productName,
+            categoryId: 0,
+            categoryName: 'Uncategorized',
+          ),
+        );
 
         final stats = productStats[productId]!;
         stats.quantitySold += item.quantity;
@@ -383,7 +420,9 @@ class GetSalesAnalyticsUseCase {
 
     // Convert to ProductPerformance and sort by revenue
     final performanceList = productStats.values.map((stats) {
-      final profitMargin = stats.revenue > 0 ? (stats.profit / stats.revenue * 100).toDouble() : 0.0;
+      final profitMargin = stats.revenue > 0
+          ? (stats.profit / stats.revenue * 100).toDouble()
+          : 0.0;
 
       PerformanceRating rating;
       if (profitMargin >= 30) {
@@ -429,7 +468,8 @@ class GetSalesAnalyticsUseCase {
         profit: performanceList[i].profit,
         profitMargin: performanceList[i].profitMargin,
         transactions: performanceList[i].transactions,
-        averageQuantityPerTransaction: performanceList[i].averageQuantityPerTransaction,
+        averageQuantityPerTransaction:
+            performanceList[i].averageQuantityPerTransaction,
         rating: performanceList[i].rating,
         rank: i + 1,
       );
@@ -453,12 +493,17 @@ class GetSalesAnalyticsUseCase {
         );
 
         final categoryId = product.categoryId ?? 0;
-        final categoryName = product.categoryId != null ? 'Category $categoryId' : 'Uncategorized';
+        final categoryName = product.categoryId != null
+            ? 'Category $categoryId'
+            : 'Uncategorized';
 
-        categoryStats.putIfAbsent(categoryId, () => _CategoryStats(
-          categoryId: categoryId,
-          categoryName: categoryName,
-        ));
+        categoryStats.putIfAbsent(
+          categoryId,
+          () => _CategoryStats(
+            categoryId: categoryId,
+            categoryName: categoryName,
+          ),
+        );
 
         final stats = categoryStats[categoryId]!;
         stats.quantitySold += item.quantity;
@@ -470,8 +515,12 @@ class GetSalesAnalyticsUseCase {
     }
 
     return categoryStats.values.map((stats) {
-      final profitMargin = stats.revenue > 0 ? (stats.profit / stats.revenue * 100).toDouble() : 0.0;
-      final avgPrice = stats.quantitySold > 0 ? (stats.revenue / stats.quantitySold).toDouble() : 0.0;
+      final profitMargin = stats.revenue > 0
+          ? (stats.profit / stats.revenue * 100).toDouble()
+          : 0.0;
+      final avgPrice = stats.quantitySold > 0
+          ? (stats.revenue / stats.quantitySold).toDouble()
+          : 0.0;
 
       PerformanceRating rating;
       if (profitMargin >= 30) {
@@ -497,8 +546,7 @@ class GetSalesAnalyticsUseCase {
         rating: rating,
         topProducts: [],
       );
-    }).toList()
-      ..sort((a, b) => b.revenue.compareTo(a.revenue));
+    }).toList()..sort((a, b) => b.revenue.compareTo(a.revenue));
   }
 
   /// Analyze time patterns (hourly, daily, weekly)
@@ -508,18 +556,22 @@ class GetSalesAnalyticsUseCase {
     for (final t in transactions) {
       final hour = t.createdAt.hour;
       hourlyData.putIfAbsent(hour, () => _TimeStats(hour));
-      hourlyData[hour]!.addTransaction(t.totalAmount, t.profit ?? 0);
+      hourlyData[hour]!.addTransaction(t.totalAmount, t.profit);
     }
 
-    final hourlyPatterns = hourlyData.values.map((stats) => HourlyPattern(
-      hour: stats.hour,
-      transactionCount: stats.transactionCount,
-      revenue: stats.revenue,
-      profit: stats.profit,
-      averageTransactionValue: stats.transactionCount > 0
-          ? stats.revenue / stats.transactionCount
-          : 0,
-    )).toList();
+    final hourlyPatterns = hourlyData.values
+        .map(
+          (stats) => HourlyPattern(
+            hour: stats.hour,
+            transactionCount: stats.transactionCount,
+            revenue: stats.revenue,
+            profit: stats.profit,
+            averageTransactionValue: stats.transactionCount > 0
+                ? stats.revenue / stats.transactionCount
+                : 0,
+          ),
+        )
+        .toList();
 
     // Daily patterns (day of week)
     final dayNames = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
@@ -527,24 +579,29 @@ class GetSalesAnalyticsUseCase {
     for (final t in transactions) {
       final day = t.createdAt.weekday;
       dailyData.putIfAbsent(day, () => _TimeStats(day));
-      dailyData[day]!.addTransaction(t.totalAmount, t.profit ?? 0);
+      dailyData[day]!.addTransaction(t.totalAmount, t.profit);
     }
 
-    final dailyPatterns = dailyData.values.map((stats) => DailyPattern(
-      dayOfWeek: stats.hour,
-      dayName: dayNames[stats.hour - 1],
-      transactionCount: stats.transactionCount,
-      revenue: stats.revenue,
-      profit: stats.profit,
-      averageTransactionValue: stats.transactionCount > 0
-          ? stats.revenue / stats.transactionCount
-          : 0,
-    )).toList();
+    final dailyPatterns = dailyData.values
+        .map(
+          (stats) => DailyPattern(
+            dayOfWeek: stats.hour,
+            dayName: dayNames[stats.hour - 1],
+            transactionCount: stats.transactionCount,
+            revenue: stats.revenue,
+            profit: stats.profit,
+            averageTransactionValue: stats.transactionCount > 0
+                ? stats.revenue / stats.transactionCount
+                : 0,
+          ),
+        )
+        .toList();
 
     // Find best times
     final peakHour = hourlyPatterns.isNotEmpty
-        ? hourlyPatterns.reduce((a, b) =>
-            a.transactionCount > b.transactionCount ? a : b)
+        ? hourlyPatterns.reduce(
+            (a, b) => a.transactionCount > b.transactionCount ? a : b,
+          )
         : null;
 
     final bestDay = dailyPatterns.isNotEmpty
@@ -610,9 +667,11 @@ class GetSalesAnalyticsUseCase {
         currentValue: currentRevenue,
         previousValue: previousRevenue,
         changePercentage: revenueChange,
-        direction: revenueChange > 5 ? TrendDirection.up
-                 : revenueChange < -5 ? TrendDirection.down
-                 : TrendDirection.stable,
+        direction: revenueChange > 5
+            ? TrendDirection.up
+            : revenueChange < -5
+            ? TrendDirection.down
+            : TrendDirection.stable,
         isPositive: revenueChange >= 0.0,
       ),
       MetricComparison(
@@ -620,9 +679,11 @@ class GetSalesAnalyticsUseCase {
         currentValue: currentProfit,
         previousValue: previousProfit,
         changePercentage: profitChange,
-        direction: profitChange > 5 ? TrendDirection.up
-                 : profitChange < -5 ? TrendDirection.down
-                 : TrendDirection.stable,
+        direction: profitChange > 5
+            ? TrendDirection.up
+            : profitChange < -5
+            ? TrendDirection.down
+            : TrendDirection.stable,
         isPositive: profitChange >= 0.0,
       ),
       MetricComparison(
@@ -630,9 +691,11 @@ class GetSalesAnalyticsUseCase {
         currentValue: currentCount.toDouble(),
         previousValue: previousCount.toDouble(),
         changePercentage: transactionChange,
-        direction: transactionChange > 5 ? TrendDirection.up
-                 : transactionChange < -5 ? TrendDirection.down
-                 : TrendDirection.stable,
+        direction: transactionChange > 5
+            ? TrendDirection.up
+            : transactionChange < -5
+            ? TrendDirection.down
+            : TrendDirection.stable,
         isPositive: transactionChange >= 0.0,
       ),
     ];
@@ -669,23 +732,35 @@ class GetSalesAnalyticsUseCase {
   ) {
     final summary = <String>[];
 
-    summary.add('📊 Skor kesehatan bisnis: ${kpis.healthScore.toStringAsFixed(1)}/100 (${kpis.healthRating.displayName})');
+    summary.add(
+      '📊 Skor kesehatan bisnis: ${kpis.healthScore.toStringAsFixed(1)}/100 (${kpis.healthRating.displayName})',
+    );
 
     if (trends.growthRate > 0) {
-      summary.add('📈 Pendapatan tumbuh ${trends.growthRate.toStringAsFixed(1)}% dengan tren ${trends.trendDirection.displayName.toLowerCase()}');
+      summary.add(
+        '📈 Pendapatan tumbuh ${trends.growthRate.toStringAsFixed(1)}% dengan tren ${trends.trendDirection.displayName.toLowerCase()}',
+      );
     } else if (trends.growthRate < 0) {
-      summary.add('📉 Pendapatan turun ${trends.growthRate.abs().toStringAsFixed(1)}% dengan ${trends.trendDirection.displayName.toLowerCase()}');
+      summary.add(
+        '📉 Pendapatan turun ${trends.growthRate.abs().toStringAsFixed(1)}% dengan ${trends.trendDirection.displayName.toLowerCase()}',
+      );
     }
 
     if (kpis.profitMargin >= 25) {
-      summary.add('💰 Margin keuntungan sehat: ${kpis.profitMargin.toStringAsFixed(1)}%');
+      summary.add(
+        '💰 Margin keuntungan sehat: ${kpis.profitMargin.toStringAsFixed(1)}%',
+      );
     } else if (kpis.profitMargin < 15) {
-      summary.add('⚠️ Margin keuntungan rendah: ${kpis.profitMargin.toStringAsFixed(1)}%, perlu evaluasi');
+      summary.add(
+        '⚠️ Margin keuntungan rendah: ${kpis.profitMargin.toStringAsFixed(1)}%, perlu evaluasi',
+      );
     }
 
     if (products.isNotEmpty) {
       final topProduct = products.first;
-      summary.add('🏆 Produk terlaris: ${topProduct.productName} (${topProduct.quantitySold} terjual)');
+      summary.add(
+        '🏆 Produk terlaris: ${topProduct.productName} (${topProduct.quantitySold} terjual)',
+      );
     }
 
     return summary;
@@ -702,14 +777,21 @@ class GetSalesAnalyticsUseCase {
 
     // Inventory actions
     if (kpis.lowStockProducts > 0) {
-      actions.add('🔁 Restock ${kpis.lowStockProducts} produk dengan stok rendah');
+      actions.add(
+        '🔁 Restock ${kpis.lowStockProducts} produk dengan stok rendah',
+      );
     }
     if (kpis.outOfStockProducts > 0) {
-      actions.add('🚨 Urus restock untuk ${kpis.outOfStockProducts} produk habis stok');
+      actions.add(
+        '🚨 Urus restock untuk ${kpis.outOfStockProducts} produk habis stok',
+      );
     }
 
     // Performance actions
-    final poorProducts = products.where((p) => p.rating == PerformanceRating.poor).take(3).toList();
+    final poorProducts = products
+        .where((p) => p.rating == PerformanceRating.poor)
+        .take(3)
+        .toList();
     if (poorProducts.isNotEmpty) {
       actions.add('📦 Review kinerja produk dengan margin rendah');
     }
@@ -766,10 +848,7 @@ class _CategoryStats {
   int transactions = 0;
   final Set<int> productIds = {};
 
-  _CategoryStats({
-    required this.categoryId,
-    required this.categoryName,
-  });
+  _CategoryStats({required this.categoryId, required this.categoryName});
 }
 
 /// Internal helper class for time statistics

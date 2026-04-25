@@ -82,7 +82,7 @@ class BrutalDropdownField<T> extends StatelessWidget {
   Widget build(BuildContext context) {
     return DropdownButtonFormField<T>(
       isExpanded: true,
-      value: value,
+      initialValue: value,
       style: NeoBrutalTheme.bodyLarge.copyWith(
         fontWeight: FontWeight.w700,
         color: Colors.black,

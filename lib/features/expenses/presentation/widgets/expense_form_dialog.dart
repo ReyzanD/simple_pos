@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/neo_brutal_theme.dart';
@@ -10,11 +10,11 @@ import '../../../../core/services/success_toast_service.dart';
 import '../../domain/constants/expense_categories.dart';
 import '../../domain/entities/expense_payment_method.dart';
 import '../../domain/entities/expense.dart';
-import '../controllers/expense_controller.dart';
+import '../../../shared/presentation/providers.dart';
 import '../utils/expense_category_helper.dart';
 
 /// Dialog for adding or editing expenses with receipt image support
-class ExpenseFormDialog extends StatefulWidget {
+class ExpenseFormDialog extends ConsumerWidget {
   final Expense? expense; // If provided, edit mode; otherwise add mode
 
   const ExpenseFormDialog({
@@ -23,10 +23,29 @@ class ExpenseFormDialog extends StatefulWidget {
   });
 
   @override
-  State<ExpenseFormDialog> createState() => _ExpenseFormDialogState();
+  Widget build(BuildContext context, WidgetRef ref) {
+    return _ExpenseFormDialogContent(
+      expense: expense,
+      controller: ref.watch(expenseControllerProvider),
+    );
+  }
 }
 
-class _ExpenseFormDialogState extends State<ExpenseFormDialog> {
+class _ExpenseFormDialogContent extends StatefulWidget {
+  final Expense? expense;
+  final dynamic controller;
+
+  const _ExpenseFormDialogContent({
+    super.key,
+    required this.expense,
+    required this.controller,
+  });
+
+  @override
+  State<_ExpenseFormDialogContent> createState() => _ExpenseFormDialogContentState();
+}
+
+class _ExpenseFormDialogContentState extends State<_ExpenseFormDialogContent> {
   final _formKey = GlobalKey<FormState>();
   final _amountController = TextEditingController();
   final _descriptionController = TextEditingController();
@@ -719,7 +738,7 @@ class _ExpenseFormDialogState extends State<ExpenseFormDialog> {
     setState(() => _isSubmitting = true);
 
     try {
-      final controller = context.read<ExpenseController>();
+      final controller = widget.controller;
 
       final success = _isEditMode
           ? await controller.updateExpense(

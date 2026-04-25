@@ -1,34 +1,34 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/product.dart';
 import '../../domain/entities/product_variant.dart';
-import '../controllers/product_variant_controller.dart';
+import '../../../shared/presentation/providers.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/modern_button.dart';
 import '../../../../core/widgets/modern_card.dart';
 import 'add_edit_variant_dialog.dart';
 
 /// Screen for managing product variants
-class ProductVariantScreen extends StatefulWidget {
+class ProductVariantScreen extends ConsumerStatefulWidget {
   final Product product;
 
   const ProductVariantScreen({super.key, required this.product});
 
   @override
-  State<ProductVariantScreen> createState() => _ProductVariantScreenState();
+  ConsumerState<ProductVariantScreen> createState() => _ProductVariantScreenState();
 }
 
-class _ProductVariantScreenState extends State<ProductVariantScreen> {
+class _ProductVariantScreenState extends ConsumerState<ProductVariantScreen> {
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<ProductVariantController>().loadVariants(widget.product.id!);
+      ref.read(productVariantControllerProvider).loadVariants(widget.product.id!);
     });
   }
 
   Future<void> _addVariant() async {
-    final controller = context.read<ProductVariantController>();
+    final controller = ref.read(productVariantControllerProvider);
     final result = await showDialog<Map<String, dynamic>>(
       context: context,
       builder: (context) => AddEditVariantDialog(
@@ -56,7 +56,7 @@ class _ProductVariantScreenState extends State<ProductVariantScreen> {
   }
 
   Future<void> _editVariant(ProductVariant variant) async {
-    final controller = context.read<ProductVariantController>();
+    final controller = ref.read(productVariantControllerProvider);
     final result = await showDialog<Map<String, dynamic>>(
       context: context,
       builder: (context) => AddEditVariantDialog(
@@ -107,7 +107,7 @@ class _ProductVariantScreenState extends State<ProductVariantScreen> {
     );
 
     if (confirmed == true && mounted) {
-      await context.read<ProductVariantController>().deleteVariant(variant.id!);
+      await ref.read(productVariantControllerProvider).deleteVariant(variant.id!);
     }
   }
 
@@ -117,6 +117,8 @@ class _ProductVariantScreenState extends State<ProductVariantScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final controller = ref.watch(productVariantControllerProvider);
+
     return Scaffold(
       backgroundColor: AppTheme.getBackgroundColor(context),
       appBar: AppBar(
@@ -132,159 +134,157 @@ class _ProductVariantScreenState extends State<ProductVariantScreen> {
           ),
         ],
       ),
-      body: Consumer(
-        builder: (context, controller, _) {
-          if (controller.isLoading && controller.variants.isEmpty) {
-            return const Center(child: CircularProgressIndicator());
-          }
+      body: () {
+        if (controller.isLoading && controller.variants.isEmpty) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
-          if (controller.hasError) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.error_outline,
-                    size: 64,
-                    color: AppTheme.errorColor,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    controller.error?.userMessage ?? 'Terjadi kesalahan',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: AppTheme.textSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () =>
-                        controller.loadVariants(widget.product.id!),
-                    child: const Text('Coba Lagi'),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          if (controller.variants.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.dashboard_customize_outlined,
-                    size: 64,
-                    color: AppTheme.textTertiary,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Belum Ada Varian',
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: AppTheme.textPrimary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Tambahkan varian untuk produk ini',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: AppTheme.textSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  ModernButton(
-                    text: 'Tambah Varian',
-                    icon: Icons.add,
-                    onPressed: () => _addVariant(),
-                    backgroundColor: AppTheme.primaryColor,
-                  ),
-                ],
-              ),
-            );
-          }
-
-          return Column(
-            children: [
-              // Summary header
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    Column(
-                      children: [
-                        Text(
-                          '${controller.variants.length}',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.primaryColor,
-                          ),
-                        ),
-                        Text(
-                          'Varian',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: AppTheme.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                    Container(
-                      width: 1,
-                      height: 40,
-                      color: AppTheme.borderColor,
-                    ),
-                    Column(
-                      children: [
-                        Text(
-                          '${controller.totalStock}',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.successColor,
-                          ),
-                        ),
-                        Text(
-                          'Total Stok',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: AppTheme.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+        if (controller.hasError) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.error_outline,
+                  size: 64,
+                  color: AppTheme.errorColor,
                 ),
-              ),
-
-              // Variant list
-              Expanded(
-                child: ListView.separated(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: controller.variants.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 12),
-                  itemBuilder: (context, index) {
-                    final variant = controller.variants[index];
-                    return _buildVariantCard(variant, controller);
-                  },
+                const SizedBox(height: 16),
+                Text(
+                  controller.error?.userMessage ?? 'Terjadi kesalahan',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: AppTheme.textSecondary,
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () =>
+                      controller.loadVariants(widget.product.id!),
+                  child: const Text('Coba Lagi'),
+                ),
+              ],
+            ),
           );
-        },
-      ),
+        }
+
+        if (controller.variants.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.dashboard_customize_outlined,
+                  size: 64,
+                  color: AppTheme.textTertiary,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Belum Ada Varian',
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: AppTheme.textPrimary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Tambahkan varian untuk produk ini',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: AppTheme.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                ModernButton(
+                  text: 'Tambah Varian',
+                  icon: Icons.add,
+                  onPressed: () => _addVariant(),
+                  backgroundColor: AppTheme.primaryColor,
+                ),
+              ],
+            ),
+          );
+        }
+
+        return Column(
+          children: [
+            // Summary header
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              color: AppTheme.primaryColor.withValues(alpha: 0.1),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  Column(
+                    children: [
+                      Text(
+                        '${controller.variants.length}',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.primaryColor,
+                        ),
+                      ),
+                      Text(
+                        'Varian',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppTheme.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Container(
+                    width: 1,
+                    height: 40,
+                    color: AppTheme.borderColor,
+                  ),
+                  Column(
+                    children: [
+                      Text(
+                        '${controller.totalStock}',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.successColor,
+                        ),
+                      ),
+                      Text(
+                        'Total Stok',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppTheme.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            // Variant list
+            Expanded(
+              child: ListView.separated(
+                padding: const EdgeInsets.all(16),
+                itemCount: controller.variants.length,
+                separatorBuilder: (_, _) => const SizedBox(height: 12),
+                itemBuilder: (context, index) {
+                  final variant = controller.variants[index];
+                  return _buildVariantCard(variant, controller);
+                },
+              ),
+            ),
+          ],
+        );
+      }(),
     );
   }
 
   Widget _buildVariantCard(
     ProductVariant variant,
-    ProductVariantController controller,
+    dynamic controller,
   ) {
     final isOutOfStock = variant.isOutOfStock;
     final isLowStock = variant.isLowStock;

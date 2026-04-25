@@ -1,21 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/neo_brutal_theme.dart';
 import '../../../../core/services/printer_service.dart';
 import '../../../../core/widgets/modern_button.dart';
 import '../../../../core/widgets/modern_card.dart';
-import '../controllers/settings_controller.dart';
+import '../../../shared/presentation/providers.dart';
 
 /// Screen for managing Bluetooth printer settings
-class PrinterSettingsScreen extends StatefulWidget {
+class PrinterSettingsScreen extends ConsumerStatefulWidget {
   const PrinterSettingsScreen({super.key});
 
   @override
-  State<PrinterSettingsScreen> createState() => _PrinterSettingsScreenState();
+  ConsumerState<PrinterSettingsScreen> createState() => _PrinterSettingsScreenState();
 }
 
-class _PrinterSettingsScreenState extends State<PrinterSettingsScreen> {
+class _PrinterSettingsScreenState extends ConsumerState<PrinterSettingsScreen> {
   int _selectedPaperWidth = 58; // 58mm or 80mm
   bool _isScanning = false;
 
@@ -39,7 +39,7 @@ class _PrinterSettingsScreenState extends State<PrinterSettingsScreen> {
       _isScanning = true;
     });
 
-    final printerService = context.read<PrinterService>();
+    final printerService = ref.read(printerServiceProvider);
 
     // Initialize first
     await printerService.initialize();
@@ -53,7 +53,7 @@ class _PrinterSettingsScreenState extends State<PrinterSettingsScreen> {
   }
 
   Future<void> _connectPrinter(PrinterInfo printer) async {
-    final printerService = context.read<PrinterService>();
+    final printerService = ref.read(printerServiceProvider);
 
     final success = await printerService.connect(printer.address);
 
@@ -67,7 +67,7 @@ class _PrinterSettingsScreenState extends State<PrinterSettingsScreen> {
   }
 
   Future<void> _disconnectPrinter() async {
-    final printerService = context.read<PrinterService>();
+    final printerService = ref.read(printerServiceProvider);
     await printerService.disconnect();
 
     if (mounted) {
@@ -77,8 +77,8 @@ class _PrinterSettingsScreenState extends State<PrinterSettingsScreen> {
   }
 
   Future<void> _testPrint() async {
-    final printerService = context.read<PrinterService>();
-    final settingsController = context.read<SettingsController>();
+    final printerService = ref.read(printerServiceProvider);
+    final settingsController = ref.read(settingsControllerProvider);
 
     if (!printerService.isConnected) {
       _showErrorSnackBar('Tidak ada printer terhubung');
@@ -129,6 +129,8 @@ class _PrinterSettingsScreenState extends State<PrinterSettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final printerService = ref.watch(printerServiceProvider);
+
     return Scaffold(
       backgroundColor: AppTheme.getBackgroundColor(context),
       appBar: AppBar(
@@ -137,9 +139,7 @@ class _PrinterSettingsScreenState extends State<PrinterSettingsScreen> {
         foregroundColor: Colors.white,
         elevation: 0,
       ),
-      body: Consumer<PrinterService>(
-        builder: (context, printerService, _) {
-          return ListView(
+      body: ListView(
             padding: const EdgeInsets.all(16),
             children: [
               // Connection status card
@@ -402,10 +402,8 @@ class _PrinterSettingsScreenState extends State<PrinterSettingsScreen> {
                 ),
               ),
             ],
-          );
-        },
-      ),
-    );
+          ),
+        );
   }
 
   Widget _buildHelpItem(String text) {

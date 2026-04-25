@@ -478,12 +478,7 @@ class POSController extends ChangeNotifier {
       final result = await checkoutUseCase.executeWithCashPayment(cart: _cart);
 
       if (!result.success) {
-        _setError(
-          DatabaseException(
-            result.message ?? 'Checkout gagal',
-            operation: 'checkout',
-          ),
-        );
+        _setError(DatabaseException(result.message, operation: 'checkout'));
         return false;
       }
 
@@ -545,12 +540,7 @@ class POSController extends ChangeNotifier {
       );
 
       if (!result.success) {
-        _setError(
-          DatabaseException(
-            result.message ?? 'Checkout gagal',
-            operation: 'checkout',
-          ),
-        );
+        _setError(DatabaseException(result.message, operation: 'checkout'));
         return false;
       }
 

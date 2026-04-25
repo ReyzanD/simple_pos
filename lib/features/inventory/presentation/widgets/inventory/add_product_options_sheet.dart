@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:simple_pos/core/theme/neo_brutal_theme.dart';
-import 'package:simple_pos/core/theme/app_theme.dart';
 import 'package:simple_pos/core/widgets/brutal_widgets.dart';
-import 'package:simple_pos/core/widgets/modern_button.dart';
 
 /// Bottom sheet for adding products (manual or CSV import)
 class AddProductOptionsSheet extends StatelessWidget {

@@ -1,4 +1,3 @@
-import '../../../../core/exceptions/app_exceptions.dart';
 import '../../../sales/domain/entities/transaction.dart';
 
 /// Result type for checkout operation

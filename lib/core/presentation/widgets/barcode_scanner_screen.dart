@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/theme.dart';
+import '../../../../core/theme/neo_brutal_theme.dart';
+import '../../../../core/utils/responsive_helper.dart';
 import '../../../../core/utils/audio_feedback_helper.dart';
 
 // Import extracted scanner widgets
@@ -161,23 +163,29 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
     AudioFeedbackHelper.instance.init();
     _loadSettings();
     _loadHistory();
-    _controller.barcodes.listen(_onBarcodeDetected);
   }
 
   @override
   void dispose() {
     _saveSettings();
-    _controller.dispose();
+    // Let MobileScanner widget handle its own cleanup
+    // Manual stop can cause race conditions with the widget's lifecycle
     super.dispose();
   }
 
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
     final useFrontCamera = prefs.getBool(_cameraFacingKey) ?? false;
-    // Set camera facing on next frame
+    // Set camera facing after a brief delay to ensure camera is ready
     if (useFrontCamera) {
-      // Switch to front camera
-      _controller.switchCamera();
+      await Future.delayed(const Duration(milliseconds: 100));
+      if (mounted) {
+        try {
+          _controller.switchCamera();
+        } catch (e) {
+          // Ignore camera switch errors during initialization
+        }
+      }
     }
   }
 
@@ -315,15 +323,15 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Enter Barcode Manually'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusXLarge)),
+        title: Text('Enter Barcode Manually', style: NeoBrutalTheme.headlineSmall),
         content: TextField(
           controller: controller,
           autofocus: true,
           keyboardType: TextInputType.text,
           decoration: InputDecoration(
             labelText: 'Barcode',
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusLarge)),
             prefixIcon: const Icon(Icons.barcode_reader),
           ),
         ),
@@ -360,20 +368,20 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
       builder: (context) => Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(NeoBrutalTheme.radiusXLarge)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              padding: EdgeInsets.all(16),
+              padding: ResponsiveHelper.getScreenPadding(context),
               child: Row(
                 children: [
                   Icon(Icons.history, color: AppTheme.primaryColor),
-                  SizedBox(width: 12),
+                  SizedBox(width: NeoBrutalTheme.spaceSM),
                   Text(
                     'Scan History',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                    style: NeoBrutalTheme.headlineSmall,
                   ),
                   Spacer(),
                   IconButton(
@@ -386,7 +394,7 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
             Divider(height: 1),
             if (_scanHistory.isEmpty)
               Padding(
-                padding: EdgeInsets.all(32),
+                padding: EdgeInsets.all(NeoBrutalTheme.spaceXL),
                 child: Text(
                   'No scan history yet',
                   style: TextStyle(color: AppTheme.textSecondary),
@@ -432,8 +440,11 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          // Full-screen camera view
-          MobileScanner(controller: _controller, onDetect: _onBarcodeDetected),
+          // Full-screen camera view - separated to prevent rebuilds
+          _ScannerView(
+            controller: _controller,
+            onDetect: _onBarcodeDetected,
+          ),
 
           // Centered scanning frame overlay
           Center(child: ScanningFrame(instruction: widget.instruction)),
@@ -478,581 +489,24 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
       ),
     );
   }
+}
 
-  Widget _buildTopBar() {
-    return Container(
-      padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top + 8,
-        left: 16,
-        right: 16,
-        bottom: 8,
-      ),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Colors.black.withValues(alpha: 0.6), Colors.transparent],
-        ),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          // Close button
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.5),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: IconButton(
-              icon: const Icon(Icons.close, color: Colors.white, size: 20),
-              onPressed: () => Navigator.pop(context),
-              padding: EdgeInsets.zero,
-            ),
-          ),
+/// Separate camera view widget that doesn't rebuild on state changes
+/// This prevents the camera from becoming choppy
+class _ScannerView extends StatelessWidget {
+  final MobileScannerController controller;
+  final Function(BarcodeCapture) onDetect;
 
-          // Title
-          Expanded(
-            child: Text(
-              widget.title,
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                shadows: [
-                  Shadow(
-                    color: Colors.black.withValues(alpha: 0.5),
-                    blurRadius: 4,
-                  ),
-                ],
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ),
+  const _ScannerView({
+    required this.controller,
+    required this.onDetect,
+  });
 
-          // Flash toggle button
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.5),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: IconButton(
-              icon: Icon(
-                _controller.torchEnabled ? Icons.flash_on : Icons.flash_off,
-                color: Colors.white,
-                size: 20,
-              ),
-              onPressed: () => _controller.toggleTorch(),
-              padding: EdgeInsets.zero,
-              tooltip: 'Toggle Flash',
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBottomBar() {
-    return Container(
-      padding: EdgeInsets.only(
-        left: 16,
-        right: 16,
-        bottom: MediaQuery.of(context).padding.bottom + 16,
-        top: 16,
-      ),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Colors.transparent, Colors.black.withValues(alpha: 0.6)],
-        ),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Continuous mode scan list
-          if (widget.mode == ScannerMode.continuous &&
-              _scannedBarcodes.isNotEmpty)
-            Container(
-              height: 120,
-              margin: const EdgeInsets.only(bottom: 12),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.95),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                children: [
-                  // Header
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.vertical(
-                        top: Radius.circular(12),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.qr_code_scanner,
-                              size: 16,
-                              color: AppTheme.primaryColor,
-                            ),
-                            SizedBox(width: 6),
-                            Text(
-                              'Scanned: ${_scannedBarcodes.length}',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                                color: AppTheme.primaryColor,
-                              ),
-                            ),
-                          ],
-                        ),
-                        TextButton(
-                          onPressed: _completeContinuousScan,
-                          style: TextButton.styleFrom(
-                            foregroundColor: AppTheme.primaryColor,
-                            textStyle: TextStyle(fontWeight: FontWeight.w600),
-                          ),
-                          child: Text('Done'),
-                        ),
-                      ],
-                    ),
-                  ),
-                  // List
-                  Expanded(
-                    child: ListView.builder(
-                      padding: EdgeInsets.symmetric(vertical: 8),
-                      itemCount: _scannedBarcodes.length,
-                      itemBuilder: (context, index) {
-                        final barcode = _scannedBarcodes[index];
-                        return Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 4,
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 24,
-                                height: 24,
-                                decoration: BoxDecoration(
-                                  color: AppTheme.successColor,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    '${index + 1}',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  barcode,
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-          // Validation error display
-          if (_validationError != null)
-            Container(
-              padding: const EdgeInsets.all(12),
-              margin: const EdgeInsets.only(bottom: 12),
-              decoration: BoxDecoration(
-                color: AppTheme.errorColor.withValues(alpha: 0.95),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.error_outline, color: Colors.white, size: 20),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      _validationError!,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-          // Product preview (for POS with product lookup)
-          if (_productInfo != null && _scannedBarcode != null)
-            Container(
-              padding: const EdgeInsets.all(12),
-              margin: const EdgeInsets.only(bottom: 12),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.95),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.shopping_cart,
-                        color: AppTheme.primaryColor,
-                        size: 16,
-                      ),
-                      SizedBox(width: 6),
-                      Text(
-                        _productInfo!['name'] ?? 'Unknown Product',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          color: AppTheme.textPrimary,
-                        ),
-                      ),
-                    ],
-                  ),
-                  if (_productInfo!['price'] != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: Row(
-                        children: [
-                          Text(
-                            'Price: ',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: AppTheme.textSecondary,
-                            ),
-                          ),
-                          Text(
-                            _productInfo!['price']!,
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: AppTheme.successColor,
-                            ),
-                          ),
-                          if (_productInfo!['stock'] != null) ...[
-                            SizedBox(width: 16),
-                            Text(
-                              'Stock: ${_productInfo!['stock']}',
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: _productInfo!['stock'] == '0'
-                                    ? AppTheme.errorColor
-                                    : AppTheme.textSecondary,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                ],
-              ),
-            ),
-
-          // Scanned result display
-          if (_scannedBarcode != null &&
-              _validationError == null &&
-              widget.mode != ScannerMode.continuous)
-            Container(
-              padding: const EdgeInsets.all(12),
-              margin: const EdgeInsets.only(bottom: 12),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.95),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        widget.mode == ScannerMode.preview
-                            ? Icons.touch_app
-                            : Icons.check_circle,
-                        color: widget.mode == ScannerMode.preview
-                            ? AppTheme.infoColor
-                            : AppTheme.successColor,
-                        size: 16,
-                      ),
-                      SizedBox(width: 6),
-                      Text(
-                        widget.mode == ScannerMode.preview
-                            ? 'Tap to confirm'
-                            : 'Scanned',
-                        style: TextStyle(
-                          color: AppTheme.textPrimary,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      Spacer(),
-                      // Format badge
-                      if (_detectedFormatName != null &&
-                          _detectedFormatName != 'Unknown')
-                        Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppTheme.infoColor.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            _detectedFormatName!,
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: AppTheme.infoColor,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                  SizedBox(height: 4),
-                  GestureDetector(
-                    onTap: widget.mode == ScannerMode.preview
-                        ? _confirmScan
-                        : null,
-                    child: Text(
-                      _scannedBarcode!,
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.primaryColor,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-          // Control buttons
-          if (widget.mode == ScannerMode.continuous)
-            Row(
-              children: [
-                // Manual entry button
-                if (widget.enableManualEntry)
-                  Expanded(
-                    child: _buildControlButton(
-                      icon: Icons.keyboard,
-                      label: 'Manual Entry',
-                      backgroundColor: AppTheme.infoColor,
-                      onTap: _showManualEntryDialog,
-                    ),
-                  ),
-                if (widget.enableManualEntry) SizedBox(width: 12),
-                // Scan history button
-                if (widget.enableHistory)
-                  Expanded(
-                    child: _buildControlButton(
-                      icon: Icons.history,
-                      label: 'History (${_scanHistory.length})',
-                      backgroundColor: AppTheme.warningColor,
-                      onTap: _showHistorySheet,
-                    ),
-                  ),
-                if (widget.enableHistory) SizedBox(width: 12),
-                // Complete batch button
-                Expanded(
-                  child: _buildControlButton(
-                    icon: Icons.check_circle,
-                    label: 'Done (${_scannedBarcodes.length})',
-                    backgroundColor: AppTheme.successColor,
-                    onTap: _completeContinuousScan,
-                  ),
-                ),
-              ],
-            )
-          else
-            Row(
-              children: [
-                // Scan again / refresh button
-                Expanded(
-                  child: _buildControlButton(
-                    icon: Icons.refresh,
-                    label: 'Scan Again',
-                    backgroundColor: AppTheme.primaryColor,
-                    onTap: _resetScanner,
-                  ),
-                ),
-                SizedBox(width: 12),
-                // Manual entry button
-                if (widget.enableManualEntry)
-                  Expanded(
-                    child: _buildControlButton(
-                      icon: Icons.keyboard,
-                      label: 'Manual Entry',
-                      backgroundColor: AppTheme.infoColor,
-                      onTap: _showManualEntryDialog,
-                    ),
-                  ),
-                if (widget.enableManualEntry) SizedBox(width: 12),
-                // History or flip camera button
-                if (widget.enableHistory)
-                  Expanded(
-                    child: _buildControlButton(
-                      icon: Icons.history,
-                      label: 'History',
-                      backgroundColor: AppTheme.warningColor,
-                      onTap: _showHistorySheet,
-                    ),
-                  )
-                else
-                  Expanded(
-                    child: _buildControlButton(
-                      icon: Icons.flip_camera_ios,
-                      label: 'Flip Camera',
-                      backgroundColor: Colors.white.withValues(alpha: 0.2),
-                      foregroundColor: Colors.white,
-                      border: Border.all(color: Colors.white, width: 1.5),
-                      onTap: () => _controller.switchCamera(),
-                    ),
-                  ),
-              ],
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildControlButton({
-    required IconData icon,
-    required String label,
-    required Color backgroundColor,
-    Color? foregroundColor,
-    BoxBorder? border,
-    required VoidCallback onTap,
-  }) {
-    return Container(
-      height: 48,
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(12),
-        border: border,
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, color: foregroundColor ?? Colors.white, size: 20),
-              SizedBox(width: 8),
-              Text(
-                label,
-                style: TextStyle(
-                  color: foregroundColor ?? Colors.white,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// Centered scanning frame overlay with corner markers
-  Widget _buildScanningFrame() {
-    return Container(
-      width: 280,
-      height: 280,
-      decoration: BoxDecoration(
-        border: Border.all(
-          color: AppTheme.primaryColor.withValues(alpha: 0.8),
-          width: 3,
-        ),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          // Top corner markers
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [_buildCornerMarker(), _buildCornerMarker()],
-            ),
-          ),
-
-          // Scan instruction
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Text(
-              widget.instruction,
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                shadows: [
-                  Shadow(
-                    color: Colors.black.withValues(alpha: 0.5),
-                    blurRadius: 4,
-                  ),
-                ],
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ),
-
-          // Bottom corner markers
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [_buildCornerMarker(), _buildCornerMarker()],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Corner marker for scanning frame
-  Widget _buildCornerMarker() {
-    return Container(
-      width: 24,
-      height: 24,
-      decoration: BoxDecoration(
-        color: AppTheme.primaryColor,
-        borderRadius: BorderRadius.circular(4),
-        boxShadow: [
-          BoxShadow(
-            color: AppTheme.primaryColor.withValues(alpha: 0.5),
-            blurRadius: 8,
-            spreadRadius: 2,
-          ),
-        ],
-      ),
+  @override
+  Widget build(BuildContext context) {
+    return MobileScanner(
+      controller: controller,
+      onDetect: onDetect,
     );
   }
 }

@@ -147,4 +147,28 @@ class ResponsiveHelper {
     if (width > 600) return 18;
     return 16;
   }
+
+  /// Get FAB bottom offset for navbar accommodation
+  static double getFABBottomOffset(BuildContext context) {
+    final width = MediaQuery.sizeOf(context).width;
+    if (width > 900) return 90;
+    if (width > 600) return 85;
+    return 80;
+  }
+
+  /// Get bottom padding for scrollable content to account for navbar/FAB
+  static double getBottomPadding(BuildContext context) {
+    final width = MediaQuery.sizeOf(context).width;
+    if (width > 900) return 100;
+    if (width > 600) return 95;
+    return 90;
+  }
+
+  /// Get product card height (for grid items with fixed height)
+  static double getProductCardHeight(BuildContext context) {
+    final width = MediaQuery.sizeOf(context).width;
+    if (width > 900) return 320;
+    if (width > 600) return 300;
+    return 280;
+  }
 }

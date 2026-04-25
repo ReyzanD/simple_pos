@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import '../../domain/entities/sales_report.dart';
+import '../../domain/entities/chart_enums.dart';
 import '../../domain/usecases/get_sales_report_usecase.dart'
     show GetSalesReportUseCase, ReportPeriod;
 import '../../domain/usecases/export_sales_to_csv_usecase.dart';
@@ -157,6 +158,15 @@ class SalesReportController extends ChangeNotifier {
         start = now.subtract(Duration(days: weekday - 1));
         start = DateTime(start.year, start.month, start.day);
         break;
+      case DateRangePreset.last7Days:
+        start = now.subtract(const Duration(days: 7));
+        break;
+      case DateRangePreset.last30Days:
+        start = now.subtract(const Duration(days: 30));
+        break;
+      case DateRangePreset.last90Days:
+        start = now.subtract(const Duration(days: 90));
+        break;
       case DateRangePreset.thisMonth:
         start = DateTime(now.year, now.month, 1);
         break;
@@ -166,6 +176,10 @@ class SalesReportController extends ChangeNotifier {
         break;
       case DateRangePreset.last3Months:
         start = DateTime(now.year, now.month - 3, 1);
+        break;
+      case DateRangePreset.thisQuarter:
+        final quarter = (now.month - 1) ~/ 3 + 1;
+        start = DateTime(now.year, (quarter - 1) * 3 + 1, 1);
         break;
       case DateRangePreset.thisYear:
         start = DateTime(now.year, 1, 1);
@@ -248,23 +262,3 @@ class SalesReportController extends ChangeNotifier {
     AppLogger.info('Disposing SalesReportController');
   }
 }
-
-/// Date range preset for quick selection
-enum DateRangePreset {
-  today,
-  thisWeek,
-  thisMonth,
-  lastMonth,
-  last3Months,
-  thisYear,
-  custom,
-}
-
-/// Chart type for visualization
-enum ChartType { line, bar, area }
-
-/// Metric to display on chart
-enum ChartMetric { revenue, profit, transactions }
-
-/// Period for chart grouping
-enum ChartPeriod { daily, weekly, monthly }

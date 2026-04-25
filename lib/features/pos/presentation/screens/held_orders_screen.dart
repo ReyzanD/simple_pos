@@ -1,26 +1,26 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/widgets/modern_card.dart';
-import '../controllers/pos_controller.dart';
 import '../../domain/usecases/get_held_carts_usecase.dart';
+import '../../../shared/presentation/providers.dart';
 
 /// Screen displaying all held orders
-class HeldOrdersScreen extends StatefulWidget {
+class HeldOrdersScreen extends ConsumerStatefulWidget {
   const HeldOrdersScreen({super.key});
 
   @override
-  State<HeldOrdersScreen> createState() => _HeldOrdersScreenState();
+  ConsumerState<HeldOrdersScreen> createState() => _HeldOrdersScreenState();
 }
 
-class _HeldOrdersScreenState extends State<HeldOrdersScreen> {
+class _HeldOrdersScreenState extends ConsumerState<HeldOrdersScreen> {
   @override
   void initState() {
     super.initState();
     // Load held carts when screen initializes
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<POSController>().loadHeldCarts();
+      ref.read(posControllerProvider).loadHeldCarts();
     });
   }
 
@@ -46,7 +46,7 @@ class _HeldOrdersScreenState extends State<HeldOrdersScreen> {
     );
 
     if (confirmed == true && mounted) {
-      final success = await context.read<POSController>().resumeCart(heldCartId);
+      final success = await ref.read(posControllerProvider).resumeCart(heldCartId);
       if (mounted) {
         if (success) {
           Navigator.of(context).pop(true);
@@ -58,7 +58,7 @@ class _HeldOrdersScreenState extends State<HeldOrdersScreen> {
             ),
           );
         } else {
-          final controller = context.read<POSController>();
+          final controller = ref.read(posControllerProvider);
           if (controller.hasError) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -96,7 +96,7 @@ class _HeldOrdersScreenState extends State<HeldOrdersScreen> {
     );
 
     if (confirmed == true && mounted) {
-      final success = await context.read<POSController>().deleteHeldCart(heldCartId);
+      final success = await ref.read(posControllerProvider).deleteHeldCart(heldCartId);
       if (mounted) {
         if (success) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -107,7 +107,7 @@ class _HeldOrdersScreenState extends State<HeldOrdersScreen> {
             ),
           );
         } else {
-          final controller = context.read<POSController>();
+          final controller = ref.read(posControllerProvider);
           if (controller.hasError) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -124,90 +124,90 @@ class _HeldOrdersScreenState extends State<HeldOrdersScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final controller = ref.watch(posControllerProvider);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Pesanan Tertahan'),
         backgroundColor: AppTheme.primaryColor,
         foregroundColor: Colors.white,
       ),
-      body: Consumer(
-        builder: (context, controller, _) {
-          if (controller.isLoadingHeldCarts) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
-          }
+      body: () {
+        if (controller.isLoadingHeldCarts) {
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        }
 
-          if (controller.hasError) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.error_outline,
-                    size: 64,
-                    color: AppTheme.errorColor,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    controller.error!.userMessage,
-                    style: Theme.of(context).textTheme.bodyLarge,
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton.icon(
-                    onPressed: () => controller.loadHeldCarts(),
-                    icon: const Icon(Icons.refresh),
-                    label: const Text('Coba Lagi'),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          if (controller.heldCarts.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.shopping_cart_outlined,
-                    size: 64,
-                    color: AppTheme.textTertiary,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Belum ada pesanan tertahan',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          color: AppTheme.textSecondary,
-                        ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Tahan pesanan dari keranjang untuk melihatnya di sini',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppTheme.textTertiary,
-                        ),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          return RefreshIndicator(
-            onRefresh: () => controller.loadHeldCarts(),
-            child: ListView.separated(
-              padding: const EdgeInsets.all(16),
-              itemCount: controller.heldCarts.length,
-              separatorBuilder: (context, index) => const SizedBox(height: 12),
-              itemBuilder: (context, index) {
-                final heldCart = controller.heldCarts[index];
-                return _buildHeldOrderCard(heldCart);
-              },
+        if (controller.hasError) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.error_outline,
+                  size: 64,
+                  color: AppTheme.errorColor,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  controller.error!.userMessage,
+                  style: Theme.of(context).textTheme.bodyLarge,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton.icon(
+                  onPressed: () => controller.loadHeldCarts(),
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Coba Lagi'),
+                ),
+              ],
             ),
           );
-        },
-      ),
+        }
+
+        if (controller.heldCarts.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.shopping_cart_outlined,
+                  size: 64,
+                  color: AppTheme.textTertiary,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Belum ada pesanan tertahan',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        color: AppTheme.textSecondary,
+                      ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Tahan pesanan dari keranjang untuk melihatnya di sini',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppTheme.textTertiary,
+                      ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return RefreshIndicator(
+          onRefresh: () => controller.loadHeldCarts(),
+          child: ListView.separated(
+            padding: const EdgeInsets.all(16),
+            itemCount: controller.heldCarts.length,
+            separatorBuilder: (context, index) => const SizedBox(height: 12),
+            itemBuilder: (context, index) {
+              final heldCart = controller.heldCarts[index];
+              return _buildHeldOrderCard(heldCart);
+            },
+          ),
+        );
+      }(),
     );
   }
 
@@ -337,7 +337,7 @@ class _HeldOrdersScreenState extends State<HeldOrdersScreen> {
           style: Theme.of(context).textTheme.titleSmall?.copyWith(
                 color: color,
                 fontWeight: FontWeight.w600,
-              ),
+          ),
         ),
       ],
     );

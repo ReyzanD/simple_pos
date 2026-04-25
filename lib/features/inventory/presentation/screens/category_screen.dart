@@ -1,34 +1,32 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/category.dart';
-import '../controllers/category_controller.dart';
+import '../../../shared/presentation/providers.dart';
 import '../../../../core/constants/ui_constants.dart';
 
 /// Screen for managing categories
-class CategoryScreen extends StatelessWidget {
+class CategoryScreen extends ConsumerWidget {
   const CategoryScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Consumer(
-      builder: (context, controller, _) {
-        return Scaffold(
-          appBar: AppBar(
-            title: const Text('Kategori'),
-          ),
-          body: controller.isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : controller.categories.isEmpty
-                  ? _buildEmptyState(context)
-                  : _buildCategoryList(controller),
-          floatingActionButton: FloatingActionButton(
-            heroTag: 'category_fab', // ✅ Unique hero tag
-            onPressed: () => _showAddEditDialog(context, controller),
-            tooltip: 'Tambah Kategori',
-            child: const Icon(Icons.add),
-          ),
-        );
-      },
+  Widget build(BuildContext context, WidgetRef ref) {
+    final controller = ref.watch(categoryControllerProvider);
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Kategori'),
+      ),
+      body: controller.isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : controller.categories.isEmpty
+              ? _buildEmptyState(context)
+              : _buildCategoryList(controller),
+      floatingActionButton: FloatingActionButton(
+        heroTag: 'category_fab', // ✅ Unique hero tag
+        onPressed: () => _showAddEditDialog(context, controller),
+        tooltip: 'Tambah Kategori',
+        child: const Icon(Icons.add),
+      ),
     );
   }
 
@@ -62,7 +60,7 @@ class CategoryScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildCategoryList(CategoryController controller) {
+  Widget _buildCategoryList(dynamic controller) {
     return ListView.builder(
       padding: const EdgeInsets.all(UIConstants.spacingSmall),
       itemCount: controller.categories.length,
@@ -73,7 +71,7 @@ class CategoryScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildCategoryCard(BuildContext context, Category category, CategoryController controller) {
+  Widget _buildCategoryCard(BuildContext context, Category category, dynamic controller) {
     return Card(
       margin: const EdgeInsets.only(bottom: UIConstants.spacingSmall),
       child: ListTile(
@@ -110,7 +108,7 @@ class CategoryScreen extends StatelessWidget {
 
   Future<void> _showAddEditDialog(
     BuildContext context,
-    CategoryController controller, [
+    dynamic controller, [
     Category? category,
   ]) async {
     final nameController = TextEditingController(text: category?.name ?? '');
@@ -201,7 +199,7 @@ class CategoryScreen extends StatelessWidget {
   Future<void> _showDeleteDialog(
     BuildContext context,
     Category category,
-    CategoryController controller,
+    dynamic controller,
   ) async {
     final confirmed = await showDialog<bool>(
       context: context,

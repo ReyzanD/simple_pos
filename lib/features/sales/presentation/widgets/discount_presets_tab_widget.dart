@@ -1,38 +1,35 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../controllers/discount_controller.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/discount_preset.dart';
+import '../../../shared/presentation/providers.dart';
 import '../../../../core/theme.dart';
 import 'add_preset_dialog.dart';
 
 /// Discount Presets Tab Widget - manages reusable discount templates
-class DiscountPresetsTabWidget extends StatelessWidget {
+class DiscountPresetsTabWidget extends ConsumerWidget {
   const DiscountPresetsTabWidget({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Consumer(
-      builder: (context, controller, _) {
-        final content = _buildContent(controller);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final controller = ref.watch(discountControllerProvider);
+    final content = _buildContent(controller);
 
-        // Wrap in Scaffold with FAB
-        return Scaffold(
-          floatingActionButton: FloatingActionButton.extended(
-            heroTag: 'discount_presets_fab', // ✅ Unique hero tag
-            onPressed: controller.isLoading
-                ? null
-                : () => _showAddDialog(context, controller),
-            backgroundColor: AppTheme.infoColor,
-            icon: const Icon(Icons.add),
-            label: const Text('Buat Preset'),
-          ),
-          body: content,
-        );
-      },
+    // Wrap in Scaffold with FAB
+    return Scaffold(
+      floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'discount_presets_fab', // ✅ Unique hero tag
+        onPressed: controller.isLoading
+            ? null
+            : () => _showAddDialog(context, controller),
+        backgroundColor: AppTheme.infoColor,
+        icon: const Icon(Icons.add),
+        label: const Text('Buat Preset'),
+      ),
+      body: content,
     );
   }
 
-  Widget _buildContent(DiscountController controller) {
+  Widget _buildContent(dynamic controller) {
     if (controller.isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -93,7 +90,7 @@ class DiscountPresetsTabWidget extends StatelessWidget {
   Widget _buildPresetCard(
     BuildContext context,
     DiscountPreset preset,
-    DiscountController controller,
+    dynamic controller,
   ) {
     return Card(
       elevation: 2,
@@ -169,7 +166,7 @@ class DiscountPresetsTabWidget extends StatelessWidget {
   void _showPresetDetails(
     BuildContext context,
     DiscountPreset preset,
-    DiscountController controller,
+    dynamic controller,
   ) {
     showDialog(
       context: context,
@@ -188,7 +185,7 @@ class DiscountPresetsTabWidget extends StatelessWidget {
   void _confirmDelete(
     BuildContext context,
     DiscountPreset preset,
-    DiscountController controller,
+    dynamic controller,
   ) {
     showDialog(
       context: context,
@@ -213,7 +210,7 @@ class DiscountPresetsTabWidget extends StatelessWidget {
     );
   }
 
-  void _showAddDialog(BuildContext context, DiscountController controller) {
+  void _showAddDialog(BuildContext context, dynamic controller) {
     showDialog(
       context: context,
       builder: (context) => AddPresetDialog(

@@ -6,7 +6,6 @@ import '../../domain/usecases/get_users_usecase.dart';
 import '../../domain/usecases/create_user_usecase.dart';
 import '../../domain/usecases/update_user_usecase.dart';
 import '../../domain/usecases/delete_user_usecase.dart';
-import '../../domain/usecases/get_current_user_usecase.dart';
 import '../../../../core/services/audit_logger.dart';
 
 /// AuthController manages authentication state and user operations
@@ -16,7 +15,6 @@ class AuthController extends ChangeNotifier {
   final CreateUserUseCase _createUserUseCase;
   final UpdateUserUseCase _updateUserUseCase;
   final DeleteUserUseCase _deleteUserUseCase;
-  final GetCurrentUserUseCase _getCurrentUserUseCase;
 
   User? _currentUser;
   bool _isLoading = false;
@@ -29,13 +27,11 @@ class AuthController extends ChangeNotifier {
     required CreateUserUseCase createUserUseCase,
     required UpdateUserUseCase updateUserUseCase,
     required DeleteUserUseCase deleteUserUseCase,
-    required GetCurrentUserUseCase getCurrentUserUseCase,
   }) : _loginUseCase = loginUseCase,
        _getUsersUseCase = getUsersUseCase,
        _createUserUseCase = createUserUseCase,
        _updateUserUseCase = updateUserUseCase,
-       _deleteUserUseCase = deleteUserUseCase,
-       _getCurrentUserUseCase = getCurrentUserUseCase;
+       _deleteUserUseCase = deleteUserUseCase;
 
   // Getters
   User? get currentUser => _currentUser;

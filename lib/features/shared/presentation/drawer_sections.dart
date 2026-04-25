@@ -27,7 +27,8 @@ class DrawerSections extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-      child: Column(
+      child: ListView(
+        padding: const EdgeInsets.all(0),
         children: [
           // Store Stats at the top
           const DrawerStoreStats(),
@@ -53,8 +54,6 @@ class DrawerSections extends StatelessWidget {
 
           // Recent Products
           const DrawerRecentProducts(),
-
-          const Spacer(),
 
           // App Info at the bottom
           const DrawerAppInfo(),

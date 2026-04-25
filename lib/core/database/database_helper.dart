@@ -4,7 +4,6 @@ import 'package:simple_pos/core/exceptions/app_exceptions.dart'
 import 'package:simple_pos/core/utils/logger.dart';
 import 'package:simple_pos/core/constants/app_constants.dart';
 import 'package:simple_pos/services/database/database_connection.dart';
-import 'package:simple_pos/services/database/migrations/database_migration.dart';
 
 // DAO Imports
 import 'package:simple_pos/services/database/dao/product_dao.dart';
@@ -64,12 +63,6 @@ class DatabaseHelper {
         originalError: e,
       );
     }
-  }
-
-  /// Upgrade database to new version.
-  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    final migration = DatabaseMigration();
-    await migration.upgrade(db, oldVersion: oldVersion, newVersion: newVersion);
   }
 
   /// Check if database schema has been created.

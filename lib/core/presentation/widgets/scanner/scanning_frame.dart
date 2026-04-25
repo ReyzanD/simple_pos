@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:simple_pos/core/theme/app_theme.dart';
+import 'package:simple_pos/core/theme/neo_brutal_theme.dart';
+import 'package:simple_pos/core/utils/responsive_helper.dart';
 import 'scanning_frame_corner_marker.dart';
 
 /// Centered scanning frame overlay with corner markers
@@ -11,21 +13,31 @@ class ScanningFrame extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 280,
-      height: 280,
+      width: ResponsiveHelper.getValue(
+        context: context,
+        mobile: 240,
+        tablet: 280,
+        desktop: 320,
+      ),
+      height: ResponsiveHelper.getValue(
+        context: context,
+        mobile: 240,
+        tablet: 280,
+        desktop: 320,
+      ),
       decoration: BoxDecoration(
         border: Border.all(
           color: AppTheme.primaryColor.withValues(alpha: 0.8),
           width: 3,
         ),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusXLarge),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           // Top corner markers
           Padding(
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.all(ResponsiveHelper.getContainerPadding(context)),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: const [
@@ -37,12 +49,17 @@ class ScanningFrame extends StatelessWidget {
 
           // Scan instruction
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: EdgeInsets.symmetric(horizontal: ResponsiveHelper.getContainerPadding(context)),
             child: Text(
               instruction,
               style: TextStyle(
                 color: Colors.white,
-                fontSize: 14,
+                fontSize: ResponsiveHelper.getFontSize(
+                  context,
+                  mobile: 14,
+                  tablet: 15,
+                  desktop: 16,
+                ),
                 fontWeight: FontWeight.w500,
                 shadows: [
                   Shadow(
@@ -57,7 +74,7 @@ class ScanningFrame extends StatelessWidget {
 
           // Bottom corner markers
           Padding(
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.all(ResponsiveHelper.getContainerPadding(context)),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: const [

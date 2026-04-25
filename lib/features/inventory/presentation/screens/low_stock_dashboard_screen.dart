@@ -1,22 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/product.dart';
 import '../../domain/usecases/get_low_stock_products_usecase.dart';
-import '../controllers/inventory_controller.dart';
+import '../../../shared/presentation/providers.dart';
 import '../../../sales/presentation/widgets/summary_stat_card.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/neo_brutal_theme.dart';
 import '../widgets/low_stock_dashboard_card.dart';
 
 /// Screen displaying low stock and out of stock products
-class LowStockDashboardScreen extends StatefulWidget {
+class LowStockDashboardScreen extends ConsumerStatefulWidget {
   const LowStockDashboardScreen({super.key});
 
   @override
-  State<LowStockDashboardScreen> createState() => _LowStockDashboardScreenState();
+  ConsumerState<LowStockDashboardScreen> createState() => _LowStockDashboardScreenState();
 }
 
-class _LowStockDashboardScreenState extends State<LowStockDashboardScreen> {
+class _LowStockDashboardScreenState extends ConsumerState<LowStockDashboardScreen> {
   bool _isLoading = false;
   LowStockResult? _lowStockResult;
   String? _errorMessage;
@@ -33,7 +33,7 @@ class _LowStockDashboardScreenState extends State<LowStockDashboardScreen> {
   Future<void> _loadLowStockData() async {
     if (_isLoading) return; // Prevent concurrent calls
 
-    final controller = context.read<InventoryController>();
+    final controller = ref.read(inventoryControllerProvider);
 
     // Load products if not loaded first, before setState
     if (controller.allProducts.isEmpty) {

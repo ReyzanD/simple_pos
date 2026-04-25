@@ -1,50 +1,47 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simple_pos/core/theme/app_theme.dart';
 import 'package:simple_pos/core/utils/haptic_helper.dart';
 import 'package:simple_pos/core/widgets/category_icons.dart';
-import 'package:simple_pos/features/inventory/presentation/controllers/inventory_controller.dart';
 import 'package:simple_pos/features/inventory/domain/entities/product.dart';
+import '../../providers.dart';
 
 // Import the shared divider widget
 import 'drawer_section_divider.dart';
 
 /// Recent Products Section - Last 5 recently added/modified products
-class DrawerRecentProducts extends StatelessWidget {
+class DrawerRecentProducts extends ConsumerWidget {
   const DrawerRecentProducts({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Consumer(
-      builder: (context, controller, _) {
-        final products = controller.allProducts;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final inventory = ref.watch(inventoryControllerProvider);
+    final products = inventory.allProducts;
 
-        if (products.isEmpty) {
-          return const SizedBox.shrink();
-        }
+    if (products.isEmpty) {
+      return const SizedBox.shrink();
+    }
 
-        // Sort by last modified (assuming newer products are added last)
-        final recentProducts = products.take(5).toList();
+    // Sort by last modified (assuming newer products are added last)
+    final recentProducts = products.take(5).toList();
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const DrawerSectionDivider(
-              title: 'Recent Products',
-              icon: Icons.history,
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Column(
-                children: recentProducts.map((product) {
-                  return _RecentProductTile(product: product);
-                }).toList(),
-              ),
-            ),
-            const SizedBox(height: 8),
-          ],
-        );
-      },
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const DrawerSectionDivider(
+          title: 'Recent Products',
+          icon: Icons.history,
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Column(
+            children: recentProducts.map((product) {
+              return _RecentProductTile(product: product);
+            }).toList(),
+          ),
+        ),
+        const SizedBox(height: 8),
+      ],
     );
   }
 }

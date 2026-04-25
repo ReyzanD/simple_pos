@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../theme/neo_brutal_theme.dart';
+import '../utils/responsive_helper.dart';
 
 /// Neo-Brutalist Card System
 ///
@@ -97,7 +98,12 @@ class BrutalButton extends StatelessWidget {
 
     return SizedBox(
       width: isFullWidth ? double.infinity : null,
-      height: 64, // Extra tall for chunky feel
+      height: ResponsiveHelper.getValue(
+        context: context,
+        mobile: 56,
+        tablet: 60,
+        desktop: 64,
+      ), // Responsive height for chunky feel
       child: ElevatedButton(
         onPressed: isDisabled ? null : onPressed,
         style: ElevatedButton.styleFrom(
@@ -106,9 +112,19 @@ class BrutalButton extends StatelessWidget {
           disabledBackgroundColor: Colors.grey.shade400,
           elevation: 0,
           shadowColor: Colors.transparent,
-          padding: const EdgeInsets.symmetric(
-            horizontal: NeoBrutalTheme.spaceLG,
-            vertical: NeoBrutalTheme.spaceSM,
+          padding: EdgeInsets.symmetric(
+            horizontal: ResponsiveHelper.getValue(
+              context: context,
+              mobile: 20,
+              tablet: 24,
+              desktop: 32,
+            ),
+            vertical: ResponsiveHelper.getValue(
+              context: context,
+              mobile: 10,
+              tablet: 11,
+              desktop: 12,
+            ),
           ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium),
@@ -119,10 +135,20 @@ class BrutalButton extends StatelessWidget {
           ),
         ),
         child: isLoading
-            ? const SizedBox(
-                width: 28,
-                height: 28,
-                child: CircularProgressIndicator(
+            ? SizedBox(
+                width: ResponsiveHelper.getValue(
+                  context: context,
+                  mobile: 24,
+                  tablet: 26,
+                  desktop: 28,
+                ),
+                height: ResponsiveHelper.getValue(
+                  context: context,
+                  mobile: 24,
+                  tablet: 26,
+                  desktop: 28,
+                ),
+                child: const CircularProgressIndicator(
                   strokeWidth: 3,
                   valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                 ),

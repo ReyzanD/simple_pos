@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import '../theme/neo_brutal_theme.dart';
 
 /// Category icons and colors for consistent display across the app
 ///
@@ -164,19 +165,19 @@ class CategoryColors {
   CategoryColors._();
 
   static const List<Color> _presetColors = [
-    Color(0xFF4F46E5), // Indigo
-    Color(0xFF14B8A6), // Teal
-    Color(0xFFF59E0B), // Amber
-    Color(0xFFEC4899), // Pink
-    Color(0xFF8B5CF6), // Purple
-    Color(0xFF10B981), // Green
-    Color(0xFF3B82F6), // Blue
-    Color(0xFFEF4444), // Red
-    Color(0xFFF97316), // Orange
-    Color(0xFF6366F1), // Indigo Light
-    Color(0xFF84CC16), // Lime
-    Color(0xFF06B6D4), // Cyan
-    Color(0xFFD946EF), // Fuchsia
+    NeoBrutalTheme.primary, // Electric Blue
+    NeoBrutalTheme.secondary, // Vibrant Coral
+    NeoBrutalTheme.warning, // Orange
+    NeoBrutalTheme.error, // Bright Red
+    NeoBrutalTheme.accent, // Bright Yellow
+    NeoBrutalTheme.success, // Bold Green
+    NeoBrutalTheme.blockPurple, // Purple
+    NeoBrutalTheme.blockPink, // Pink
+    AppTheme.primaryColor, // Indigo (from AppTheme for variety)
+    NeoBrutalTheme.primaryLight, // Light Blue
+    NeoBrutalTheme.successLight, // Light Green
+    NeoBrutalTheme.secondaryLight, // Light Coral
+    NeoBrutalTheme.warningLight, // Light Orange
   ];
 
   /// Get color for a category by name (consistent based on name hash)
@@ -294,7 +295,7 @@ class CategoryPill extends StatelessWidget {
             Text(
               categoryName,
               style: TextStyle(
-                fontSize: 13,
+                fontSize: 14, // Increased from 13 for better readability
                 fontWeight: FontWeight.w500,
                 color: isSelected ? Colors.white : color,
               ),
@@ -423,7 +424,7 @@ class CategoryCard extends StatelessWidget {
             Text(
               '$productCount produk',
               style: TextStyle(
-                fontSize: 10,
+                fontSize: 12, // Increased from 10 for better readability
                 color: AppTheme.getTextSecondaryColor(context),
               ),
             ),

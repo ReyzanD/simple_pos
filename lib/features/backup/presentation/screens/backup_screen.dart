@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Themes & Constants
 import '../../../../core/theme/neo_brutal_theme.dart';
 import '../../../../core/constants/backup_constants.dart';
-
-// Controllers & Entities
-import '../controllers/backup_controller.dart';
-import '../../domain/entities/backup_metadata.dart';
+import '../../../shared/presentation/providers.dart';
 
 // EXTRACTED WIDGETS (We are creating these next)
 import '../widgets/backup_storage_status.dart';
@@ -19,14 +16,14 @@ import '../widgets/backup_schedule_dialog.dart';
 ///
 /// **Refactored:** 2,743 lines -> ~180 lines
 /// **Purpose:** Main orchestrator for the Backup feature UI.
-class BackupScreen extends StatefulWidget {
+class BackupScreen extends ConsumerStatefulWidget {
   const BackupScreen({super.key});
 
   @override
-  State<BackupScreen> createState() => _BackupScreenState();
+  ConsumerState<BackupScreen> createState() => _BackupScreenState();
 }
 
-class _BackupScreenState extends State<BackupScreen>
+class _BackupScreenState extends ConsumerState<BackupScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
@@ -37,7 +34,7 @@ class _BackupScreenState extends State<BackupScreen>
 
     // Initial data load
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<BackupController>().loadBackups();
+      ref.read(backupControllerProvider).loadBackups();
     });
   }
 
@@ -49,38 +46,40 @@ class _BackupScreenState extends State<BackupScreen>
 
   @override
   Widget build(BuildContext context) {
+    final controller = ref.watch(backupControllerProvider);
+
     return Scaffold(
       backgroundColor: NeoBrutalTheme.background,
       appBar: _buildAppBar(),
-      body: Consumer(
-        builder: (context, controller, _) {
-          if (controller.isLoading && controller.backups.isEmpty) {
-            return const Center(child: CircularProgressIndicator());
-          }
+      body: _buildBody(controller),
+      floatingActionButton: _buildFAB(controller),
+    );
+  }
 
-          if (controller.hasError) {
-            return _buildErrorState(controller);
-          }
+  Widget _buildBody(controller) {
+    if (controller.isLoading && controller.backups.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
-          return Column(
+    if (controller.hasError) {
+      return _buildErrorState(controller);
+    }
+
+    return Column(
+      children: [
+        // Extracted Storage Widget
+        BackupStorageStatusWidget(controller: controller),
+
+        Expanded(
+          child: TabBarView(
+            controller: _tabController,
             children: [
-              // Extracted Storage Widget
-              BackupStorageStatusWidget(controller: controller),
-
-              Expanded(
-                child: TabBarView(
-                  controller: _tabController,
-                  children: [
-                    _buildBackupList(controller, BackupType.full),
-                    _buildBackupList(controller, BackupType.incremental),
-                  ],
-                ),
-              ),
+              _buildBackupList(controller, BackupType.full),
+              _buildBackupList(controller, BackupType.incremental),
             ],
-          );
-        },
-      ),
-      floatingActionButton: _buildFAB(),
+          ),
+        ),
+      ],
     );
   }
 
@@ -108,7 +107,7 @@ class _BackupScreenState extends State<BackupScreen>
     );
   }
 
-  Widget _buildBackupList(BackupController controller, BackupType type) {
+  Widget _buildBackupList(dynamic controller, BackupType type) {
     final filteredBackups =
         controller.backups.where((backup) => backup.type == type).toList()
           ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
@@ -139,27 +138,23 @@ class _BackupScreenState extends State<BackupScreen>
     );
   }
 
-  Widget _buildFAB() {
-    return Consumer(
-      builder: (context, controller, _) {
-        if (controller.isProcessing) return const SizedBox.shrink();
-        return FloatingActionButton.extended(
-          onPressed: () => _showBackupOptions(context, controller),
-          icon: const Icon(Icons.add),
-          label: const Text('Backup'),
-          backgroundColor: NeoBrutalTheme.primary,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium),
-            side: const BorderSide(color: Colors.black, width: 4),
-          ), // Assuming this is defined in your theme
-        );
-      },
+  Widget _buildFAB(dynamic controller) {
+    if (controller.isProcessing) return const SizedBox.shrink();
+    return FloatingActionButton.extended(
+      onPressed: () => _showBackupOptions(context, controller),
+      icon: const Icon(Icons.add),
+      label: const Text('Backup'),
+      backgroundColor: NeoBrutalTheme.primary,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium),
+        side: const BorderSide(color: Colors.black, width: 4),
+      ),
     );
   }
 
   // --- HELPER METHODS ---
 
-  void _showBackupOptions(BuildContext context, BackupController controller) {
+  void _showBackupOptions(BuildContext context, dynamic controller) {
     showModalBottomSheet(
       context: context,
       builder: (context) => Column(
@@ -196,7 +191,7 @@ class _BackupScreenState extends State<BackupScreen>
     return Center(child: Text('No ${type.name} backups found'));
   }
 
-  Widget _buildErrorState(BackupController controller) {
+  Widget _buildErrorState(dynamic controller) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,

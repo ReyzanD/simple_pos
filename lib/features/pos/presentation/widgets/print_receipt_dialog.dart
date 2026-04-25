@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/services/printer_service.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/modern_button.dart';
 import '../../../sales/domain/entities/transaction.dart';
 import '../../../settings/presentation/controllers/settings_controller.dart';
 import '../../../shifts/presentation/controllers/shift_controller.dart';
+import '../../../shared/presentation/providers.dart';
 
 /// Dialog for offering to print receipt after successful checkout
-class PrintReceiptDialog extends StatefulWidget {
+class PrintReceiptDialog extends ConsumerStatefulWidget {
   final Transaction transaction;
   final double? cashReceived;
   final double? change;
@@ -39,19 +40,19 @@ class PrintReceiptDialog extends StatefulWidget {
   }
 
   @override
-  State<PrintReceiptDialog> createState() => _PrintReceiptDialogState();
+  ConsumerState<PrintReceiptDialog> createState() => _PrintReceiptDialogState();
 }
 
-class _PrintReceiptDialogState extends State<PrintReceiptDialog> {
+class _PrintReceiptDialogState extends ConsumerState<PrintReceiptDialog> {
   bool _isPrinting = false;
   String? _errorMessage;
   final int _paperWidth = 58; // Default to 58mm
+  final PrinterService _printerService = PrinterService();
 
   @override
   Widget build(BuildContext context) {
-    final printerService = context.watch<PrinterService>();
-    final settingsController = context.watch<SettingsController>();
-    final shiftController = context.watch<ShiftController>();
+    final settingsController = ref.watch(settingsControllerProvider);
+    final shiftController = ref.watch(shiftControllerProvider);
 
     return AlertDialog(
       shape: RoundedRectangleBorder(
@@ -113,7 +114,7 @@ class _PrintReceiptDialogState extends State<PrintReceiptDialog> {
             const SizedBox(height: 24),
 
             // Printer connection status
-            if (!printerService.isConnected)
+            if (!_printerService.isConnected)
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
@@ -186,8 +187,8 @@ class _PrintReceiptDialogState extends State<PrintReceiptDialog> {
               child: ModernButton(
                 text: 'Cetak Struk',
                 icon: Icons.print,
-                onPressed: (printerService.isConnected && !_isPrinting)
-                    ? () => _handlePrint(printerService, settingsController, shiftController)
+                onPressed: (_printerService.isConnected && !_isPrinting)
+                    ? () => _handlePrint(settingsController, shiftController)
                     : null,
                 isFullWidth: true,
               ),
@@ -211,7 +212,6 @@ class _PrintReceiptDialogState extends State<PrintReceiptDialog> {
   }
 
   Future<void> _handlePrint(
-    PrinterService printerService,
     SettingsController settingsController,
     ShiftController shiftController,
   ) async {
@@ -221,7 +221,7 @@ class _PrintReceiptDialogState extends State<PrintReceiptDialog> {
     });
 
     try {
-      final result = await printerService.printReceipt(
+      final result = await _printerService.printReceipt(
         transaction: widget.transaction,
         settings: settingsController.settings,
         shift: shiftController.currentShift,

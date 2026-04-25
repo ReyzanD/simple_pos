@@ -234,7 +234,7 @@ class _Row extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: index.isOdd
-            ? Colors.black.withOpacity(0.05)
+            ? Colors.black.withValues(alpha: 0.05)
             : Colors.transparent,
       ),
       child: Row(

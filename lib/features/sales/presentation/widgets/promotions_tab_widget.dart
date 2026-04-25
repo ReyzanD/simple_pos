@@ -1,38 +1,35 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../controllers/discount_controller.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/promotion.dart';
+import '../../../shared/presentation/providers.dart';
 import '../../../../core/theme.dart';
 import 'add_promotion_dialog.dart';
 
 /// Promotions Tab Widget - manages time-limited discount campaigns
-class PromotionsTabWidget extends StatelessWidget {
+class PromotionsTabWidget extends ConsumerWidget {
   const PromotionsTabWidget({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Consumer(
-      builder: (context, controller, _) {
-        final content = _buildContent(controller);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final controller = ref.watch(discountControllerProvider);
+    final content = _buildContent(controller);
 
-        // Wrap in Scaffold with FAB
-        return Scaffold(
-          floatingActionButton: FloatingActionButton.extended(
-            heroTag: 'promotions_fab', // ✅ Unique hero tag
-            onPressed: controller.isLoading
-                ? null
-                : () => _showAddDialog(context, controller),
-            backgroundColor: AppTheme.warningColor,
-            icon: const Icon(Icons.add),
-            label: const Text('Buat Promosi'),
-          ),
-          body: content,
-        );
-      },
+    // Wrap in Scaffold with FAB
+    return Scaffold(
+      floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'promotions_fab', // ✅ Unique hero tag
+        onPressed: controller.isLoading
+            ? null
+            : () => _showAddDialog(context, controller),
+        backgroundColor: AppTheme.warningColor,
+        icon: const Icon(Icons.add),
+        label: const Text('Buat Promosi'),
+      ),
+      body: content,
     );
   }
 
-  Widget _buildContent(DiscountController controller) {
+  Widget _buildContent(dynamic controller) {
     if (controller.isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -123,7 +120,7 @@ class PromotionsTabWidget extends StatelessWidget {
   Widget _buildPromotionCard(
     BuildContext context,
     Promotion promotion,
-    DiscountController controller,
+    dynamic controller,
   ) {
     final isActive = promotion.isActive;
     final isScheduled = promotion.isScheduled;
@@ -348,7 +345,7 @@ class PromotionsTabWidget extends StatelessWidget {
   void _showPromotionDetails(
     BuildContext context,
     Promotion promotion,
-    DiscountController controller,
+    dynamic controller,
   ) {
     showDialog(
       context: context,
@@ -370,7 +367,7 @@ class PromotionsTabWidget extends StatelessWidget {
   void _confirmDelete(
     BuildContext context,
     Promotion promotion,
-    DiscountController controller,
+    dynamic controller,
   ) {
     showDialog(
       context: context,
@@ -395,7 +392,7 @@ class PromotionsTabWidget extends StatelessWidget {
     );
   }
 
-  void _showAddDialog(BuildContext context, DiscountController controller) {
+  void _showAddDialog(BuildContext context, dynamic controller) {
     showDialog(
       context: context,
       builder: (context) => AddPromotionDialog(

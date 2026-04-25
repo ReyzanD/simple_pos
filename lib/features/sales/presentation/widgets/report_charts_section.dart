@@ -6,14 +6,14 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/neo_brutal_theme.dart';
-import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/utils/responsive_helper.dart';
 import '../../domain/entities/sales_report.dart';
 import '../../domain/entities/payment_method.dart';
-import '../controllers/sales_report_controller.dart';
+import '../../domain/entities/chart_enums.dart';
+import '../../../shared/presentation/providers.dart';
 
 class ReportChartsSection extends StatelessWidget {
   final SalesReport report;
@@ -35,58 +35,54 @@ class ReportChartsSection extends StatelessWidget {
 
 // --- 1. DAILY SALES TREND WIDGET ---
 
-class _DailySalesTrend extends StatelessWidget {
+class _DailySalesTrend extends ConsumerWidget {
   final SalesReport report;
   const _DailySalesTrend({required this.report});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final dailyData = report.dailyBreakdown;
+    final controller = ref.watch(salesReportControllerProvider);
 
-    return Consumer(
-      builder: (context, controller, _) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Tren Penjualan',
-              style: Theme.of(
-                context,
-              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-            _buildChartTypeSelector(controller),
-            const SizedBox(height: 12),
-            _buildMetricSelector(controller),
-            const SizedBox(height: 16),
-            Container(
-              height: ResponsiveHelper.getChartHeight(context),
-              padding: EdgeInsets.all(NeoBrutalTheme.spaceMD),
-              decoration: BoxDecoration(
-                color: AppTheme.getCardColor(context),
-                borderRadius: BorderRadius.circular(
-                  NeoBrutalTheme.radiusMedium,
-                ),
-                border: Border.all(color: Colors.black, width: 4),
-                boxShadow: NeoBrutalTheme.chunkyShadow,
-              ),
-              child: _buildActualChart(context, controller, dailyData),
-            ),
-            const SizedBox(height: 16),
-            _buildComparisonCard(context, report),
-          ],
-        );
-      },
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Tren Penjualan',
+          style: Theme.of(
+            context,
+          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 16),
+        _buildChartTypeSelector(controller),
+        const SizedBox(height: 12),
+        _buildMetricSelector(controller),
+        const SizedBox(height: 16),
+        Container(
+          height: ResponsiveHelper.getChartHeight(context),
+          padding: EdgeInsets.all(NeoBrutalTheme.spaceMD),
+          decoration: BoxDecoration(
+            color: AppTheme.getCardColor(context),
+            borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium),
+            border: Border.all(color: Colors.black, width: 4),
+            boxShadow: NeoBrutalTheme.chunkyShadow,
+          ),
+          child: _buildActualChart(context, controller, dailyData),
+        ),
+        const SizedBox(height: 16),
+        _buildComparisonCard(context, report),
+      ],
     );
   }
 
   Widget _buildActualChart(
     BuildContext context,
-    SalesReportController controller,
+    dynamic controller,
     List<DailySales> dailyData,
   ) {
-    if (dailyData.isEmpty)
+    if (dailyData.isEmpty) {
       return const Center(child: Text("No data available"));
+    }
 
     switch (controller.chartType) {
       case ChartType.line:
@@ -95,12 +91,14 @@ class _DailySalesTrend extends StatelessWidget {
         return _BarChart(dailyData: dailyData, metric: controller.chartMetric);
       case ChartType.area:
         return _AreaChart(dailyData: dailyData, metric: controller.chartMetric);
+      default:
+        return const SizedBox.shrink();
     }
   }
 
   // --- Selectors ---
 
-  Widget _buildChartTypeSelector(SalesReportController controller) {
+  Widget _buildChartTypeSelector(dynamic controller) {
     return Wrap(
       spacing: NeoBrutalTheme.spaceSM,
       children: ChartType.values.map((type) {
@@ -115,7 +113,7 @@ class _DailySalesTrend extends StatelessWidget {
     );
   }
 
-  Widget _buildMetricSelector(SalesReportController controller) {
+  Widget _buildMetricSelector(dynamic controller) {
     return Wrap(
       spacing: NeoBrutalTheme.spaceSM,
       children: ChartMetric.values.map((metric) {
@@ -367,8 +365,8 @@ class _AreaChart extends StatelessWidget {
               show: true,
               gradient: LinearGradient(
                 colors: [
-                  AppTheme.secondaryColor.withOpacity(0.5),
-                  AppTheme.secondaryColor.withOpacity(0.0),
+                  AppTheme.secondaryColor.withValues(alpha: 0.5),
+                  AppTheme.secondaryColor.withValues(alpha: 0.0),
                 ],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
@@ -458,8 +456,8 @@ Widget _buildComparisonCard(BuildContext context, SalesReport report) {
   return Container(
     padding: const EdgeInsets.all(12),
     decoration: BoxDecoration(
-      color: (isPos ? AppTheme.successColor : AppTheme.errorColor).withOpacity(
-        0.1,
+      color: (isPos ? AppTheme.successColor : AppTheme.errorColor).withValues(
+        alpha: 0.1,
       ),
       borderRadius: BorderRadius.circular(8),
       border: Border.all(

@@ -4,15 +4,19 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../../../core/theme/app_theme.dart';
 import '../../../../core/constants/backup_constants.dart';
 import '../controllers/backup_controller.dart';
 import '../../domain/entities/backup_metadata.dart';
 
 class BackupRestoreDialog extends StatefulWidget {
   final BackupMetadata backup;
-  const BackupRestoreDialog({super.key, required this.backup});
+  final BackupController controller;
+
+  const BackupRestoreDialog({
+    super.key,
+    required this.backup,
+    required this.controller,
+  });
 
   @override
   State<BackupRestoreDialog> createState() => _BackupRestoreDialogState();
@@ -62,7 +66,7 @@ class _BackupRestoreDialogState extends State<BackupRestoreDialog> {
 
   Future<void> _handleRestore() async {
     setState(() => _isRestoring = true);
-    final success = await context.read<BackupController>().restoreBackup(_mode);
+    final success = await widget.controller.restoreBackup(_mode);
     if (mounted) {
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(

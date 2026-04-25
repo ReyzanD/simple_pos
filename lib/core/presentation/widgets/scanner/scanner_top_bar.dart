@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:simple_pos/core/theme/app_theme.dart';
 
 /// Scanner top bar widget
 class ScannerTopBar extends StatelessWidget {

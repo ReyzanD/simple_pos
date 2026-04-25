@@ -1,8 +1,5 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:simple_pos/core/database/database_helper.dart';
-import 'package:simple_pos/core/utils/logger.dart';
-import 'package:simple_pos/core/exceptions/app_exceptions.dart'
-    as app_exceptions;
 
 class ProductVariantDao {
   final DatabaseHelper _dbHelper;

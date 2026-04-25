@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/neo_brutal_theme.dart';
-import '../controllers/expense_controller.dart';
+import '../../../shared/presentation/providers.dart';
 import '../widgets/expense_list_tab.dart';
 import '../widgets/expense_summary_tab.dart';
 import '../widgets/expense_categories_tab.dart';
 import '../widgets/expense_form_dialog.dart';
 
-class ExpenseScreen extends StatefulWidget {
+class ExpenseScreen extends ConsumerStatefulWidget {
   const ExpenseScreen({super.key});
 
   @override
-  State<ExpenseScreen> createState() => _ExpenseScreenState();
+  ConsumerState<ExpenseScreen> createState() => _ExpenseScreenState();
 }
 
-class _ExpenseScreenState extends State<ExpenseScreen>
+class _ExpenseScreenState extends ConsumerState<ExpenseScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   int _currentTab = 0;
@@ -41,7 +41,7 @@ class _ExpenseScreenState extends State<ExpenseScreen>
 
   @override
   Widget build(BuildContext context) {
-    final controller = context.watch<ExpenseController>();
+    final controller = ref.watch(expenseControllerProvider);
 
     return Scaffold(
       backgroundColor: NeoBrutalTheme.background, // ✅ Brutal white background

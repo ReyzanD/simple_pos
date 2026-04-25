@@ -14,6 +14,7 @@ import '../../backup/data/repositories/backup_repository_impl.dart';
 import '../../backup/presentation/controllers/backup_controller.dart';
 
 import '../../../core/services/backup_service.dart';
+import '../../../core/services/printer_service.dart';
 // --- Expenses ---
 import '../../expenses/presentation/controllers/expense_controller.dart';
 import '../../expenses/domain/usecases/add_expense_usecase.dart';
@@ -56,7 +57,6 @@ import '../../users/domain/usecases/get_users_usecase.dart';
 import '../../users/domain/usecases/create_user_usecase.dart';
 import '../../users/domain/usecases/update_user_usecase.dart';
 import '../../users/domain/usecases/delete_user_usecase.dart';
-import '../../users/domain/usecases/get_current_user_usecase.dart';
 import '../../users/presentation/controllers/auth_controller.dart';
 
 // --- Inventory ---
@@ -173,9 +173,6 @@ final _updateUserUseCaseProvider = Provider(
 final _deleteUserUseCaseProvider = Provider(
   (ref) => DeleteUserUseCase(ref.watch(_userRepositoryProvider)),
 );
-final _getCurrentUserUseCaseProvider = Provider(
-  (ref) => GetCurrentUserUseCase(ref.watch(_userRepositoryProvider)),
-);
 
 final authControllerProvider = ChangeNotifierProvider<AuthController>(
   (ref) => AuthController(
@@ -184,7 +181,6 @@ final authControllerProvider = ChangeNotifierProvider<AuthController>(
     createUserUseCase: ref.watch(_createUserUseCaseProvider),
     updateUserUseCase: ref.watch(_updateUserUseCaseProvider),
     deleteUserUseCase: ref.watch(_deleteUserUseCaseProvider),
-    getCurrentUserUseCase: ref.watch(_getCurrentUserUseCaseProvider),
   ),
 );
 
@@ -825,4 +821,11 @@ final _settingsRepositoryProvider = Provider(
 final settingsControllerProvider = ChangeNotifierProvider<SettingsController>(
   (ref) =>
       SettingsController(repository: ref.watch(_settingsRepositoryProvider)),
+);
+
+// ============================================================
+// PRINTER SERVICE
+// ============================================================
+final printerServiceProvider = ChangeNotifierProvider<PrinterService>(
+  (ref) => PrinterService(),
 );

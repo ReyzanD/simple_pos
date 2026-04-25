@@ -4,14 +4,12 @@ import '../../domain/entities/transaction.dart';
 import '../../domain/entities/payment_method.dart';
 import '../../domain/entities/payment_status.dart';
 import '../controllers/sales_history_controller.dart';
-import '../controllers/refund_controller.dart';
 import '../widgets/refund_confirmation_dialog.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/neo_brutal_theme.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../shared/presentation/main_navigation.dart';
 import '../../../../core/widgets/brutal_inputs.dart';
-import '../../../shared/presentation/providers.dart';
 import '../../../shared/presentation/providers.dart';
 
 /// Modern Material 3 screen showing sales history with filters

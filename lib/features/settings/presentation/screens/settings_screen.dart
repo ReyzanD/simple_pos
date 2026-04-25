@@ -1,268 +1,299 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../controllers/settings_controller.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/neo_brutal_theme.dart';
-import '../../../../core/controllers/theme_controller.dart';
 import '../../../shared/presentation/main_navigation.dart';
 import 'printer_settings_screen.dart';
 import 'data_management_screen.dart';
 import '../../../../core/widgets/brutal_widgets.dart';
+import '../../../shared/presentation/providers.dart';
 
 /// Settings screen with 6 expandable sections using grouped card layout
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Consumer(
-      builder: (context, controller, _) {
-        return Scaffold(
-          appBar: AppBar(
-            leading: IconButton(
-              icon: const Icon(Icons.menu),
-              onPressed: () {
-                final mainNavState = context.findAncestorStateOfType<MainNavigationState>();
-                mainNavState?.openDrawer();
-              },
-            ),
-            title: const Text('Pengaturan'),
-            actions: [
-              Padding(
-                padding: EdgeInsets.only(right: NeoBrutalTheme.spaceSM),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: NeoBrutalTheme.warning.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
-                    border: Border.all(
-                      color: Colors.black,
-                      width: 2,
-                    ),
-                  ),
-                  child: IconButton(
-                    icon: Icon(
-                      Icons.restore,
-                      color: NeoBrutalTheme.warning,
-                    ),
-                    tooltip: 'Reset ke Default',
-                    onPressed: () => _showResetDialog(context, controller),
-                  ),
-                ),
-              ),
-            ],
-            flexibleSpace: Container(
+    final controller = ref.watch(settingsControllerProvider);
+    final themeController = ref.watch(themeControllerProvider);
+
+    return Scaffold(
+      appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.menu),
+          onPressed: () {
+            final mainNavState = context
+                .findAncestorStateOfType<MainNavigationState>();
+            mainNavState?.openDrawer();
+          },
+        ),
+        title: const Text('Pengaturan'),
+        actions: [
+          Padding(
+            padding: EdgeInsets.only(right: NeoBrutalTheme.spaceSM),
+            child: Container(
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: isDark
-                      ? [
-                          AppTheme.darkSurface,
-                          AppTheme.darkSurface.withValues(alpha: 0.95),
-                        ]
-                      : [
-                          AppTheme.primaryColor,
-                          AppTheme.primaryLight,
-                        ],
-                ),
+                color: NeoBrutalTheme.warning.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
+                border: Border.all(color: Colors.black, width: 2),
+              ),
+              child: IconButton(
+                icon: Icon(Icons.restore, color: NeoBrutalTheme.warning),
+                tooltip: 'Reset ke Default',
+                onPressed: () => _showResetDialog(context, controller),
               ),
             ),
           ),
-          body: controller.isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : ListView(
-                  padding: const EdgeInsets.only(
-                    left: NeoBrutalTheme.spaceMD,
-                    right: NeoBrutalTheme.spaceMD,
-                    top: NeoBrutalTheme.spaceMD,
-                    bottom: 100, // Space for floating nav
-                  ),
+        ],
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: isDark
+                  ? [
+                      AppTheme.darkSurface,
+                      AppTheme.darkSurface.withValues(alpha: 0.95),
+                    ]
+                  : [AppTheme.primaryColor, AppTheme.primaryLight],
+            ),
+          ),
+        ),
+      ),
+      body: controller.isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : ListView(
+              padding: const EdgeInsets.only(
+                left: NeoBrutalTheme.spaceMD,
+                right: NeoBrutalTheme.spaceMD,
+                top: NeoBrutalTheme.spaceMD,
+                bottom: 100, // Space for floating nav
+              ),
+              children: [
+                // Appearance section with dark mode toggle
+                _buildExpandableSection(
+                  context,
+                  title: 'Tampilan',
+                  icon: Icons.palette_outlined,
                   children: [
-                    // Appearance section with dark mode toggle
-                    _buildExpandableSection(
-                      context,
-                      title: 'Tampilan',
-                      icon: Icons.palette_outlined,
-                      children: [
-                        Consumer(
-                          builder: (context, themeController, _) {
-                            return SwitchListTile(
-                              title: const Text('Mode Gelap'),
-                              subtitle: Text(themeController.isDarkMode ? 'Aktif' : 'Nonaktif'),
-                              value: themeController.isDarkMode,
-                              onChanged: (value) => themeController.setThemeMode(value),
-                              secondary: Icon(
-                                themeController.isDarkMode ? Icons.dark_mode : Icons.light_mode,
-                              ),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: NeoBrutalTheme.spaceMD),
-
-                    // 6 Expandable sections
-                    _buildExpandableSection(
-                      context,
-                      title: 'Informasi Bisnis',
-                      icon: Icons.business_outlined,
-                      children: [
-                        _buildSettingsTile(
-                          title: 'Nama Bisnis',
-                          subtitle: controller.businessInfo.name,
-                          icon: Icons.store,
-                          onTap: () => _editBusinessName(context, controller, controller.businessInfo.name),
-                        ),
-                        const Divider(height: 1),
-                        _buildSettingsTile(
-                          title: 'Alamat',
-                          subtitle: controller.businessInfo.address.isEmpty ? 'Belum diisi' : controller.businessInfo.address,
-                          icon: Icons.location_on_outlined,
-                          onTap: () => _editBusinessAddress(context, controller, controller.businessInfo.address),
-                        ),
-                        const Divider(height: 1),
-                        _buildSettingsTile(
-                          title: 'Telepon',
-                          subtitle: controller.businessInfo.phone.isEmpty ? 'Belum diisi' : controller.businessInfo.phone,
-                          icon: Icons.phone_outlined,
-                          onTap: () => _editBusinessPhone(context, controller, controller.businessInfo.phone),
-                        ),
-                        const Divider(height: 1),
-                        _buildSettingsTile(
-                          title: 'Email',
-                          subtitle: controller.businessInfo.email.isEmpty ? 'Belum diisi' : controller.businessInfo.email,
-                          icon: Icons.email_outlined,
-                          onTap: () => _editBusinessEmail(context, controller, controller.businessInfo.email),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: NeoBrutalTheme.spaceMD),
-
-                    _buildExpandableSection(
-                      context,
-                      title: 'Pajak',
-                      icon: Icons.percent_outlined,
-                      children: [
-                        SwitchListTile(
-                          title: const Text('Aktifkan Pajak'),
-                          subtitle: Text('Pajak: ${(controller.taxRate * 100).toStringAsFixed(1)}%'),
-                          value: controller.taxEnabled,
-                          onChanged: (value) => controller.toggleTax(value),
-                          secondary: const Icon(Icons.calculate_outlined),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: NeoBrutalTheme.spaceMD),
-
-                    _buildExpandableSection(
-                      context,
-                      title: 'Mata Uang',
-                      icon: Icons.attach_money,
-                      children: [
-                        _buildSettingsTile(
-                          title: 'Simbol Mata Uang',
-                          subtitle: controller.currencySymbol,
-                          icon: Icons.tag,
-                          onTap: () => _editCurrencySymbol(context, controller, controller.currencySymbol),
-                        ),
-                        const Divider(height: 1),
-                        _buildSettingsTile(
-                          title: 'Kode Mata Uang',
-                          subtitle: controller.currencyCode,
-                          icon: Icons.code,
-                          onTap: () => _editCurrencyCode(context, controller, controller.currencyCode),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: NeoBrutalTheme.spaceMD),
-
-                    _buildExpandableSection(
-                      context,
-                      title: 'Struk',
-                      icon: Icons.receipt_long,
-                      children: [
-                        _buildSettingsTile(
-                          title: 'Pengaturan Printer',
-                          subtitle: 'Bluetooth thermal printer',
-                          icon: Icons.print_outlined,
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const PrinterSettingsScreen(),
-                              ),
-                            );
-                          },
-                        ),
-                        const Divider(height: 1),
-                        _buildSettingsTile(
-                          title: 'Footer Struk',
-                          subtitle: controller.receiptFooter,
-                          icon: Icons.message_outlined,
-                          maxLines: 2,
-                          onTap: () => _editReceiptFooter(context, controller, controller.receiptFooter),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: NeoBrutalTheme.spaceMD),
-
-                    _buildExpandableSection(
-                      context,
-                      title: 'Inventaris',
-                      icon: Icons.inventory_2_outlined,
-                      children: [
-                        _buildSettingsTile(
-                          title: 'Batas Stok Rendah',
-                          subtitle: '${controller.lowStockThreshold} item',
-                          icon: Icons.warning_outlined,
-                          onTap: () => _editLowStockThreshold(context, controller, controller.lowStockThreshold),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: NeoBrutalTheme.spaceMD),
-
-                    _buildExpandableSection(
-                      context,
-                      title: 'Manajemen Data',
-                      icon: Icons.storage,
-                      children: [
-                        _buildSettingsTile(
-                          title: 'Kelola Data',
-                          subtitle: 'Ekspor data dan backup',
-                          icon: Icons.manage_search_outlined,
-                          iconColor: AppTheme.infoColor,
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const DataManagementScreen(),
-                              ),
-                            );
-                          },
-                        ),
-                        const Divider(height: 1),
-                        _buildSettingsTile(
-                          title: 'Ekspor Pengaturan',
-                          subtitle: 'Simpan pengaturan ke file',
-                          icon: Icons.file_download_outlined,
-                          iconColor: AppTheme.successColor,
-                          onTap: () => _exportSettings(context, controller),
-                        ),
-                        const Divider(height: 1),
-                        _buildSettingsTile(
-                          title: 'Hapus Semua Data',
-                          subtitle: 'Hapus semua data transaksi dan produk',
-                          icon: Icons.delete_sweep,
-                          iconColor: AppTheme.errorColor,
-                          onTap: () => _showClearDataDialog(context, controller),
-                        ),
-                      ],
+                    SwitchListTile(
+                      title: const Text('Mode Gelap'),
+                      subtitle: Text(
+                        themeController.isDarkMode ? 'Aktif' : 'Nonaktif',
+                      ),
+                      value: themeController.isDarkMode,
+                      onChanged: (value) => themeController.setThemeMode(value),
+                      secondary: Icon(
+                        themeController.isDarkMode
+                            ? Icons.dark_mode
+                            : Icons.light_mode,
+                      ),
                     ),
                   ],
                 ),
-        );
-      },
+                const SizedBox(height: NeoBrutalTheme.spaceMD),
+
+                // 6 Expandable sections
+                _buildExpandableSection(
+                  context,
+                  title: 'Informasi Bisnis',
+                  icon: Icons.business_outlined,
+                  children: [
+                    _buildSettingsTile(
+                      title: 'Nama Bisnis',
+                      subtitle: controller.businessInfo.name,
+                      icon: Icons.store,
+                      onTap: () => _editBusinessName(
+                        context,
+                        controller,
+                        controller.businessInfo.name,
+                      ),
+                    ),
+                    const Divider(height: 1),
+                    _buildSettingsTile(
+                      title: 'Alamat',
+                      subtitle: controller.businessInfo.address.isEmpty
+                          ? 'Belum diisi'
+                          : controller.businessInfo.address,
+                      icon: Icons.location_on_outlined,
+                      onTap: () => _editBusinessAddress(
+                        context,
+                        controller,
+                        controller.businessInfo.address,
+                      ),
+                    ),
+                    const Divider(height: 1),
+                    _buildSettingsTile(
+                      title: 'Telepon',
+                      subtitle: controller.businessInfo.phone.isEmpty
+                          ? 'Belum diisi'
+                          : controller.businessInfo.phone,
+                      icon: Icons.phone_outlined,
+                      onTap: () => _editBusinessPhone(
+                        context,
+                        controller,
+                        controller.businessInfo.phone,
+                      ),
+                    ),
+                    const Divider(height: 1),
+                    _buildSettingsTile(
+                      title: 'Email',
+                      subtitle: controller.businessInfo.email.isEmpty
+                          ? 'Belum diisi'
+                          : controller.businessInfo.email,
+                      icon: Icons.email_outlined,
+                      onTap: () => _editBusinessEmail(
+                        context,
+                        controller,
+                        controller.businessInfo.email,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: NeoBrutalTheme.spaceMD),
+
+                _buildExpandableSection(
+                  context,
+                  title: 'Pajak',
+                  icon: Icons.percent_outlined,
+                  children: [
+                    SwitchListTile(
+                      title: const Text('Aktifkan Pajak'),
+                      subtitle: Text(
+                        'Pajak: ${(controller.taxRate * 100).toStringAsFixed(1)}%',
+                      ),
+                      value: controller.taxEnabled,
+                      onChanged: (value) => controller.toggleTax(value),
+                      secondary: const Icon(Icons.calculate_outlined),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: NeoBrutalTheme.spaceMD),
+
+                _buildExpandableSection(
+                  context,
+                  title: 'Mata Uang',
+                  icon: Icons.attach_money,
+                  children: [
+                    _buildSettingsTile(
+                      title: 'Simbol Mata Uang',
+                      subtitle: controller.currencySymbol,
+                      icon: Icons.tag,
+                      onTap: () => _editCurrencySymbol(
+                        context,
+                        controller,
+                        controller.currencySymbol,
+                      ),
+                    ),
+                    const Divider(height: 1),
+                    _buildSettingsTile(
+                      title: 'Kode Mata Uang',
+                      subtitle: controller.currencyCode,
+                      icon: Icons.code,
+                      onTap: () => _editCurrencyCode(
+                        context,
+                        controller,
+                        controller.currencyCode,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: NeoBrutalTheme.spaceMD),
+
+                _buildExpandableSection(
+                  context,
+                  title: 'Struk',
+                  icon: Icons.receipt_long,
+                  children: [
+                    _buildSettingsTile(
+                      title: 'Pengaturan Printer',
+                      subtitle: 'Bluetooth thermal printer',
+                      icon: Icons.print_outlined,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const PrinterSettingsScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                    const Divider(height: 1),
+                    _buildSettingsTile(
+                      title: 'Footer Struk',
+                      subtitle: controller.receiptFooter,
+                      icon: Icons.message_outlined,
+                      maxLines: 2,
+                      onTap: () => _editReceiptFooter(
+                        context,
+                        controller,
+                        controller.receiptFooter,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: NeoBrutalTheme.spaceMD),
+
+                _buildExpandableSection(
+                  context,
+                  title: 'Inventaris',
+                  icon: Icons.inventory_2_outlined,
+                  children: [
+                    _buildSettingsTile(
+                      title: 'Batas Stok Rendah',
+                      subtitle: '${controller.lowStockThreshold} item',
+                      icon: Icons.warning_outlined,
+                      onTap: () => _editLowStockThreshold(
+                        context,
+                        controller,
+                        controller.lowStockThreshold,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: NeoBrutalTheme.spaceMD),
+
+                _buildExpandableSection(
+                  context,
+                  title: 'Manajemen Data',
+                  icon: Icons.storage,
+                  children: [
+                    _buildSettingsTile(
+                      title: 'Kelola Data',
+                      subtitle: 'Ekspor data dan backup',
+                      icon: Icons.manage_search_outlined,
+                      iconColor: AppTheme.infoColor,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const DataManagementScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                    const Divider(height: 1),
+                    _buildSettingsTile(
+                      title: 'Ekspor Pengaturan',
+                      subtitle: 'Simpan pengaturan ke file',
+                      icon: Icons.file_download_outlined,
+                      iconColor: AppTheme.successColor,
+                      onTap: () => _exportSettings(context, controller),
+                    ),
+                    const Divider(height: 1),
+                    _buildSettingsTile(
+                      title: 'Hapus Semua Data',
+                      subtitle: 'Hapus semua data transaksi dan produk',
+                      icon: Icons.delete_sweep,
+                      iconColor: AppTheme.errorColor,
+                      onTap: () => _showClearDataDialog(context, controller),
+                    ),
+                  ],
+                ),
+              ],
+            ),
     );
   }
 
@@ -290,16 +321,9 @@ class SettingsScreen extends StatelessWidget {
             decoration: BoxDecoration(
               color: NeoBrutalTheme.primary,
               borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
-              border: Border.all(
-                color: Colors.black,
-                width: 3,
-              ),
+              border: Border.all(color: Colors.black, width: 3),
             ),
-            child: Icon(
-              icon,
-              color: Colors.white,
-              size: 24,
-            ),
+            child: Icon(icon, color: Colors.white, size: 24),
           ),
           title: Text(
             title,
@@ -309,10 +333,7 @@ class SettingsScreen extends StatelessWidget {
               color: AppTheme.textPrimary,
             ),
           ),
-          trailing: Icon(
-            Icons.expand_more,
-            color: AppTheme.textSecondary,
-          ),
+          trailing: Icon(Icons.expand_more, color: AppTheme.textSecondary),
           children: children,
         ),
       ),
@@ -342,16 +363,9 @@ class SettingsScreen extends StatelessWidget {
               decoration: BoxDecoration(
                 color: defaultIconColor,
                 borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
-                border: Border.all(
-                  color: Colors.black,
-                  width: 3,
-                ),
+                border: Border.all(color: Colors.black, width: 3),
               ),
-              child: Icon(
-                icon,
-                color: Colors.white,
-                size: 24,
-              ),
+              child: Icon(icon, color: Colors.white, size: 24),
             ),
             SizedBox(width: NeoBrutalTheme.spaceMD),
             Expanded(
@@ -377,11 +391,7 @@ class SettingsScreen extends StatelessWidget {
                 ],
               ),
             ),
-            Icon(
-              Icons.chevron_right,
-              color: AppTheme.textSecondary,
-              size: 24,
-            ),
+            Icon(Icons.chevron_right, color: AppTheme.textSecondary, size: 24),
           ],
         ),
       ),
@@ -390,7 +400,11 @@ class SettingsScreen extends StatelessWidget {
 
   // Edit dialogs
 
-  Future<void> _editBusinessName(BuildContext context, SettingsController controller, String currentValue) async {
+  Future<void> _editBusinessName(
+    BuildContext context,
+    SettingsController controller,
+    String currentValue,
+  ) async {
     final result = await _showEditDialog(
       context,
       title: 'Nama Bisnis',
@@ -406,7 +420,11 @@ class SettingsScreen extends StatelessWidget {
     }
   }
 
-  Future<void> _editBusinessAddress(BuildContext context, SettingsController controller, String currentValue) async {
+  Future<void> _editBusinessAddress(
+    BuildContext context,
+    SettingsController controller,
+    String currentValue,
+  ) async {
     final result = await _showEditDialog(
       context,
       title: 'Alamat Bisnis',
@@ -422,7 +440,11 @@ class SettingsScreen extends StatelessWidget {
     }
   }
 
-  Future<void> _editBusinessPhone(BuildContext context, SettingsController controller, String currentValue) async {
+  Future<void> _editBusinessPhone(
+    BuildContext context,
+    SettingsController controller,
+    String currentValue,
+  ) async {
     final result = await _showEditDialog(
       context,
       title: 'Telepon Bisnis',
@@ -439,7 +461,11 @@ class SettingsScreen extends StatelessWidget {
     }
   }
 
-  Future<void> _editBusinessEmail(BuildContext context, SettingsController controller, String currentValue) async {
+  Future<void> _editBusinessEmail(
+    BuildContext context,
+    SettingsController controller,
+    String currentValue,
+  ) async {
     final result = await _showEditDialog(
       context,
       title: 'Email Bisnis',
@@ -456,7 +482,11 @@ class SettingsScreen extends StatelessWidget {
     }
   }
 
-  Future<void> _editCurrencySymbol(BuildContext context, SettingsController controller, String currentValue) async {
+  Future<void> _editCurrencySymbol(
+    BuildContext context,
+    SettingsController controller,
+    String currentValue,
+  ) async {
     final result = await _showEditDialog(
       context,
       title: 'Simbol Mata Uang',
@@ -464,14 +494,21 @@ class SettingsScreen extends StatelessWidget {
       hintText: 'Contoh: Rp',
     );
     if (result != null) {
-      await controller.updateCurrency(symbol: result, code: controller.currencyCode);
+      await controller.updateCurrency(
+        symbol: result,
+        code: controller.currencyCode,
+      );
       if (context.mounted) {
         _showSuccessSnackBar(context, 'Simbol mata uang diperbarui');
       }
     }
   }
 
-  Future<void> _editCurrencyCode(BuildContext context, SettingsController controller, String currentValue) async {
+  Future<void> _editCurrencyCode(
+    BuildContext context,
+    SettingsController controller,
+    String currentValue,
+  ) async {
     final result = await _showEditDialog(
       context,
       title: 'Kode Mata Uang',
@@ -479,14 +516,21 @@ class SettingsScreen extends StatelessWidget {
       hintText: 'Contoh: IDR',
     );
     if (result != null) {
-      await controller.updateCurrency(symbol: controller.currencySymbol, code: result);
+      await controller.updateCurrency(
+        symbol: controller.currencySymbol,
+        code: result,
+      );
       if (context.mounted) {
         _showSuccessSnackBar(context, 'Kode mata uang diperbarui');
       }
     }
   }
 
-  Future<void> _editReceiptFooter(BuildContext context, SettingsController controller, String currentValue) async {
+  Future<void> _editReceiptFooter(
+    BuildContext context,
+    SettingsController controller,
+    String currentValue,
+  ) async {
     final result = await _showEditDialog(
       context,
       title: 'Footer Struk',
@@ -502,7 +546,11 @@ class SettingsScreen extends StatelessWidget {
     }
   }
 
-  Future<void> _editLowStockThreshold(BuildContext context, SettingsController controller, int currentValue) async {
+  Future<void> _editLowStockThreshold(
+    BuildContext context,
+    SettingsController controller,
+    int currentValue,
+  ) async {
     final result = await _showNumberDialog(
       context,
       title: 'Batas Stok Rendah',
@@ -530,9 +578,7 @@ class SettingsScreen extends StatelessWidget {
     return showDialog<String>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(title),
         content: TextField(
           controller: controller,
@@ -572,9 +618,7 @@ class SettingsScreen extends StatelessWidget {
     return showDialog<double>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(title),
         content: TextField(
           controller: controller,
@@ -603,15 +647,18 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  Future<void> _showResetDialog(BuildContext context, SettingsController controller) async {
+  Future<void> _showResetDialog(
+    BuildContext context,
+    SettingsController controller,
+  ) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text('Reset Pengaturan'),
-        content: const Text('Apakah Anda yakin ingin mereset semua pengaturan ke nilai default?'),
+        content: const Text(
+          'Apakah Anda yakin ingin mereset semua pengaturan ke nilai default?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
@@ -619,7 +666,9 @@ class SettingsScreen extends StatelessWidget {
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(dialogContext, true),
-            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.errorColor),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.errorColor,
+            ),
             child: const Text('Reset'),
           ),
         ],
@@ -634,7 +683,10 @@ class SettingsScreen extends StatelessWidget {
     }
   }
 
-  Future<void> _showClearDataDialog(BuildContext context, SettingsController controller) async {
+  Future<void> _showClearDataDialog(
+    BuildContext context,
+    SettingsController controller,
+  ) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -707,7 +759,10 @@ class SettingsScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            child: const Text('Hapus', style: TextStyle(fontWeight: FontWeight.w600)),
+            child: const Text(
+              'Hapus',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
           ),
         ],
       ),
@@ -721,7 +776,10 @@ class SettingsScreen extends StatelessWidget {
     }
   }
 
-  Future<void> _exportSettings(BuildContext context, SettingsController controller) async {
+  Future<void> _exportSettings(
+    BuildContext context,
+    SettingsController controller,
+  ) async {
     final data = await controller.exportSettings();
     if (data != null && context.mounted) {
       _showSuccessSnackBar(context, 'Pengaturan diekspor');

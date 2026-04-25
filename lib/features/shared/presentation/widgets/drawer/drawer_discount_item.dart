@@ -1,20 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simple_pos/core/theme/app_theme.dart';
 import 'package:simple_pos/core/theme/neo_brutal_theme.dart';
 import 'package:simple_pos/core/utils/haptic_helper.dart';
-import 'package:simple_pos/features/sales/presentation/controllers/discount_controller.dart';
 import 'package:simple_pos/features/sales/presentation/screens/discount_management_screen.dart';
 
 /// Modern Discount Management Item
-class DrawerDiscountItem extends StatelessWidget {
+class DrawerDiscountItem extends ConsumerWidget {
   const DrawerDiscountItem({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Consumer(
-      builder: (context, controller, _) {
-        return ListTile(
+  Widget build(BuildContext context, WidgetRef ref) {
+    return ListTile(
           contentPadding: EdgeInsets.symmetric(
             horizontal: NeoBrutalTheme.spaceMD,
             vertical: NeoBrutalTheme.spaceXS,
@@ -62,15 +59,10 @@ class DrawerDiscountItem extends StatelessWidget {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => ChangeNotifierProvider.value(
-                  value: controller,
-                  child: const DiscountManagementScreen(),
-                ),
+                builder: (context) => const DiscountManagementScreen(),
               ),
             );
           },
         );
-      },
-    );
   }
 }

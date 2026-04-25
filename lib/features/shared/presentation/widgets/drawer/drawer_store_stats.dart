@@ -1,25 +1,24 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simple_pos/core/theme/app_theme.dart';
 import 'package:simple_pos/core/theme/neo_brutal_theme.dart';
-import 'package:simple_pos/features/inventory/presentation/controllers/inventory_controller.dart';
-import 'package:simple_pos/features/sales/presentation/controllers/sales_report_controller.dart';
+import '../../providers.dart';
 
 /// Store Stats Card - Today's sales, transaction count, low stock
-class DrawerStoreStats extends StatelessWidget {
+class DrawerStoreStats extends ConsumerWidget {
   const DrawerStoreStats({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final inventory = ref.watch(inventoryControllerProvider);
+
+    final lowStockCount = inventory.allProducts
+        .where((p) => p.isLowStock || p.isOutOfStock)
+        .length;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      child: Consumer2<InventoryController, SalesReportController>(
-        builder: (context, inventory, salesReport, _) {
-          final lowStockCount = inventory.allProducts
-              .where((p) => p.isLowStock || p.isOutOfStock)
-              .length;
-
-          return Container(
+      child: Container(
             padding: EdgeInsets.all(NeoBrutalTheme.spaceMD),
             decoration: BoxDecoration(
               color: NeoBrutalTheme.blockCoral, // ✅ Bold coral background
@@ -98,10 +97,8 @@ class DrawerStoreStats extends StatelessWidget {
                 _LowStockAlert(count: lowStockCount),
               ],
             ),
-          );
-        },
-      ),
-    );
+        ),
+      );
   }
 }
 

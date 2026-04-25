@@ -5,14 +5,16 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/neo_brutal_theme.dart';
 import '../../../../core/constants/backup_constants.dart';
+import '../../../shared/presentation/providers.dart';
 import '../../domain/entities/backup_metadata.dart';
 import 'backup_restore_dialog.dart'; // We'll create this soon
 import 'backup_delete_dialog.dart'; // We'll create this soon
 
-class BackupListItem extends StatelessWidget {
+class BackupListItem extends ConsumerWidget {
   final BackupMetadata backup;
   final bool isSelected;
   final VoidCallback onTap;
@@ -25,7 +27,8 @@ class BackupListItem extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final controller = ref.watch(backupControllerProvider);
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
@@ -56,7 +59,7 @@ class BackupListItem extends StatelessWidget {
             _buildHeader(context),
             SizedBox(height: NeoBrutalTheme.spaceMD),
             _buildChips(context),
-            if (isSelected) _buildActionArea(context),
+            if (isSelected) _buildActionArea(context, controller),
           ],
         ),
       ),
@@ -113,7 +116,7 @@ class BackupListItem extends StatelessWidget {
     );
   }
 
-  Widget _buildActionArea(BuildContext context) {
+  Widget _buildActionArea(BuildContext context, dynamic controller) {
     return Column(
       children: [
         SizedBox(height: NeoBrutalTheme.spaceMD),
@@ -128,7 +131,7 @@ class BackupListItem extends StatelessWidget {
                 color: AppTheme.successColor,
                 onPressed: () => showDialog(
                   context: context,
-                  builder: (_) => BackupRestoreDialog(backup: backup),
+                  builder: (_) => BackupRestoreDialog(backup: backup, controller: controller),
                 ),
               ),
             ),
@@ -140,7 +143,7 @@ class BackupListItem extends StatelessWidget {
                 color: AppTheme.errorColor,
                 onPressed: () => showDialog(
                   context: context,
-                  builder: (_) => BackupDeleteDialog(backup: backup),
+                  builder: (_) => BackupDeleteDialog(backup: backup, controller: controller),
                 ),
               ),
             ),

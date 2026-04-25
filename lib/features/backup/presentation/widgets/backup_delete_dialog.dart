@@ -4,16 +4,19 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../../../core/widgets/modern_button.dart';
 import '../controllers/backup_controller.dart';
 import '../../domain/entities/backup_metadata.dart';
 
 class BackupDeleteDialog extends StatefulWidget {
   final BackupMetadata backup;
+  final BackupController controller;
 
-  const BackupDeleteDialog({super.key, required this.backup});
+  const BackupDeleteDialog({
+    super.key,
+    required this.backup,
+    required this.controller,
+  });
 
   @override
   State<BackupDeleteDialog> createState() => _BackupDeleteDialogState();
@@ -57,7 +60,7 @@ class _BackupDeleteDialogState extends State<BackupDeleteDialog> {
 
   Future<void> _handleDelete() async {
     setState(() => _isDeleting = true);
-    final success = await context.read<BackupController>().deleteBackup();
+    final success = await widget.controller.deleteBackup();
     if (mounted) {
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(

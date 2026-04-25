@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import '../../domain/usecases/get_sales_analytics_usecase.dart';
 import '../../domain/entities/sales_analytics.dart';
+import '../../domain/entities/chart_enums.dart';
 import '../../../../core/exceptions/app_exceptions.dart';
 import '../../../../core/utils/logger.dart';
 
@@ -87,6 +88,14 @@ class AnalyticsController extends ChangeNotifier {
     DateTime end = now;
 
     switch (preset) {
+      case DateRangePreset.today:
+        start = DateTime(now.year, now.month, now.day);
+        break;
+      case DateRangePreset.thisWeek:
+        final weekday = now.weekday;
+        start = now.subtract(Duration(days: weekday - 1));
+        start = DateTime(start.year, start.month, start.day);
+        break;
       case DateRangePreset.last7Days:
         start = now.subtract(const Duration(days: 7));
         break;
@@ -102,6 +111,9 @@ class AnalyticsController extends ChangeNotifier {
       case DateRangePreset.lastMonth:
         start = DateTime(now.year, now.month - 1, 1);
         end = DateTime(now.year, now.month, 0, 23, 59, 59);
+        break;
+      case DateRangePreset.last3Months:
+        start = DateTime(now.year, now.month - 3, 1);
         break;
       case DateRangePreset.thisQuarter:
         final quarter = (now.month - 1) ~/ 3 + 1;
@@ -159,21 +171,13 @@ class AnalyticsController extends ChangeNotifier {
   }
 }
 
-/// Date range preset for quick selection
-enum DateRangePreset {
-  last7Days,
-  last30Days,
-  last90Days,
-  thisMonth,
-  lastMonth,
-  thisQuarter,
-  thisYear,
-  custom,
-}
-
 extension DateRangePresetExtension on DateRangePreset {
   String get displayName {
     switch (this) {
+      case DateRangePreset.today:
+        return 'Hari Ini';
+      case DateRangePreset.thisWeek:
+        return 'Minggu Ini';
       case DateRangePreset.last7Days:
         return '7 Hari Terakhir';
       case DateRangePreset.last30Days:
@@ -184,6 +188,8 @@ extension DateRangePresetExtension on DateRangePreset {
         return 'Bulan Ini';
       case DateRangePreset.lastMonth:
         return 'Bulan Lalu';
+      case DateRangePreset.last3Months:
+        return '3 Bulan Terakhir';
       case DateRangePreset.thisQuarter:
         return 'Kuartal Ini';
       case DateRangePreset.thisYear:

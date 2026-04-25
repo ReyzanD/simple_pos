@@ -1,5 +1,4 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../../domain/usecases/supplier_usecases.dart';
 import '../../domain/entities/supplier.dart';
 
 part 'supplier_provider.g.dart';

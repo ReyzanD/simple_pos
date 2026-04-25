@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../inventory/domain/entities/product.dart';
 import '../../../inventory/domain/entities/category.dart' as entities;
 import '../../../inventory/domain/entities/supplier.dart';
@@ -7,11 +7,10 @@ import '../../../inventory/domain/entities/supplier.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../core/exceptions/app_exceptions.dart';
-import '../controllers/category_controller.dart';
-import '../controllers/supplier_controller.dart';
+import '../../../shared/presentation/providers.dart';
 
 /// Dialog for editing an existing product
-class EditProductDialog extends StatefulWidget {
+class EditProductDialog extends ConsumerStatefulWidget {
   final Product product;
   final Future<bool> Function({
     required String name,
@@ -35,10 +34,10 @@ class EditProductDialog extends StatefulWidget {
   });
 
   @override
-  State<EditProductDialog> createState() => _EditProductDialogState();
+  ConsumerState<EditProductDialog> createState() => _EditProductDialogState();
 }
 
-class _EditProductDialogState extends State<EditProductDialog> {
+class _EditProductDialogState extends ConsumerState<EditProductDialog> {
   late final TextEditingController _nameController;
   late final TextEditingController _priceController;
   late final TextEditingController _costPriceController;
@@ -157,7 +156,7 @@ class _EditProductDialogState extends State<EditProductDialog> {
           ElevatedButton(
             onPressed: () async {
               if (formKey.currentState!.validate()) {
-                final categoryController = context.read<CategoryController>();
+                final categoryController = ref.read(categoryControllerProvider);
                 final name = nameController.text.trim();
                 final description = descController.text.trim().isEmpty
                     ? null
@@ -193,7 +192,7 @@ class _EditProductDialogState extends State<EditProductDialog> {
 
     if (result == true && mounted) {
       // Refresh categories from controller and select the newly added one
-      final categoryController = context.read<CategoryController>();
+      final categoryController = ref.read(categoryControllerProvider);
       setState(() {
         _categories = categoryController.categories;
         // Select the newly added category (last one in the list)
@@ -296,7 +295,7 @@ class _EditProductDialogState extends State<EditProductDialog> {
           ElevatedButton(
             onPressed: () async {
               if (formKey.currentState!.validate()) {
-                final supplierController = context.read<SupplierController>();
+                final supplierController = ref.read(supplierControllerProvider);
                 final name = nameController.text.trim();
                 final contactPerson = contactController.text.trim().isEmpty
                     ? null
@@ -336,7 +335,7 @@ class _EditProductDialogState extends State<EditProductDialog> {
 
     if (result == true && mounted) {
       // Refresh suppliers from controller and select the newly added one
-      final supplierController = context.read<SupplierController>();
+      final supplierController = ref.read(supplierControllerProvider);
       setState(() {
         _suppliers = supplierController.suppliers;
         // Select the newly added supplier (last one in the list)

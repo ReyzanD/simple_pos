@@ -1,22 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/services/export_service.dart';
 import '../../../../features/backup/domain/entities/backup_metadata.dart';
 import '../../../../features/backup/domain/entities/backup_config.dart';
 import '../../../../core/constants/backup_constants.dart';
-import '../../../../features/backup/presentation/controllers/backup_controller.dart';
+import '../../../shared/presentation/providers.dart';
 import '../../../../core/database/database_helper.dart';
 
 /// Screen for data management (export, backup, restore)
-class DataManagementScreen extends StatefulWidget {
+class DataManagementScreen extends ConsumerStatefulWidget {
   const DataManagementScreen({super.key});
 
   @override
-  State<DataManagementScreen> createState() => _DataManagementScreenState();
+  ConsumerState<DataManagementScreen> createState() => _DataManagementScreenState();
 }
 
-class _DataManagementScreenState extends State<DataManagementScreen> {
+class _DataManagementScreenState extends ConsumerState<DataManagementScreen> {
   final ExportService _exportService = ExportService(
     databaseHelper: DatabaseHelper.instance,
   );
@@ -24,14 +24,14 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
   bool _isExporting = false;
 
   List<BackupMetadata> get _backups =>
-      context.watch<BackupController>().backups;
-  bool get _isLoadingBackups => context.watch<BackupController>().isLoading;
+      ref.watch(backupControllerProvider).backups;
+  bool get _isLoadingBackups => ref.watch(backupControllerProvider).isLoading;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<BackupController>().loadBackups();
+      ref.read(backupControllerProvider).loadBackups();
     });
   }
 
@@ -117,7 +117,7 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
   }
 
   Future<void> _createBackup() async {
-    final controller = context.read<BackupController>();
+    final controller = ref.read(backupControllerProvider);
     final config = BackupConfig(
       type: BackupType.full,
       dataTypes: [BackupDataType.all],
@@ -159,7 +159,7 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
     );
 
     if (confirmed == true) {
-      final controller = context.read<BackupController>();
+      final controller = ref.read(backupControllerProvider);
       controller.selectBackup(backup);
       await controller.deleteBackup();
       if (!mounted) return;
@@ -266,7 +266,7 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
   }
 
   Widget _buildBackupCreateCard() {
-    final controller = context.watch<BackupController>();
+    final controller = ref.watch(backupControllerProvider);
     final isCreating = controller.isProcessing;
 
     return Card(

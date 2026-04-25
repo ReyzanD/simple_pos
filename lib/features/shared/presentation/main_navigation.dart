@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../inventory/presentation/controllers/inventory_controller.dart';
 import '../../inventory/presentation/screens/inventory_screen.dart';
 import '../../pos/presentation/screens/pos_screen.dart';
-import '../../pos/presentation/controllers/pos_controller.dart';
 import '../../../core/presentation/widgets/barcode_scanner_screen.dart';
 import '../../sales/presentation/screens/sales_history_screen.dart';
 import '../../sales/presentation/screens/sales_report_screen.dart';

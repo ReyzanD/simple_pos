@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
-import '../controllers/shift_controller.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../shared/presentation/providers.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/modern_button.dart';
 import '../../../../core/widgets/modern_card.dart';
@@ -9,14 +9,14 @@ import 'package:intl/intl.dart';
 import 'cash_count_screen.dart';
 
 /// Screen for closing an active cashier shift
-class ShiftCloseScreen extends StatefulWidget {
+class ShiftCloseScreen extends ConsumerStatefulWidget {
   const ShiftCloseScreen({super.key});
 
   @override
-  State<ShiftCloseScreen> createState() => _ShiftCloseScreenState();
+  ConsumerState<ShiftCloseScreen> createState() => _ShiftCloseScreenState();
 }
 
-class _ShiftCloseScreenState extends State<ShiftCloseScreen> {
+class _ShiftCloseScreenState extends ConsumerState<ShiftCloseScreen> {
   final _closingBalanceController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
@@ -27,7 +27,7 @@ class _ShiftCloseScreenState extends State<ShiftCloseScreen> {
   }
 
   Future<void> _handleCloseShift() async {
-    final controller = context.read<ShiftController>();
+    final controller = ref.read(shiftControllerProvider);
     final shift = controller.currentShift;
 
     if (shift == null) {
@@ -76,6 +76,9 @@ class _ShiftCloseScreenState extends State<ShiftCloseScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final controller = ref.watch(shiftControllerProvider);
+    final shift = controller.currentShift;
+
     return Scaffold(
       backgroundColor: AppTheme.getBackgroundColor(context),
       appBar: AppBar(
@@ -85,9 +88,7 @@ class _ShiftCloseScreenState extends State<ShiftCloseScreen> {
         elevation: 0,
       ),
       body: SafeArea(
-        child: Consumer(
-          builder: (context, controller, _) {
-            final shift = controller.currentShift;
+        child: () {
 
             if (shift == null) {
               return const Center(
@@ -323,8 +324,7 @@ class _ShiftCloseScreenState extends State<ShiftCloseScreen> {
                 ),
               ),
             );
-          },
-        ),
+        }(),
       ),
     );
   }

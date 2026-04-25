@@ -22,9 +22,6 @@ class BackupScheduleDialog extends StatefulWidget {
 class _BackupScheduleDialogState extends State<BackupScheduleDialog> {
   final TextEditingController _nameController = TextEditingController();
   BackupFrequency _frequency = BackupFrequency.daily;
-  BackupType _backupType = BackupType.full;
-  BackupDataType _dataType = BackupDataType.all;
-  StorageLocation _location = StorageLocation.local;
   TimeOfDay _selectedTime = const TimeOfDay(hour: 2, minute: 0);
   int? _selectedDayOfWeek;
   int? _selectedDayOfMonth;
@@ -78,7 +75,7 @@ class _BackupScheduleDialogState extends State<BackupScheduleDialog> {
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: AppTheme.secondaryColor.withOpacity(0.1),
+            color: AppTheme.secondaryColor.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(Icons.schedule, color: AppTheme.secondaryColor),
@@ -143,7 +140,7 @@ class _BackupScheduleDialogState extends State<BackupScheduleDialog> {
       padding: const EdgeInsets.only(top: 16),
       child: DropdownButtonFormField<int>(
         decoration: const InputDecoration(labelText: 'Day of Month'),
-        value: _selectedDayOfMonth,
+        initialValue: _selectedDayOfMonth,
         items: List.generate(
           28,
           (i) => DropdownMenuItem(value: i + 1, child: Text('${i + 1}')),

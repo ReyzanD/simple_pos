@@ -69,7 +69,7 @@ class ProductGridWidget extends StatelessWidget {
         ResponsiveHelper.getCardSpacing(context),
         0,
         ResponsiveHelper.getCardSpacing(context),
-        ResponsiveHelper.isVerySmallScreen(context) ? 90 : 100,
+        ResponsiveHelper.getBottomPadding(context),
       ),
       sliver: SliverGrid(
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(

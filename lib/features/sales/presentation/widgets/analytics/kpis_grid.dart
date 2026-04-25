@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:simple_pos/core/theme/app_theme.dart';
-import 'package:simple_pos/core/theme/neo_brutal_theme.dart';
 import 'package:simple_pos/core/utils/currency_formatter.dart';
 import 'package:simple_pos/core/utils/responsive_helper.dart';
 import 'package:simple_pos/features/sales/presentation/widgets/analytics/kpi_card.dart';

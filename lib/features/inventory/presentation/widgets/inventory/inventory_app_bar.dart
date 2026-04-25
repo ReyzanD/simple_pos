@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simple_pos/core/theme/neo_brutal_theme.dart';
-import 'package:simple_pos/core/theme/app_theme.dart';
 import 'package:simple_pos/features/inventory/presentation/providers/inventory_providers.dart';
 
 /// Simple inventory app bar

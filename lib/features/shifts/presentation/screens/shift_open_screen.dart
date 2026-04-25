@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
-import '../controllers/shift_controller.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../shared/presentation/providers.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/modern_button.dart';
 import '../../../../core/widgets/modern_card.dart';
 
 /// Screen for opening a new cashier shift
-class ShiftOpenScreen extends StatefulWidget {
+class ShiftOpenScreen extends ConsumerStatefulWidget {
   const ShiftOpenScreen({super.key});
 
   @override
-  State<ShiftOpenScreen> createState() => _ShiftOpenScreenState();
+  ConsumerState<ShiftOpenScreen> createState() => _ShiftOpenScreenState();
 }
 
-class _ShiftOpenScreenState extends State<ShiftOpenScreen> {
+class _ShiftOpenScreenState extends ConsumerState<ShiftOpenScreen> {
   final _formKey = GlobalKey<FormState>();
   final _userNameController = TextEditingController();
   final _openingBalanceController = TextEditingController();
@@ -31,7 +31,7 @@ class _ShiftOpenScreenState extends State<ShiftOpenScreen> {
       return;
     }
 
-    final controller = context.read<ShiftController>();
+    final controller = ref.read(shiftControllerProvider);
 
     final success = await controller.openShift(
       userName: _userNameController.text.trim(),
@@ -45,6 +45,8 @@ class _ShiftOpenScreenState extends State<ShiftOpenScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final controller = ref.watch(shiftControllerProvider);
+
     return Scaffold(
       backgroundColor: AppTheme.getBackgroundColor(context),
       appBar: AppBar(
@@ -54,50 +56,49 @@ class _ShiftOpenScreenState extends State<ShiftOpenScreen> {
         elevation: 0,
       ),
       body: SafeArea(
-        child: Consumer(
-          builder: (context, controller, _) {
-            if (controller.hasError) {
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(controller.error?.userMessage ?? 'Terjadi kesalahan'),
-                    backgroundColor: AppTheme.errorColor,
-                  ),
-                );
-                controller.clearError();
-              });
-            }
+        child: () {
+          if (controller.hasError) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(controller.error?.userMessage ?? 'Terjadi kesalahan'),
+                  backgroundColor: AppTheme.errorColor,
+                ),
+              );
+              controller.clearError();
+            });
+          }
 
-            return Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(20),
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 500),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        // Header illustration
-                        Container(
-                          width: 100,
-                          height: 100,
-                          decoration: BoxDecoration(
-                            color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: const Icon(
-                            Icons.storefront,
-                            size: 50,
-                            color: AppTheme.primaryColor,
-                          ),
+          return Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 500),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Header illustration
+                      Container(
+                        width: 100,
+                        height: 100,
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(20),
                         ),
-                        const SizedBox(height: 24),
+                        child: const Icon(
+                          Icons.storefront,
+                          size: 50,
+                          color: AppTheme.primaryColor,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
 
-                        // Title
-                        const Text(
-                          'Mulai Shift Kerja',
+                      // Title
+                      const Text(
+                        'Mulai Shift Kerja',
                           style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
@@ -198,8 +199,7 @@ class _ShiftOpenScreenState extends State<ShiftOpenScreen> {
                 ),
               ),
             );
-          },
-        ),
+        }(),
       ),
     );
   }

@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../../../../core/widgets/animated_empty_state.dart';
 import '../../../../core/widgets/contextual_error_display.dart';
 import '../controllers/expense_controller.dart';
@@ -23,80 +22,93 @@ class _ExpenseListTabState extends State<ExpenseListTab> {
   void initState() {
     super.initState();
     widget.controller.loadExpenses();
+    widget.controller.addListener(_onControllerChanged);
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_onControllerChanged);
+    super.dispose();
+  }
+
+  void _onControllerChanged() {
+    if (mounted) setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
+    final controller = widget.controller;
+
     return Column(
       children: [
         ExpenseFilterBar(
-          selectedCategory: widget.controller.selectedCategory,
-          dateRange: widget.controller.startDate != null &&
-                  widget.controller.endDate != null
+          selectedCategory: controller.selectedCategory,
+          dateRange: controller.startDate != null &&
+                  controller.endDate != null
               ? DateTimeRange(
-                  start: widget.controller.startDate!,
-                  end: widget.controller.endDate!,
+                  start: controller.startDate!,
+                  end: controller.endDate!,
                 )
               : null,
           onCategoryChanged: (cat) {
-            widget.controller.setCategoryFilter(cat);
+            controller.setCategoryFilter(cat);
           },
           onDateRangeChanged: (range) {
             if (range != null) {
-              widget.controller.setDateRangeFilter(range.start, range.end);
+              controller.setDateRangeFilter(range.start, range.end);
             } else {
-              widget.controller.setDateRangeFilter(null, null);
+              controller.setDateRangeFilter(null, null);
             }
           },
-          onClearFilters: widget.controller.clearFilters,
+          onClearFilters: controller.clearFilters,
         ),
         Expanded(
-          child: Consumer(
-            builder: (context, controller, _) {
-              if (controller.isLoading) {
-                return const Center(
-                  child: CircularProgressIndicator(color: Color(0xFF4F46E5)),
-                );
-              }
-
-              if (controller.hasError) {
-                return ContextualErrorDisplay.auto(
-                  error: controller.error!,
-                  onRetry: controller.loadExpenses,
-                );
-              }
-
-              final expenses = controller.expenses;
-
-              if (expenses.isEmpty) {
-                return AnimatedEmptyState.noExpenses(
-                  onAction: () => _showAddDialog(context),
-                );
-              }
-
-              return ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: expenses.length,
-                itemBuilder: (context, index) {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: ExpenseCard(
-                      expense: expenses[index],
-                      onEdit: () => _showEditDialog(context, expenses[index]),
-                      onDelete: () =>
-                          controller.deleteExpense(expenses[index].id!),
-                      onViewReceipt: expenses[index].receiptImagePath != null
-                          ? () => _showReceiptImage(
-                              context, expenses[index].receiptImagePath!)
-                          : null,
-                    ),
-                  );
-                },
-              );
-            },
-          ),
+          child: _buildContent(controller),
         ),
       ],
+    );
+  }
+
+  Widget _buildContent(controller) {
+    if (controller.isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(color: Color(0xFF4F46E5)),
+      );
+    }
+
+    if (controller.hasError) {
+      return ContextualErrorDisplay.auto(
+        error: controller.error!,
+        onRetry: controller.loadExpenses,
+      );
+    }
+
+    final expenses = controller.expenses;
+
+    if (expenses.isEmpty) {
+      return AnimatedEmptyState.noExpenses(
+        onAction: () => _showAddDialog(context),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: expenses.length,
+      itemBuilder: (context, index) {
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: ExpenseCard(
+            expense: expenses[index],
+            onEdit: () => _showEditDialog(context, expenses[index]),
+            onDelete: () =>
+                controller.deleteExpense(expenses[index].id!),
+            onViewReceipt: expenses[index].receiptImagePath != null
+                ? () => _showReceiptImage(
+                    context, expenses[index].receiptImagePath!)
+                : null,
+          ),
+        );
+      },
     );
   }
 

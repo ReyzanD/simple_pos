@@ -15,11 +15,16 @@ class BackupLocalDataSource {
   /// Get the root backup directory
   Future<Directory> get _backupRootDir async {
     final appDir = await getApplicationDocumentsDirectory();
-    final backupDir = Directory('${appDir.path}/${BackupConstants.backupDirName}');
+    final backupDir = Directory(
+      '${appDir.path}/${BackupConstants.backupDirName}',
+    );
 
     if (!await backupDir.exists()) {
       await backupDir.create(recursive: true);
-      AppLogger.info('Created backup root directory', tag: 'BackupLocalDataSource');
+      AppLogger.info(
+        'Created backup root directory',
+        tag: 'BackupLocalDataSource',
+      );
     }
 
     return backupDir;
@@ -28,11 +33,16 @@ class BackupLocalDataSource {
   /// Get the full backup directory
   Future<Directory> get _fullBackupDir async {
     final root = await _backupRootDir;
-    final fullDir = Directory('${root.path}/${BackupConstants.fullBackupDirName}');
+    final fullDir = Directory(
+      '${root.path}/${BackupConstants.fullBackupDirName}',
+    );
 
     if (!await fullDir.exists()) {
       await fullDir.create(recursive: true);
-      AppLogger.info('Created full backup directory', tag: 'BackupLocalDataSource');
+      AppLogger.info(
+        'Created full backup directory',
+        tag: 'BackupLocalDataSource',
+      );
     }
 
     return fullDir;
@@ -41,11 +51,16 @@ class BackupLocalDataSource {
   /// Get the incremental backup directory
   Future<Directory> get _incrementalBackupDir async {
     final root = await _backupRootDir;
-    final incDir = Directory('${root.path}/${BackupConstants.incrementalBackupDirName}');
+    final incDir = Directory(
+      '${root.path}/${BackupConstants.incrementalBackupDirName}',
+    );
 
     if (!await incDir.exists()) {
       await incDir.create(recursive: true);
-      AppLogger.info('Created incremental backup directory', tag: 'BackupLocalDataSource');
+      AppLogger.info(
+        'Created incremental backup directory',
+        tag: 'BackupLocalDataSource',
+      );
     }
 
     return incDir;
@@ -55,11 +70,16 @@ class BackupLocalDataSource {
   /// Used for temporary files during backup creation/extraction
   Future<Directory> get tempBackupDir async {
     final root = await _backupRootDir;
-    final tempDir = Directory('${root.path}/${BackupConstants.tempBackupDirName}');
+    final tempDir = Directory(
+      '${root.path}/${BackupConstants.tempBackupDirName}',
+    );
 
     if (!await tempDir.exists()) {
       await tempDir.create(recursive: true);
-      AppLogger.info('Created temp backup directory', tag: 'BackupLocalDataSource');
+      AppLogger.info(
+        'Created temp backup directory',
+        tag: 'BackupLocalDataSource',
+      );
     }
 
     return tempDir;
@@ -67,7 +87,9 @@ class BackupLocalDataSource {
 
   /// Get backup directory based on type
   Future<Directory> _getBackupDir(BackupType type) async {
-    return type == BackupType.full ? await _fullBackupDir : await _incrementalBackupDir;
+    return type == BackupType.full
+        ? await _fullBackupDir
+        : await _incrementalBackupDir;
   }
 
   /// Save backup data to local storage
@@ -88,7 +110,10 @@ class BackupLocalDataSource {
       final metadataFile = File(metadataPath);
       await metadataFile.writeAsString(metadata.toJson().toString());
 
-      AppLogger.info('Backup saved successfully at $filePath', tag: 'BackupLocalDataSource');
+      AppLogger.info(
+        'Backup saved successfully at $filePath',
+        tag: 'BackupLocalDataSource',
+      );
       return filePath;
     } catch (e, stackTrace) {
       AppLogger.error(
@@ -137,7 +162,10 @@ class BackupLocalDataSource {
       }
 
       // TODO: Implement ZIP extraction in Task 12
-      AppLogger.info('Backup loaded successfully', tag: 'BackupLocalDataSource');
+      AppLogger.info(
+        'Backup loaded successfully',
+        tag: 'BackupLocalDataSource',
+      );
       return BackupData();
     } on NotFoundException {
       rethrow;
@@ -170,9 +198,14 @@ class BackupLocalDataSource {
 
       // List incremental backups
       final incDir = await _incrementalBackupDir;
-      backups.addAll(await _listBackupsInDirectory(incDir, BackupType.incremental));
+      backups.addAll(
+        await _listBackupsInDirectory(incDir, BackupType.incremental),
+      );
 
-      AppLogger.info('Found ${backups.length} local backups', tag: 'BackupLocalDataSource');
+      AppLogger.info(
+        'Found ${backups.length} local backups',
+        tag: 'BackupLocalDataSource',
+      );
       return backups;
     } catch (e, stackTrace) {
       AppLogger.error(
@@ -217,7 +250,10 @@ class BackupLocalDataSource {
   /// Delete a local backup
   Future<void> deleteBackup(String backupId) async {
     try {
-      AppLogger.info('Deleting backup: $backupId', tag: 'BackupLocalDataSource');
+      AppLogger.info(
+        'Deleting backup: $backupId',
+        tag: 'BackupLocalDataSource',
+      );
 
       final metadata = await getMetadata(backupId);
       if (metadata == null) {
@@ -238,7 +274,10 @@ class BackupLocalDataSource {
       final file = File(filePath);
       if (await file.exists()) {
         await file.delete();
-        AppLogger.info('Backup deleted successfully', tag: 'BackupLocalDataSource');
+        AppLogger.info(
+          'Backup deleted successfully',
+          tag: 'BackupLocalDataSource',
+        );
       }
     } on NotFoundException {
       rethrow;
@@ -263,12 +302,20 @@ class BackupLocalDataSource {
     try {
       // Search in full backups
       final fullDir = await _fullBackupDir;
-      final metadata = await _searchMetadataInDirectory(fullDir, backupId, BackupType.full);
+      final metadata = await _searchMetadataInDirectory(
+        fullDir,
+        backupId,
+        BackupType.full,
+      );
       if (metadata != null) return metadata;
 
       // Search in incremental backups
       final incDir = await _incrementalBackupDir;
-      return await _searchMetadataInDirectory(incDir, backupId, BackupType.incremental);
+      return await _searchMetadataInDirectory(
+        incDir,
+        backupId,
+        BackupType.incremental,
+      );
     } catch (e, stackTrace) {
       AppLogger.error(
         'Failed to get metadata',
@@ -304,7 +351,10 @@ class BackupLocalDataSource {
   }
 
   /// Get metadata from a backup file
-  Future<BackupMetadata?> getMetadataFromFile(String filePath, BackupType type) async {
+  Future<BackupMetadata?> getMetadataFromFile(
+    String filePath,
+    BackupType type,
+  ) async {
     try {
       final metadataPath = '$filePath.metadata';
       final metadataFile = File(metadataPath);
@@ -332,7 +382,8 @@ class BackupLocalDataSource {
       }
 
       await metadataFile.readAsString(); // Will parse properly in Task 12
-      final metadataMap = <String, dynamic>{}; // Placeholder until proper JSON parsing
+      final metadataMap =
+          <String, dynamic>{}; // Placeholder until proper JSON parsing
 
       return BackupMetadata.fromJson(metadataMap);
     } catch (e, stackTrace) {
@@ -351,7 +402,10 @@ class BackupLocalDataSource {
     try {
       // For simplicity, return a dummy value
       // In production, would use platform-specific code to get actual disk space
-      AppLogger.info('Getting available storage space', tag: 'BackupLocalDataSource');
+      AppLogger.info(
+        'Getting available storage space',
+        tag: 'BackupLocalDataSource',
+      );
       return 1024 * 1024 * 1024; // 1GB dummy value
     } catch (e, stackTrace) {
       AppLogger.error(
@@ -372,10 +426,12 @@ class BackupLocalDataSource {
       final backups = await listBackups();
 
       // Separate by type
-      final fullBackups = backups.where((b) => b.type == BackupType.full).toList()
-        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-      final incrementalBackups = backups.where((b) => b.type == BackupType.incremental).toList()
-        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      final fullBackups =
+          backups.where((b) => b.type == BackupType.full).toList()
+            ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      final incrementalBackups =
+          backups.where((b) => b.type == BackupType.incremental).toList()
+            ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
       // Delete excess full backups
       if (fullBackups.length > BackupConstants.maxLocalFullBackups) {
@@ -386,8 +442,11 @@ class BackupLocalDataSource {
       }
 
       // Delete excess incremental backups
-      if (incrementalBackups.length > BackupConstants.maxLocalIncrementalBackups) {
-        final toDelete = incrementalBackups.skip(BackupConstants.maxLocalIncrementalBackups);
+      if (incrementalBackups.length >
+          BackupConstants.maxLocalIncrementalBackups) {
+        final toDelete = incrementalBackups.skip(
+          BackupConstants.maxLocalIncrementalBackups,
+        );
         for (final backup in toDelete) {
           await deleteBackup(backup.id);
         }
@@ -416,12 +475,19 @@ class BackupLocalDataSource {
       // Add database file if present
       if (data.databaseFile != null && await data.databaseFile!.exists()) {
         final dbBytes = await data.databaseFile!.readAsBytes();
-        final dbFile = ArchiveFile('database/simple_pos.db', dbBytes.length, dbBytes);
+        final dbFile = ArchiveFile(
+          'database/simple_pos.db',
+          dbBytes.length,
+          dbBytes,
+        );
         archive.addFile(dbFile);
 
         // Calculate checksum for database
         final dbDigest = sha256.convert(dbBytes);
-        AppLogger.database('Database checksum: ${dbDigest.toString()}', details: 'BackupLocalDataSource');
+        AppLogger.database(
+          'Database checksum: ${dbDigest.toString()}',
+          details: 'BackupLocalDataSource',
+        );
       }
 
       // Add image files
@@ -429,7 +495,11 @@ class BackupLocalDataSource {
         if (await imageFile.exists()) {
           final imageBytes = await imageFile.readAsBytes();
           final fileName = imageFile.path.split('/').last;
-          final imageFileInArchive = ArchiveFile('images/$fileName', imageBytes.length, imageBytes);
+          final imageFileInArchive = ArchiveFile(
+            'images/$fileName',
+            imageBytes.length,
+            imageBytes,
+          );
           archive.addFile(imageFileInArchive);
         }
       }
@@ -447,7 +517,11 @@ class BackupLocalDataSource {
       };
       final metadataJson = metadata.toString();
       final metadataBytes = metadataJson.codeUnits;
-      final metadataFile = ArchiveFile('metadata.json', metadataBytes.length, metadataBytes);
+      final metadataFile = ArchiveFile(
+        'metadata.json',
+        metadataBytes.length,
+        metadataBytes,
+      );
       archive.addFile(metadataFile);
 
       // Create and add manifest.json with file checksums
@@ -475,7 +549,11 @@ class BackupLocalDataSource {
 
       final manifestJson = manifest.toString();
       final manifestBytes = manifestJson.codeUnits;
-      final manifestFile = ArchiveFile('manifest.json', manifestBytes.length, manifestBytes);
+      final manifestFile = ArchiveFile(
+        'manifest.json',
+        manifestBytes.length,
+        manifestBytes,
+      );
       archive.addFile(manifestFile);
 
       // Encode and compress the archive
@@ -527,7 +605,10 @@ class BackupLocalDataSource {
   /// Extracts ZIP and returns BackupData with database and images
   Future<BackupData> extractZipBackup(String zipPath) async {
     try {
-      AppLogger.info('Extracting ZIP backup: $zipPath', tag: 'BackupLocalDataSource');
+      AppLogger.info(
+        'Extracting ZIP backup: $zipPath',
+        tag: 'BackupLocalDataSource',
+      );
 
       // Read ZIP file
       final zipFile = File(zipPath);
@@ -560,7 +641,10 @@ class BackupLocalDataSource {
         manifest = _parseJsonSafely(manifestJson);
 
         if (manifest != null) {
-          AppLogger.database('Manifest found, will verify file integrity', details: 'BackupLocalDataSource');
+          AppLogger.database(
+            'Manifest found, will verify file integrity',
+            details: 'BackupLocalDataSource',
+          );
         }
       }
 
@@ -599,8 +683,8 @@ class BackupLocalDataSource {
       }
 
       // Verify checksums if manifest is present
-      if (manifest != null && manifest!['files'] != null) {
-        final expectedChecksums = manifest!['files'] as Map<String, dynamic>;
+      if (manifest != null && manifest['files'] != null) {
+        final expectedChecksums = manifest['files'] as Map<String, dynamic>;
         bool verificationFailed = false;
 
         for (final entry in expectedChecksums.entries) {
@@ -609,14 +693,14 @@ class BackupLocalDataSource {
           final actualChecksum = actualChecksums[fileName];
 
           if (actualChecksum == null) {
-            AppLogger.warning(
-              'File missing from archive: $fileName',
-            );
+            AppLogger.warning('File missing from archive: $fileName');
             verificationFailed = true;
           } else if (actualChecksum != expectedChecksum) {
             AppLogger.error(
               'Checksum mismatch for $fileName',
-              error: Exception('Expected: $expectedChecksum, Got: $actualChecksum'),
+              error: Exception(
+                'Expected: $expectedChecksum, Got: $actualChecksum',
+              ),
             );
             verificationFailed = true;
           }

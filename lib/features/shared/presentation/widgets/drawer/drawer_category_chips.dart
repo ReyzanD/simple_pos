@@ -1,21 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simple_pos/core/theme/app_theme.dart';
 import 'package:simple_pos/core/theme/neo_brutal_theme.dart';
 import 'package:simple_pos/core/utils/haptic_helper.dart';
 import 'package:simple_pos/core/widgets/category_icons.dart';
-import 'package:simple_pos/features/inventory/presentation/controllers/inventory_controller.dart';
+import '../../providers.dart';
 
 // Import the shared divider widget
 import 'drawer_section_divider.dart';
 
 /// Category Quick Links Section - Horizontal scrollable chips
-class DrawerCategoryChips extends StatelessWidget {
+class DrawerCategoryChips extends ConsumerWidget {
   const DrawerCategoryChips({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final inventoryController = context.watch<InventoryController>();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final inventoryController = ref.watch(inventoryControllerProvider);
     final products = inventoryController.allProducts;
 
     if (products.isEmpty) {

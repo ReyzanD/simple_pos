@@ -89,7 +89,7 @@ class ShiftModel {
       if (id != null) 'id': id,
       'user_name': userName,
       'opening_balance': openingBalance,
-      'closing_balance': closingBalance,
+      'closing_balance': closingBalance ?? 0.0, // Use 0.0 as default for new shifts
       'cash_sales': cashSales,
       'card_sales': cardSales,
       'qr_sales': qrSales,

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../../../../core/widgets/animated_empty_state.dart';
 import '../../../../core/widgets/modern_card.dart';
 import '../../../../core/utils/currency_formatter.dart';
@@ -22,11 +21,22 @@ class _ExpenseSummaryTabState extends State<ExpenseSummaryTab> {
   @override
   void initState() {
     super.initState();
+    widget.controller.addListener(_onControllerChanged);
     final now = DateTime.now();
     _selectPeriod(DateTimeRange(
       start: DateTime(now.year, now.month, 1),
       end: now,
     ));
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_onControllerChanged);
+    super.dispose();
+  }
+
+  void _onControllerChanged() {
+    if (mounted) setState(() {});
   }
 
   @override
@@ -44,69 +54,71 @@ class _ExpenseSummaryTabState extends State<ExpenseSummaryTab> {
           },
         ),
         Expanded(
-          child: Consumer(
-            builder: (context, controller, _) {
-              if (controller.isLoading) {
-                return const Center(
-                  child: CircularProgressIndicator(color: Color(0xFF4F46E5)),
-                );
-              }
+          child: _buildContent(),
+        ),
+      ],
+    );
+  }
 
-              if (controller.totalExpenses == 0) {
-                return AnimatedEmptyState(
-                  icon: Icons.bar_chart,
-                  title: 'Belum Ada Data',
-                  subtitle: 'Pilih periode untuk melihat ringkasan pengeluaran',
-                );
-              }
+  Widget _buildContent() {
+    final controller = widget.controller;
 
-              return ListView(
-                padding: const EdgeInsets.all(20),
-                children: [
-                  // KPI Cards
-                  Row(
-                    children: [
-                      Expanded(
-                        child: SummaryStatCard(
-                          title: 'Total Pengeluaran',
-                          value: CurrencyFormatter.format(controller.totalExpenses),
-                          icon: Icons.payments,
-                          color: AppTheme.secondaryColor,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: SummaryStatCard(
-                          title: 'Periode Lalu',
-                          value: controller.periodComparison != null
-                              ? '${controller.periodComparison!.toStringAsFixed(0)}%'
-                              : '-',
-                          icon: controller.periodComparison != null &&
-                                  controller.periodComparison! >= 0
-                              ? Icons.trending_up
-                              : Icons.trending_down,
-                          color: controller.periodComparison != null &&
-                                  controller.periodComparison! >= 0
-                              ? AppTheme.successColor
-                              : AppTheme.errorColor,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  // Category breakdown
-                  _CategoryBreakdownChart(
-                    categorySummary: controller.categorySummary,
-                  ),
-                  const SizedBox(height: 24),
-                  // Payment method breakdown
-                  _PaymentMethodChart(
-                    expenses: controller.expenses,
-                  ),
-                ],
-              );
-            },
-          ),
+    if (controller.isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(color: Color(0xFF4F46E5)),
+      );
+    }
+
+    if (controller.totalExpenses == 0) {
+      return AnimatedEmptyState(
+        icon: Icons.bar_chart,
+        title: 'Belum Ada Data',
+        subtitle: 'Pilih periode untuk melihat ringkasan pengeluaran',
+      );
+    }
+
+    return ListView(
+      padding: const EdgeInsets.all(20),
+      children: [
+        // KPI Cards
+        Row(
+          children: [
+            Expanded(
+              child: SummaryStatCard(
+                title: 'Total Pengeluaran',
+                value: CurrencyFormatter.format(controller.totalExpenses),
+                icon: Icons.payments,
+                color: AppTheme.secondaryColor,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: SummaryStatCard(
+                title: 'Periode Lalu',
+                value: controller.periodComparison != null
+                    ? '${controller.periodComparison!.toStringAsFixed(0)}%'
+                    : '-',
+                icon: controller.periodComparison != null &&
+                        controller.periodComparison! >= 0
+                    ? Icons.trending_up
+                    : Icons.trending_down,
+                color: controller.periodComparison != null &&
+                        controller.periodComparison! >= 0
+                    ? AppTheme.successColor
+                    : AppTheme.errorColor,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 24),
+        // Category breakdown
+        _CategoryBreakdownChart(
+          categorySummary: controller.categorySummary,
+        ),
+        const SizedBox(height: 24),
+        // Payment method breakdown
+        _PaymentMethodChart(
+          expenses: controller.expenses,
         ),
       ],
     );

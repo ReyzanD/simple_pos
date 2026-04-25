@@ -57,10 +57,7 @@ class Product {
   bool get hasDiscount => discountPercentage != null && discountPercentage! > 0;
 
   /// Checks if product has any discount available
-  bool hasAnyDiscount({
-    double? categoryDiscount,
-    double? promotionDiscount,
-  }) {
+  bool hasAnyDiscount({double? categoryDiscount, double? promotionDiscount}) {
     return hasDiscount ||
         (categoryDiscount != null && categoryDiscount > 0) ||
         (promotionDiscount != null && promotionDiscount > 0);
@@ -105,11 +102,11 @@ class Product {
     }
 
     // Apply additional discounts
-    if (categoryDiscount != null && categoryDiscount! > 0) {
-      finalPrice -= categoryDiscount!;
+    if (categoryDiscount != null && categoryDiscount > 0) {
+      finalPrice -= categoryDiscount;
     }
-    if (promotionDiscount != null && promotionDiscount! > 0) {
-      finalPrice -= promotionDiscount!;
+    if (promotionDiscount != null && promotionDiscount > 0) {
+      finalPrice -= promotionDiscount;
     }
 
     return finalPrice < 0 ? 0 : finalPrice;
@@ -121,9 +118,8 @@ class Product {
     double? promotionDiscount,
   }) {
     final productDiscount = hasDiscount ? discountAmount : 0;
-    final totalDiscount = productDiscount +
-        (categoryDiscount ?? 0) +
-        (promotionDiscount ?? 0);
+    final totalDiscount =
+        productDiscount + (categoryDiscount ?? 0) + (promotionDiscount ?? 0);
 
     return DiscountBreakdown(
       basePrice: price,
@@ -245,7 +241,7 @@ class Product {
 
   @override
   int get hashCode =>
-    id.hashCode ^
+      id.hashCode ^
       name.hashCode ^
       price.hashCode ^
       stock.hashCode ^

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/contextual_error_display.dart';
 import '../../../expenses/domain/constants/expense_categories.dart';
@@ -20,46 +19,55 @@ class _ExpenseCategoriesTabState extends State<ExpenseCategoriesTab> {
   void initState() {
     super.initState();
     widget.controller.loadCategoryCounts();
+    widget.controller.addListener(_onControllerChanged);
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_onControllerChanged);
+    super.dispose();
+  }
+
+  void _onControllerChanged() {
+    if (mounted) setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
-    return Consumer(
-      builder: (context, controller, _) {
-        if (controller.isLoading) {
-          return const Center(
-            child: CircularProgressIndicator(color: Color(0xFF4F46E5)),
+    final controller = widget.controller;
+
+    if (controller.isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(color: Color(0xFF4F46E5)),
+      );
+    }
+
+    if (controller.hasError) {
+      return ContextualErrorDisplay.auto(
+        error: controller.error!,
+        onRetry: controller.loadCategoryCounts,
+      );
+    }
+
+    final categories = ExpenseCategories.predefined;
+    final counts = controller.categoryCounts;
+
+    return ListView(
+      padding: const EdgeInsets.all(20),
+      children: [
+        const Text(
+          'Kategori Pengeluaran',
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 16),
+        ...categories.map((cat) {
+          final count = counts[cat] ?? 0;
+          return _CategoryCard(
+            categoryName: cat,
+            expenseCount: count,
           );
-        }
-
-        if (controller.hasError) {
-          return ContextualErrorDisplay.auto(
-            error: controller.error!,
-            onRetry: controller.loadCategoryCounts,
-          );
-        }
-
-        final categories = ExpenseCategories.predefined;
-        final counts = controller.categoryCounts;
-
-        return ListView(
-          padding: const EdgeInsets.all(20),
-          children: [
-            const Text(
-              'Kategori Pengeluaran',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-            ...categories.map((cat) {
-              final count = counts[cat] ?? 0;
-              return _CategoryCard(
-                categoryName: cat,
-                expenseCount: count,
-              );
-            }),
-          ],
-        );
-      },
+        }),
+      ],
     );
   }
 }
