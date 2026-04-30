@@ -213,7 +213,10 @@ class MainNavigationState extends ConsumerState<MainNavigation>
                 return null; // Product not found
               },
               onConfirmWithProduct: (barcode, productInfo) async {
-                logger.AppLogger.info('Inventory confirm scan: $barcode, product: $productInfo', tag: 'INVENTORY');
+                logger.AppLogger.info(
+                  'Inventory confirm scan: $barcode, product: $productInfo',
+                  tag: 'INVENTORY',
+                );
 
                 if (productInfo != null) {
                   // Product exists - show details and keep scanner open
@@ -233,7 +236,9 @@ class MainNavigationState extends ConsumerState<MainNavigation>
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text('Name: ${product.name}'),
-                              Text('Price: Rp ${product.price.toStringAsFixed(0)}'),
+                              Text(
+                                'Price: Rp ${product.price.toStringAsFixed(0)}',
+                              ),
                               Text('Stock: ${product.stock}'),
                               if (product.isLowStock)
                                 const Text(
@@ -255,7 +260,10 @@ class MainNavigationState extends ConsumerState<MainNavigation>
                             ElevatedButton(
                               onPressed: () {
                                 Navigator.pop(dialogContext);
-                                Navigator.pop(context, barcode); // Close scanner and return to inventory
+                                Navigator.pop(
+                                  context,
+                                  barcode,
+                                ); // Close scanner and return to inventory
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppTheme.primaryColor,
@@ -278,7 +286,8 @@ class MainNavigationState extends ConsumerState<MainNavigation>
                         content: Text('Barcode $barcode is not in inventory.'),
                         actions: [
                           TextButton(
-                            onPressed: () => Navigator.pop(dialogContext, false),
+                            onPressed: () =>
+                                Navigator.pop(dialogContext, false),
                             child: const Text('Cancel'),
                           ),
                           ElevatedButton(
@@ -296,39 +305,42 @@ class MainNavigationState extends ConsumerState<MainNavigation>
 
                     if (shouldAdd == true) {
                       // Navigate to add product dialog
-                      final categoryController = ref.read(categoryControllerProvider);
-                      final supplierController = ref.read(supplierControllerProvider);
+                      final categoryController = ref.read(
+                        categoryControllerProvider,
+                      );
+                      final supplierController = ref.read(
+                        supplierControllerProvider,
+                      );
 
                       if (!mounted) return false;
 
                       await showDialog(
                         context: context,
                         builder: (dialogContext) => AddProductDialog(
-                          onAdd: ({
-                            required String name,
-                            required double price,
-                            required double costPrice,
-                            required int stock,
-                            int? categoryId,
-                            int? supplierId,
-                            String? barcode,
-                            String? imagePath,
-                            bool hasVariants = false,
-                          }) async {
-                            return await inventoryController.addProduct(
-                              name: name,
-                              price: price,
-                              costPrice: costPrice,
-                              stock: stock,
-                              categoryId: categoryId,
-                              supplierId: supplierId,
-                              barcode: barcode,
-                              imagePath: imagePath,
-                              hasVariants: hasVariants,
-                            );
-                          },
-                          categories: categoryController.categories,
-                          suppliers: supplierController.suppliers,
+                          onAdd:
+                              ({
+                                required String name,
+                                required double price,
+                                required double costPrice,
+                                required int stock,
+                                int? categoryId,
+                                int? supplierId,
+                                String? barcode,
+                                String? imagePath,
+                                bool hasVariants = false,
+                              }) async {
+                                return await inventoryController.addProduct(
+                                  name: name,
+                                  price: price,
+                                  costPrice: costPrice,
+                                  stock: stock,
+                                  categoryId: categoryId,
+                                  supplierId: supplierId,
+                                  barcode: barcode,
+                                  imagePath: imagePath,
+                                  hasVariants: hasVariants,
+                                );
+                              },
                           initialBarcode: barcode,
                         ),
                       );
@@ -484,13 +496,12 @@ class MainNavigationState extends ConsumerState<MainNavigation>
 }
 
 /// Glassmorphic bottom navigation bar
-class _GlassBottomNav extends StatelessWidget {
+class _GlassBottomNav extends StatefulWidget {
   final int currentIndex;
   final Function(int) onTap;
   final VoidCallback onScannerPressed;
   final Animation<double> scannerAnimation;
   final bool isCompact;
-
   const _GlassBottomNav({
     required this.currentIndex,
     required this.onTap,
@@ -498,22 +509,33 @@ class _GlassBottomNav extends StatelessWidget {
     required this.scannerAnimation,
     required this.isCompact,
   });
+  @override
+  State<_GlassBottomNav> createState() => _GlassBottomNavState();
+}
 
+class _GlassBottomNavState extends State<_GlassBottomNav> {
+  int _pressedIndex = -1;
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: (isCompact ? 60 : 70) + MediaQuery.of(context).padding.bottom,
+      height:
+          (widget.isCompact ? 60 : 70) + MediaQuery.of(context).padding.bottom,
       decoration: BoxDecoration(
-        color: NeoBrutalTheme.blockYellow,
+        color: NeoBrutalTheme.accent,
         borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium),
         border: Border.all(color: Colors.black, width: 3),
-        boxShadow: NeoBrutalTheme.chunkyShadow,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.3),
+            offset: const Offset(4, 4),
+            blurRadius: 0,
+          ),
+        ],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Left side nav items
           Expanded(
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -534,11 +556,7 @@ class _GlassBottomNav extends StatelessWidget {
               ],
             ),
           ),
-
-          // Center scanner button
           _buildScannerButton(),
-
-          // Right side nav items
           Expanded(
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -570,115 +588,146 @@ class _GlassBottomNav extends StatelessWidget {
     required String label,
     required int index,
   }) {
-    final isSelected = currentIndex == index;
-
+    final isSelected = widget.currentIndex == index;
+    final isPressed = _pressedIndex == index;
     return Expanded(
       child: Tooltip(
         message: label,
         waitDuration: const Duration(milliseconds: 500),
         showDuration: const Duration(seconds: 2),
         child: GestureDetector(
-          onTap: () {
-            HapticHelper.selection(); // Haptic feedback on nav change
-            onTap(index);
+          onTapDown: (_) {
+            setState(() => _pressedIndex = index);
           },
-          child: isCompact
-              ? SizedBox(
-                  height: 40, // ✅ Proper touch target (was 28)
-                  child: Center(
-                    child: Icon(
-                      icon,
-                      size: 22, // ✅ Proper icon size (was 18)
-                      color: isSelected ? NeoBrutalTheme.primary : Colors.black,
-                    ),
-                  ),
-                )
-              : LayoutBuilder(
-                  builder: (context, constraints) {
-                    // Proper sizing for good touch targets
-                    final maxHeight = constraints.maxHeight;
-                    final iconSize = (maxHeight * 0.35).clamp(
-                      20.0,
-                      26.0,
-                    ); // ✅ Larger icons
-                    final textSize = (maxHeight * 0.18).clamp(
-                      11.0,
-                      13.0,
-                    ); // ✅ Readable text
-                    final spacing = maxHeight * 0.08; // ✅ Proper spacing
-
-                    return Column(
-                      mainAxisSize: MainAxisSize.min,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        // Icon with NO container - just the icon
-                        Icon(
-                          icon,
-                          size: iconSize,
-                          color: isSelected
-                              ? NeoBrutalTheme.primary
-                              : Colors.black,
-                        ),
-                        // Responsive label
-                        SizedBox(height: spacing),
-                        Text(
-                          label,
-                          style: TextStyle(
-                            fontSize: textSize,
-                            fontWeight: isSelected
-                                ? FontWeight.bold
-                                : FontWeight.w600,
-                            color: Colors.black,
-                            height: 1.0,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    );
-                  },
-                ),
+          onTapUp: (_) {
+            setState(() => _pressedIndex = -1);
+            HapticHelper.selection();
+            widget.onTap(index);
+          },
+          onTapCancel: () {
+            setState(() => _pressedIndex = -1);
+          },
+          child: AnimatedBuilder(
+            animation: Listenable.merge([]),
+            builder: (context, _) {
+              final offset = isPressed ? const Offset(4.0, 4.0) : Offset.zero;
+              return Transform.translate(
+                offset: offset,
+                child: widget.isCompact
+                    ? _buildCompactNavItem(icon, isSelected, isPressed)
+                    : _buildExpandedNavItem(icon, label, isSelected, isPressed),
+              );
+            },
+          ),
         ),
       ),
     );
   }
 
+  Widget _buildCompactNavItem(IconData icon, bool isSelected, bool isPressed) {
+    return SizedBox(
+      height: 40,
+      child: Center(
+        child: Icon(
+          icon,
+          size: 24,
+          color: isSelected ? NeoBrutalTheme.primary : Colors.black,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildExpandedNavItem(
+    IconData icon,
+    String label,
+    bool isSelected,
+    bool isPressed,
+  ) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(
+          icon,
+          size: 24,
+          color: isSelected ? NeoBrutalTheme.primary : Colors.black,
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+            color: Colors.black,
+            height: 1.0,
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ],
+    );
+  }
+
   Widget _buildScannerButton() {
+    final isPressed = _pressedIndex == 999;
     return AnimatedBuilder(
-      animation: scannerAnimation,
+      animation: widget.scannerAnimation,
       builder: (context, child) {
         return Transform.scale(
-          scale: scannerAnimation.value,
+          scale: widget.scannerAnimation.value,
           child: Tooltip(
             message: 'Scan QR Code',
             waitDuration: const Duration(milliseconds: 500),
             showDuration: const Duration(seconds: 2),
             child: GestureDetector(
-              onTap: onScannerPressed,
-              child: Container(
-                width: isCompact
-                    ? 40
-                    : 56, // ✅ Proper touch targets (was 28/48)
-                height: isCompact
-                    ? 40
-                    : 56, // ✅ Proper touch targets (was 28/48)
-                margin: EdgeInsets.symmetric(horizontal: isCompact ? 4 : 8),
-                decoration: BoxDecoration(
-                  color: NeoBrutalTheme.secondary,
-                  borderRadius: BorderRadius.circular(
-                    isCompact ? 8 : NeoBrutalTheme.radiusMedium,
-                  ),
-                  border: Border.all(
-                    color: Colors.black,
-                    width: isCompact ? 3 : 4, // ✅ Bold borders
-                  ),
-                  boxShadow: isCompact ? [] : NeoBrutalTheme.chunkyShadow,
-                ),
-                child: Icon(
-                  Icons.qr_code_scanner_rounded,
-                  color: Colors.white,
-                  size: isCompact ? 20 : 26, // ✅ Proper icon sizes (was 12/20)
-                ),
+              onTapDown: (_) {
+                setState(() => _pressedIndex = 999);
+              },
+              onTapUp: (_) {
+                setState(() => _pressedIndex = -1);
+                HapticHelper.selection();
+                widget.onScannerPressed();
+              },
+              onTapCancel: () {
+                setState(() => _pressedIndex = -1);
+              },
+              child: AnimatedBuilder(
+                animation: Listenable.merge([]),
+                builder: (context, _) {
+                  final offset = isPressed
+                      ? const Offset(4.0, 4.0)
+                      : Offset.zero;
+                  final shadowAlpha = isPressed ? 0.1 : 0.3;
+                  return Transform.translate(
+                    offset: offset,
+                    child: Container(
+                      width: widget.isCompact ? 40 : 56,
+                      height: widget.isCompact ? 40 : 56,
+                      margin: EdgeInsets.symmetric(
+                        horizontal: widget.isCompact ? 4 : 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: NeoBrutalTheme.secondary,
+                        borderRadius: BorderRadius.circular(
+                          widget.isCompact ? 8 : NeoBrutalTheme.radiusMedium,
+                        ),
+                        border: Border.all(color: Colors.black, width: 3),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: shadowAlpha),
+                            offset: const Offset(4, 4),
+                            blurRadius: 0,
+                          ),
+                        ],
+                      ),
+                      child: Icon(
+                        Icons.qr_code_scanner_rounded,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                  );
+                },
               ),
             ),
           ),

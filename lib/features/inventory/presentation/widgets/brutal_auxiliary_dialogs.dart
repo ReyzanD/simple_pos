@@ -28,7 +28,6 @@ class BrutalAddCategoryDialog extends ConsumerWidget {
           final controller = ref.read(categoryControllerProvider);
           final success = await controller.addCategory(
             entities.Category(
-              id: 0,
               name: nameController.text.trim(),
               description: descController.text.isEmpty
                   ? null

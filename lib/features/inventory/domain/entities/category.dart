@@ -56,18 +56,28 @@ class Category {
     final trimmedName = name.trim();
 
     if (trimmedName.isEmpty) {
-      throw const ValidationException('Nama kategori tidak boleh kosong', field: 'Nama Kategori');
+      throw const ValidationException(
+        'Nama kategori tidak boleh kosong',
+        field: 'Nama Kategori',
+      );
     }
 
     if (trimmedName.length < 2) {
-      throw const ValidationException('Nama kategori minimal 2 karakter', field: 'Nama Kategori');
+      throw const ValidationException(
+        'Nama kategori minimal 2 karakter',
+        field: 'Nama Kategori',
+      );
     }
 
     if (trimmedName.length > 50) {
-      throw const ValidationException('Nama kategori maksimal 50 karakter', field: 'Nama Kategori');
+      throw const ValidationException(
+        'Nama kategori maksimal 50 karakter',
+        field: 'Nama Kategori',
+      );
     }
 
-    if (discountPercentage != null && (discountPercentage! < 0 || discountPercentage! > 100)) {
+    if (discountPercentage != null &&
+        (discountPercentage! < 0 || discountPercentage! > 100)) {
       throw const ValidationException(
         'Diskon kategori harus antara 0-100',
         field: 'Diskon Kategori',
@@ -77,13 +87,19 @@ class Category {
 
   /// Converts category to map for database storage
   Map<String, dynamic> toMap() {
-    return {
-      'id': id,
+    final map = <String, dynamic>{
       'name': name,
       'description': description,
       'discount_percentage': discountPercentage,
       'created_at': createdAt.toIso8601String(),
     };
+
+    // Only include id if it's not null (for updates, not inserts)
+    if (id != null) {
+      map['id'] = id;
+    }
+
+    return map;
   }
 
   /// Creates a Category from a database map

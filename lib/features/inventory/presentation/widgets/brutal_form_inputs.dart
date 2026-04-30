@@ -11,6 +11,7 @@ class BrutalTextFormField extends StatelessWidget {
   final String? prefixText;
   final TextInputType keyboardType;
   final String? Function(String?)? validator;
+  final Widget? suffixIcon; // ← ADD THIS
 
   const BrutalTextFormField({
     super.key,
@@ -22,6 +23,7 @@ class BrutalTextFormField extends StatelessWidget {
     this.prefixText,
     this.keyboardType = TextInputType.text,
     this.validator,
+    this.suffixIcon, // ← ADD THIS
   });
 
   @override

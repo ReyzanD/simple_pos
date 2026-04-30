@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/neo_brutal_theme.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/product_image_picker.dart';
 import '../../../inventory/domain/entities/category.dart' as entities;
 import '../../../inventory/domain/entities/supplier.dart';
 
-// THE MODULAR PIECES
+import '../../../shared/presentation/providers.dart';
 import '../widgets/brutal_form_inputs.dart';
 import '../widgets/brutal_auxiliary_dialogs.dart';
 import '../widgets/add_product_components.dart';
 
-class AddProductDialog extends StatefulWidget {
+class AddProductDialog extends ConsumerStatefulWidget {
   final Future<bool> Function({
     required String name,
     required double price,
@@ -23,30 +24,21 @@ class AddProductDialog extends StatefulWidget {
     bool hasVariants,
   })
   onAdd;
-  final List<entities.Category> categories;
-  final List<Supplier> suppliers;
   final String? initialBarcode;
 
-  const AddProductDialog({
-    super.key,
-    required this.onAdd,
-    required this.categories,
-    required this.suppliers,
-    this.initialBarcode,
-  });
+  const AddProductDialog({super.key, required this.onAdd, this.initialBarcode});
 
   @override
-  State<AddProductDialog> createState() => _AddProductDialogState();
+  ConsumerState<AddProductDialog> createState() => _AddProductDialogState();
 }
 
-class _AddProductDialogState extends State<AddProductDialog> {
+class _AddProductDialogState extends ConsumerState<AddProductDialog> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _priceController = TextEditingController();
   final _costPriceController = TextEditingController();
   final _stockController = TextEditingController();
   final _barcodeController = TextEditingController();
-
   int? _selectedCategoryId;
   int? _selectedSupplierId;
   String? _imagePath;
@@ -56,19 +48,35 @@ class _AddProductDialogState extends State<AddProductDialog> {
   @override
   void initState() {
     super.initState();
-    // Auto-fill barcode if provided
     if (widget.initialBarcode != null) {
       _barcodeController.text = widget.initialBarcode!;
     }
   }
 
   @override
+  void dispose() {
+    _nameController.dispose();
+    _priceController.dispose();
+    _costPriceController.dispose();
+    _stockController.dispose();
+    _barcodeController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    // Watch categories and suppliers from providers
+    final categories = ref.watch(categoryControllerProvider).categories;
+    final suppliers = ref.watch(supplierControllerProvider).suppliers;
+
     return Dialog(
       backgroundColor: Colors.transparent,
       child: Container(
         width: MediaQuery.of(context).size.width * 0.95,
-        constraints: const BoxConstraints(maxWidth: 600, maxHeight: 750),
+        constraints: BoxConstraints(
+          maxWidth: 600,
+          maxHeight: MediaQuery.of(context).size.height * 0.85,
+        ),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusLarge),
@@ -81,7 +89,7 @@ class _AddProductDialogState extends State<AddProductDialog> {
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(20),
-                child: _buildForm(),
+                child: _buildForm(categories, suppliers),
               ),
             ),
             AddProductActions(
@@ -95,11 +103,15 @@ class _AddProductDialogState extends State<AddProductDialog> {
     );
   }
 
-  Widget _buildForm() {
+  Widget _buildForm(
+    List<entities.Category> categories,
+    List<Supplier> suppliers,
+  ) {
     return Form(
       key: _formKey,
       child: Column(
         children: [
+          // IMAGE PICKER
           ProductImagePicker(
             currentImagePath: _imagePath,
             onImageChanged: (p) => setState(() => _imagePath = p),
@@ -113,34 +125,44 @@ class _AddProductDialogState extends State<AddProductDialog> {
             label: 'NAMA PRODUK',
             icon: Icons.label,
             themeColor: NeoBrutalTheme.primary,
+            validator: (value) {
+              if (value == null || value.trim().isEmpty) {
+                return 'Nama produk wajib diisi';
+              }
+              return null;
+            },
           ),
           const SizedBox(height: 16),
 
-          // PRICE & COST ROW
-          Row(
-            children: [
-              Expanded(
-                child: BrutalTextFormField(
-                  controller: _priceController,
-                  label: 'HARGA',
-                  icon: Icons.sell,
-                  themeColor: AppTheme.successColor,
-                  prefixText: 'Rp ',
-                  keyboardType: TextInputType.number,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: BrutalTextFormField(
-                  controller: _costPriceController,
-                  label: 'MODAL',
-                  icon: Icons.money,
-                  themeColor: NeoBrutalTheme.secondary,
-                  prefixText: 'Rp ',
-                  keyboardType: TextInputType.number,
-                ),
-              ),
-            ],
+          // PRICE - FULL WIDTH
+          BrutalTextFormField(
+            controller: _priceController,
+            label: 'HARGA JUAL',
+            icon: Icons.sell,
+            themeColor: AppTheme.successColor,
+            prefixText: 'Rp ',
+            keyboardType: TextInputType.number,
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Harga jual wajib diisi';
+              }
+              if (double.tryParse(value) == null) {
+                return 'Masukkan angka yang valid';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 16),
+
+          // COST PRICE - FULL WIDTH
+          BrutalTextFormField(
+            controller: _costPriceController,
+            label: 'HARGA MODAL',
+            icon: Icons.money,
+            themeColor: NeoBrutalTheme.secondary,
+            prefixText: 'Rp ',
+            keyboardType: TextInputType.number,
+            hintText: 'Opsional',
           ),
           const SizedBox(height: 16),
 
@@ -151,16 +173,30 @@ class _AddProductDialogState extends State<AddProductDialog> {
             icon: Icons.inventory,
             themeColor: AppTheme.infoColor,
             keyboardType: TextInputType.number,
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Stok wajib diisi';
+              }
+              if (int.tryParse(value) == null) {
+                return 'Masukkan angka yang valid';
+              }
+              return null;
+            },
           ),
           const SizedBox(height: 16),
 
-          // ✅ ADD THIS: BARCODE FIELD
+          // BARCODE WITH SCAN BUTTON
           BrutalTextFormField(
             controller: _barcodeController,
             label: 'BARCODE',
             icon: Icons.qr_code_scanner_rounded,
             themeColor: AppTheme.warningColor,
-            hintText: 'Opsional',
+            hintText: 'Opsional - ketik atau scan',
+            suffixIcon: IconButton(
+              icon: const Icon(Icons.camera_alt_rounded),
+              tooltip: 'Scan Barcode',
+              onPressed: _scanBarcode,
+            ),
           ),
           const SizedBox(height: 16),
 
@@ -171,18 +207,42 @@ class _AddProductDialogState extends State<AddProductDialog> {
             prefixIcon: Icons.category,
             color: NeoBrutalTheme.primary,
             onAddPressed: () => _showSubDialog('category'),
-            items: widget.categories
+            items: categories
                 .map((c) => DropdownMenuItem(value: c.id, child: Text(c.name)))
                 .toList(),
             onChanged: (v) => setState(() => _selectedCategoryId = v),
+          ),
+          const SizedBox(height: 16),
+
+          // SUPPLIER
+          BrutalDropdownField<int>(
+            label: 'SUPPLIER',
+            value: _selectedSupplierId,
+            prefixIcon: Icons.local_shipping,
+            color: AppTheme.warningColor,
+            onAddPressed: () => _showSubDialog('supplier'),
+            items: suppliers
+                .map((s) => DropdownMenuItem(value: s.id, child: Text(s.name)))
+                .toList(),
+            onChanged: (v) => setState(() => _selectedSupplierId = v),
           ),
         ],
       ),
     );
   }
 
+  Future<void> _scanBarcode() async {
+    // TODO: Implement barcode scanning using mobile_scanner or similar
+    // Example:
+    // final result = await Navigator.push(context, MaterialPageRoute(builder: (_) => BarcodeScannerPage()));
+    // if (result != null && mounted) {
+    //   setState(() => _barcodeController.text = result);
+    // }
+  }
+
   Future<void> _handleSubmit() async {
     if (!_formKey.currentState!.validate()) return;
+
     setState(() => _isSubmitting = true);
 
     final success = await widget.onAdd(
@@ -190,7 +250,6 @@ class _AddProductDialogState extends State<AddProductDialog> {
       price: double.tryParse(_priceController.text) ?? 0,
       costPrice: double.tryParse(_costPriceController.text) ?? 0,
       stock: int.tryParse(_stockController.text) ?? 0,
-      // ✅ ADD THIS LINE:
       barcode: _barcodeController.text.trim().isEmpty
           ? null
           : _barcodeController.text.trim(),
@@ -206,8 +265,8 @@ class _AddProductDialogState extends State<AddProductDialog> {
     }
   }
 
-  void _showSubDialog(String type) {
-    showDialog(
+  Future<void> _showSubDialog(String type) async {
+    final result = await showDialog<bool>(
       context: context,
       builder: (_) => type == 'category'
           ? BrutalAddCategoryDialog(
@@ -222,5 +281,14 @@ class _AddProductDialogState extends State<AddProductDialog> {
               formKey: GlobalKey<FormState>(),
             ),
     );
+
+    // Reload categories/suppliers if successfully added
+    if (result == true && mounted) {
+      if (type == 'category') {
+        await ref.read(categoryControllerProvider).loadCategories();
+      } else {
+        await ref.read(supplierControllerProvider).loadSuppliers();
+      }
+    }
   }
 }

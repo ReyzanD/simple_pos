@@ -170,7 +170,10 @@ class POSScreenState extends ConsumerState<POSScreen>
             },
           ),
         ),
-        title: const Text('Checkout Cart'),
+        title: const Text(
+          'Checkout Cart',
+          style: TextStyle(color: Colors.black, fontWeight: FontWeight.w900),
+        ),
         actions: [
           Container(
             margin: EdgeInsets.all(NeoBrutalTheme.spaceXS),

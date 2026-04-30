@@ -123,7 +123,7 @@ class DatabaseHelper {
         'CREATE TABLE transactions (id $idType, transaction_date $textType, subtotal $realType, tax $realType DEFAULT 0, discount $realType DEFAULT 0, total_amount $realType, payment_method $textType, payment_status $textType DEFAULT "completed", notes $textNullable, created_at $textType, updated_at $textType)',
       );
       await db.execute(
-        'CREATE TABLE transaction_items (id $idType, transaction_id $intType, product_id $intType, product_name $textType, quantity $intType, unit_price $realType, subtotal $realType, FOREIGN KEY (transaction_id) REFERENCES transactions(id) ON DELETE CASCADE, FOREIGN KEY (product_id) REFERENCES products(id))',
+        'CREATE TABLE transaction_items (id $idType, transaction_id $intType, product_id $intType, variant_id $intNullable, product_name $textType, quantity $intType, unit_price $realType, subtotal $realType, FOREIGN KEY (transaction_id) REFERENCES transactions(id) ON DELETE CASCADE, FOREIGN KEY (product_id) REFERENCES products(id))',
       );
       await db.execute(
         'CREATE TABLE shifts (id $idType, user_name $textType, opening_balance $realType DEFAULT 0, opened_at $intType NOT NULL, closed_at $intNullable)',

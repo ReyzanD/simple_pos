@@ -210,7 +210,7 @@ class DatabaseConnection {
       'CREATE TABLE transactions (id $idType, transaction_date $textType, subtotal $realType, tax $realType DEFAULT 0, discount $realType DEFAULT 0, total_amount $realType, payment_method $textType, payment_status $textType DEFAULT "completed", notes $textNullable, created_at $textType, updated_at $textType)',
     );
     await db.execute(
-      'CREATE TABLE transaction_items (id $idType, transaction_id $intType, product_id $intType, product_name $textType, quantity $intType, unit_price $realType, subtotal $realType, cost_price $realNullable DEFAULT 0, FOREIGN KEY (transaction_id) REFERENCES transactions(id) ON DELETE CASCADE, FOREIGN KEY (product_id) REFERENCES products(id))',
+      'CREATE TABLE transaction_items (id $idType, transaction_id $intType, product_id $intType, product_name $textType, quantity $intType, unit_price $realType, subtotal $realType, cost_price $realNullable DEFAULT 0, variant_id $intNullable DEFAULT 0, FOREIGN KEY (transaction_id) REFERENCES transactions(id) ON DELETE CASCADE, FOREIGN KEY (product_id) REFERENCES products(id))',
     );
     await db.execute(
       'CREATE TABLE shifts (id $idType, user_name $textType, opening_balance $realType DEFAULT 0, closing_balance $realType DEFAULT 0, cash_sales $realType DEFAULT 0, card_sales $realType DEFAULT 0, qr_sales $realType DEFAULT 0, transfer_sales $realType DEFAULT 0, total_transactions INTEGER DEFAULT 0, opened_at INTEGER NOT NULL, closed_at INTEGER)',
@@ -245,7 +245,9 @@ class DatabaseConnection {
     await db.execute(
       'CREATE TABLE product_variants (id $idType, product_id INTEGER NOT NULL, name TEXT NOT NULL, sku TEXT, barcode TEXT, price REAL NOT NULL, cost_price REAL DEFAULT 0, stock INTEGER DEFAULT 0, attributes TEXT, is_active INTEGER DEFAULT 1, created_at TEXT NOT NULL, FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE)',
     );
-
+    await db.execute(
+      'CREATE TABLE payments (id $idType, transaction_id $intType, payment_method $textType, amount $realType, cash_received $realType, card_last_4_digits $textNullable, payment_date $textType, FOREIGN KEY (transaction_id) REFERENCES transactions(id) ON DELETE CASCADE)',
+    );
     // Indexes
     await db.execute(
       'CREATE INDEX IF NOT EXISTS idx_products_barcode ON products(barcode)',

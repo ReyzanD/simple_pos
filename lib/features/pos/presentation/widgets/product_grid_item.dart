@@ -6,22 +6,19 @@ import 'dart:io';
 import '../../../inventory/domain/entities/product.dart';
 import '../../../inventory/presentation/controllers/category_controller.dart';
 import '../../../sales/presentation/controllers/discount_controller.dart';
-
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/neo_brutal_theme.dart';
 import '../../../../core/utils/currency_formatter.dart';
-import '../../../../core/utils/responsive_helper.dart';
 import '../../../shared/presentation/providers.dart';
 
-/// Modern grid item widget for displaying a product in POS screen
+/// 2-Column Product Card with Image Focus
 ///
-/// Material 3 Features:
-/// - 24px border radius (matches Design System)
-/// - Subtle 0.5px border instead of shadows
-/// - Reduced padding for better information density
-/// - Larger, semi-bold product name
-/// - Ghosted button when out of stock
-/// - Staggered entrance animation
+/// Layout:
+/// - Top (60%): Image container with pastel placeholder if null
+/// - Bottom (40%): White info section with Product Name and Price
+/// - Press animation: 4px down/right + shadow removal
+/// - Entire card tappable
+/// - Supports category + promotion discounts
 class ProductGridItem extends ConsumerWidget {
   final Product product;
   final int quantity;
@@ -42,7 +39,6 @@ class ProductGridItem extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final categoryController = ref.watch(categoryControllerProvider);
     final discountController = ref.watch(discountControllerProvider);
-
     return _ProductGridItemContent(
       product: product,
       quantity: quantity,
@@ -75,19 +71,37 @@ class _ProductGridItemContent extends StatefulWidget {
   });
 
   @override
-  State<_ProductGridItemContent> createState() => _ProductGridItemContentState();
+  State<_ProductGridItemContent> createState() =>
+      _ProductGridItemContentState();
 }
 
-class _ProductGridItemContentState extends State<_ProductGridItemContent> {
+class _ProductGridItemContentState extends State<_ProductGridItemContent>
+    with SingleTickerProviderStateMixin {
   bool _isPressed = false;
   final GlobalKey _widgetKey = GlobalKey();
+  late AnimationController _pressController;
+
+  @override
+  void initState() {
+    super.initState();
+    _pressController = AnimationController(
+      duration: const Duration(milliseconds: 100),
+      vsync: this,
+    );
+  }
+
+  @override
+  void dispose() {
+    _pressController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final isOutOfStock = widget.product.isOutOfStock;
-    final canAddMore = !isOutOfStock && (widget.quantity < widget.product.stock);
     final hasQuantity = widget.quantity > 0;
 
+    // Calculate discount
     double? categoryDiscount;
     if (widget.product.categoryId != null) {
       final category = widget.categoryController.categories
@@ -98,13 +112,12 @@ class _ProductGridItemContentState extends State<_ProductGridItemContent> {
       }
     }
 
-    // Get active promotion discount (use the first active promotion if multiple)
     double? promotionDiscount;
     if (widget.discountController.activePromotions.isNotEmpty) {
-      promotionDiscount = widget.discountController.activePromotions.first.discountPercentage;
+      promotionDiscount =
+          widget.discountController.activePromotions.first.discountPercentage;
     }
 
-    // Calculate compound price
     final hasCompoundDiscount = widget.product.hasAnyDiscount(
       categoryDiscount: categoryDiscount,
       promotionDiscount: promotionDiscount,
@@ -123,62 +136,61 @@ class _ProductGridItemContentState extends State<_ProductGridItemContent> {
         onTapDown: (_) {
           if (!isOutOfStock) {
             setState(() => _isPressed = true);
-            // Haptic feedback
+            _pressController.forward();
             HapticFeedback.lightImpact();
           }
         },
         onTapUp: (_) {
           if (!isOutOfStock) {
             setState(() => _isPressed = false);
+            _pressController.reverse();
           }
         },
         onTapCancel: () {
           setState(() => _isPressed = false);
+          _pressController.reverse();
         },
-        onTap: isOutOfStock ? null : () {
-          // Trigger animation callback before calling onTap
-          if (widget.onAddAnimation != null) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              final RenderBox? renderBox = _widgetKey.currentContext?.findRenderObject() as RenderBox?;
-              if (renderBox != null) {
-                final position = renderBox.localToGlobal(Offset.zero);
-                final size = renderBox.size;
-                // Calculate center position, accounting for the 40px animation container
-                final centerPosition = Offset(
-                  position.dx + size.width / 2 - 20, // 20 = half of container width (40px)
-                  position.dy + size.height / 2 - 20, // 20 = half of container height (40px)
-                );
-                widget.onAddAnimation!(centerPosition);
-              }
-            });
-          }
-          widget.onTap();
-        },
-        child: _buildCard(
-          context,
-          isOutOfStock,
-          canAddMore,
-          hasQuantity,
-          hasCompoundDiscount,
-          categoryDiscount,
-          promotionDiscount,
-          compoundPrice,
-        ).animate(
-          delay: (widget.index != null ? Duration(milliseconds: widget.index! * 50) : Duration.zero),
-        ).fadeIn(
-          duration: 300.ms,
-          curve: Curves.easeOut,
-        ).slideY(
-          begin: 0.1,
-          end: 0,
-          duration: 300.ms,
-          curve: Curves.easeOut,
-        ).then().scale(
-          begin: const Offset(1.0, 1.0),
-          end: _isPressed ? const Offset(0.95, 0.95) : const Offset(1.0, 1.0),
-          duration: 100.ms,
-          curve: Curves.easeInOut,
-        ),
+        onTap: isOutOfStock
+            ? null
+            : () {
+                if (widget.onAddAnimation != null) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    final RenderBox? renderBox =
+                        _widgetKey.currentContext?.findRenderObject()
+                            as RenderBox?;
+                    if (renderBox != null) {
+                      final position = renderBox.localToGlobal(Offset.zero);
+                      final size = renderBox.size;
+                      final centerPosition = Offset(
+                        position.dx + size.width / 2 - 20,
+                        position.dy + size.height / 2 - 20,
+                      );
+                      widget.onAddAnimation!(centerPosition);
+                    }
+                  });
+                }
+                widget.onTap();
+              },
+        child:
+            _buildCard(
+                  context,
+                  isOutOfStock,
+                  hasQuantity,
+                  hasCompoundDiscount,
+                  compoundPrice,
+                )
+                .animate(
+                  delay: (widget.index != null
+                      ? Duration(milliseconds: widget.index! * 50)
+                      : Duration.zero),
+                )
+                .fadeIn(duration: 300.ms, curve: Curves.easeOut)
+                .slideY(
+                  begin: 0.1,
+                  end: 0,
+                  duration: 300.ms,
+                  curve: Curves.easeOut,
+                ),
       ),
     );
   }
@@ -186,291 +198,250 @@ class _ProductGridItemContentState extends State<_ProductGridItemContent> {
   Widget _buildCard(
     BuildContext context,
     bool isOutOfStock,
-    bool canAddMore,
     bool hasQuantity,
     bool hasCompoundDiscount,
-    double? categoryDiscount,
-    double? promotionDiscount,
     double compoundPrice,
   ) {
-    final isMobile = ResponsiveHelper.isMobile(context);
+    return AnimatedBuilder(
+      animation: _pressController,
+      builder: (context, child) {
+        final offset = _isPressed ? const Offset(4.0, 4.0) : Offset.zero;
+        final shadowAlpha = _isPressed ? 0.05 : 0.2;
 
-    return Container(
-      height: ResponsiveHelper.getValue(
-        context: context,
-        mobile: 80.0,
-        tablet: 85.0,
-        desktop: 90.0,
-      ),
-      decoration: BoxDecoration(
-        color: isOutOfStock ? const Color(0xFFF3F4F6) : Colors.white,
-        borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium),
-        border: Border.all(
-          color: hasQuantity ? NeoBrutalTheme.primary : Colors.black,
-          width: 3, // Bold Neo-Brutalist border
-        ),
-        boxShadow: hasQuantity ? NeoBrutalTheme.chunkyShadow : NeoBrutalTheme.softShadow,
-      ),
-      child: Padding(
-        padding: EdgeInsets.all(
-          ResponsiveHelper.getValue(
-            context: context,
-            mobile: 10.0,
-            tablet: 12.0,
-            desktop: 14.0,
-          ),
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            // Compact product image (left side)
-            SizedBox(
-              width: ResponsiveHelper.getValue(
-                context: context,
-                mobile: 50.0,
-                tablet: 55.0,
-                desktop: 60.0,
+        return Transform.translate(
+          offset: offset,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium),
+              border: Border.all(
+                color: hasQuantity ? NeoBrutalTheme.primary : Colors.black,
+                width: 3,
               ),
-              height: ResponsiveHelper.getValue(
-                context: context,
-                mobile: 50.0,
-                tablet: 55.0,
-                desktop: 60.0,
-              ),
-              child: Stack(
-                children: [
-                  Container(
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: shadowAlpha),
+                  offset: const Offset(4, 4),
+                  blurRadius: 0,
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                // TOP: Image (60%)
+                Expanded(
+                  flex: 60,
+                  child: Container(
                     width: double.infinity,
-                    height: double.infinity,
                     decoration: BoxDecoration(
-                      color: NeoBrutalTheme.primary.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: NeoBrutalTheme.primary.withValues(alpha: 0.2),
-                        width: 2,
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(NeoBrutalTheme.radiusMedium),
+                        topRight: Radius.circular(NeoBrutalTheme.radiusMedium),
                       ),
+                      color: _getPlaceholderColor(widget.product.id ?? 0),
                     ),
-                    child: widget.product.imagePath != null && widget.product.imagePath!.isNotEmpty
-                        ? ClipRRect(
-                            borderRadius: BorderRadius.circular(6),
-                            child: Image.file(
-                              File(widget.product.imagePath!),
-                              fit: BoxFit.cover,
-                            ),
-                          )
-                        : Icon(
-                            Icons.inventory_2_outlined,
-                            size: ResponsiveHelper.getIconSize(context),
-                            color: NeoBrutalTheme.primary,
-                          ),
+                    child: _buildImageContent(isOutOfStock, hasQuantity),
                   ),
-                  // Quantity badge
-                  if (hasQuantity)
-                    Positioned(
-                      top: 0,
-                      right: 0,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: NeoBrutalTheme.primary,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.black, width: 2),
-                        ),
-                        child: Text(
-                          '${widget.quantity}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w800,
-                            fontSize: 12,
-                            height: 1.0,
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
+                ),
+                // BOTTOM: Info (40%)
+                Expanded(
+                  flex: 40,
+                  child: _buildInfoSection(
+                    isOutOfStock,
+                    hasQuantity,
+                    hasCompoundDiscount,
+                    compoundPrice,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  /// Build image or placeholder
+  Widget _buildImageContent(bool isOutOfStock, bool hasQuantity) {
+    final imagePath = widget.product.imagePath;
+
+    return Stack(
+      children: [
+        // Image or placeholder (full background)
+        if (imagePath != null && imagePath.isNotEmpty)
+          _buildImage(imagePath)
+        else
+          _buildPlaceholder(),
+
+        // Quantity badge (top-right corner)
+        if (hasQuantity)
+          Positioned(
+            top: 8,
+            right: 8,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+              decoration: BoxDecoration(
+                color: NeoBrutalTheme.primary,
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: Colors.black, width: 2),
+              ),
+              child: Text(
+                '${widget.quantity}',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 12,
+                  height: 1.0,
+                ),
               ),
             ),
+          ),
+      ],
+    );
+  }
 
-            SizedBox(
-              width: ResponsiveHelper.getValue(
-                context: context,
-                mobile: 10.0,
-                tablet: 12.0,
-                desktop: 14.0,
-              ),
-            ),
+  /// Build actual image with error handling and object-fit: cover
+  Widget _buildImage(String imagePath) {
+    return ClipRRect(
+      borderRadius: BorderRadius.only(
+        topLeft: Radius.circular(NeoBrutalTheme.radiusMedium),
+        topRight: Radius.circular(NeoBrutalTheme.radiusMedium),
+      ),
+      child: Image.file(
+        File(imagePath),
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return _buildPlaceholder();
+        },
+      ),
+    );
+  }
 
-            // Product info (center - more space)
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Product name
-                  Text(
-                    widget.product.name,
-                    style: TextStyle(
-                      fontSize: ResponsiveHelper.getFontSize(
-                        context,
-                        mobile: 15.0,
-                        tablet: 16.0,
-                        desktop: 17.0,
-                      ),
-                      fontWeight: FontWeight.w700,
-                      color: isOutOfStock
-                          ? AppTheme.textTertiary
-                          : Colors.black,
-                      height: 1.2,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  SizedBox(
-                    height: ResponsiveHelper.getValue(
-                      context: context,
-                      mobile: 4.0,
-                      tablet: 5.0,
-                      desktop: 6.0,
-                    ),
-                  ),
-                  // Price with discount support
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (hasCompoundDiscount)
-                        Text(
-                          CurrencyFormatter.format(widget.product.price),
-                          style: TextStyle(
-                            fontSize: ResponsiveHelper.getFontSize(
-                              context,
-                              mobile: 12.0,
-                              tablet: 13.0,
-                              desktop: 14.0,
-                            ),
-                            color: AppTheme.textTertiary,
-                            decoration: TextDecoration.lineThrough,
-                            decorationColor: AppTheme.textTertiary,
-                            height: 1.0,
-                          ),
-                          maxLines: 1,
-                        ),
-                      Text(
-                        hasCompoundDiscount
-                            ? CurrencyFormatter.format(compoundPrice)
-                            : CurrencyFormatter.format(widget.product.price),
-                        style: TextStyle(
-                          fontSize: ResponsiveHelper.getFontSize(
-                            context,
-                            mobile: 17.0,
-                            tablet: 18.0,
-                            desktop: 19.0,
-                          ),
-                          fontWeight: FontWeight.w900,
-                          color: hasCompoundDiscount
-                              ? AppTheme.successColor
-                              : NeoBrutalTheme.primary,
-                          height: 1.1,
-                        ),
-                        maxLines: 1,
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-
-            SizedBox(
-              width: ResponsiveHelper.getValue(
-                context: context,
-                mobile: 8.0,
-                tablet: 10.0,
-                desktop: 12.0,
-              ),
-            ),
-
-            // Action button (right side)
-            _buildCompactActionButton(canAddMore, isOutOfStock, isMobile),
-          ],
+  /// Build pastel placeholder when image_path is null or image fails
+  Widget _buildPlaceholder() {
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      decoration: BoxDecoration(
+        color: _getPlaceholderColor(widget.product.id ?? 0),
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(NeoBrutalTheme.radiusMedium),
+          topRight: Radius.circular(NeoBrutalTheme.radiusMedium),
+        ),
+      ),
+      child: Center(
+        child: Icon(
+          Icons.image_not_supported_outlined,
+          size: 48,
+          color: Colors.white.withValues(alpha: 0.6),
         ),
       ),
     );
   }
 
-  Widget _buildCompactActionButton(bool canAddMore, bool isOutOfStock, bool isMobile) {
-    final buttonSize = ResponsiveHelper.getValue(
-      context: context,
-      mobile: 36.0,
-      tablet: 40.0,
-      desktop: 44.0,
-    );
-    final iconSize = ResponsiveHelper.getValue(
-      context: context,
-      mobile: 18.0,
-      tablet: 20.0,
-      desktop: 22.0,
-    );
+  /// Get pastel placeholder color based on product ID
+  Color _getPlaceholderColor(int productId) {
+    final colors = [
+      const Color(0xFFFFB6C1), // Pastel pink
+      const Color(0xFFFFD1DC), // Pastel light pink
+      const Color(0xFFFFC0CB), // Pastel peach
+      const Color(0xFFFFDAB9), // Pastel peach puff
+      const Color(0xFFFFE4B5), // Pastel moccasin
+      const Color(0xFFFFEDD5), // Pastel floral white
+      const Color(0xFFF0E68C), // Pastel khaki
+      const Color(0xFFEEE8AA), // Pastel pale goldenrod
+      const Color(0xFFE0FFFF), // Pastel cyan
+      const Color(0xFFB0E0E6), // Pastel powder blue
+      const Color(0xFFADD8E6), // Pastel light blue
+      const Color(0xFFC8A2C8), // Pastel lilac
+    ];
+    return colors[productId % colors.length];
+  }
 
-    // Green "Tambah" button (default)
-    if (canAddMore) {
-      return Container(
-        width: buttonSize,
-        height: buttonSize,
-        decoration: BoxDecoration(
-          color: AppTheme.successColor,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.black, width: 2),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.2),
-              offset: const Offset(2, 2),
-            ),
-          ],
-        ),
-        child: Icon(
-          Icons.add,
-          size: iconSize,
-          color: Colors.white,
-        ),
-      );
-    }
-
-    // Amber "Max" button (when quantity equals stock)
-    if (!isOutOfStock && widget.quantity >= widget.product.stock) {
-      return Container(
-        width: buttonSize,
-        height: buttonSize,
-        decoration: BoxDecoration(
-          color: AppTheme.warningColor,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.black, width: 2),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.2),
-              offset: const Offset(2, 2),
-            ),
-          ],
-        ),
-        child: Icon(
-          Icons.check_circle,
-          size: iconSize,
-          color: Colors.white,
-        ),
-      );
-    }
-
-    // Ghosted "Habis" button
+  /// Build info section (Product Name + Price)
+  Widget _buildInfoSection(
+    bool isOutOfStock,
+    bool hasQuantity,
+    bool hasCompoundDiscount,
+    double compoundPrice,
+  ) {
     return Container(
-      width: buttonSize,
-      height: buttonSize,
-      decoration: BoxDecoration(
-        color: Colors.grey.shade300,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.black, width: 2),
-      ),
-      child: Icon(
-        Icons.block,
-        size: iconSize,
-        color: Colors.grey.shade600,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          // Product Name
+          Expanded(
+            child: Text(
+              widget.product.name,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: isOutOfStock ? AppTheme.textTertiary : Colors.black,
+                height: 1.2,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          // Original Price (if discounted) - strikethrough
+          if (hasCompoundDiscount)
+            Text(
+              CurrencyFormatter.format(widget.product.price),
+              style: TextStyle(
+                fontSize: 10,
+                color: AppTheme.textTertiary,
+                decoration: TextDecoration.lineThrough,
+                decorationColor: AppTheme.textTertiary,
+                height: 1.0,
+              ),
+            ),
+
+          Row(
+            children: [
+              // "Rp" label - fixed width
+              Text(
+                'Rp',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: isOutOfStock
+                      ? AppTheme.textTertiary
+                      : (hasCompoundDiscount
+                            ? AppTheme.successColor
+                            : NeoBrutalTheme.primary),
+                  height: 1.0,
+                ),
+              ),
+              const SizedBox(width: 2),
+              // Price amount (expands, no truncation)
+              Expanded(
+                child: Text(
+                  hasCompoundDiscount
+                      ? CurrencyFormatter.formatWithoutDecimals(
+                          compoundPrice,
+                        ).replaceAll('Rp ', '')
+                      : CurrencyFormatter.formatWithoutDecimals(
+                          widget.product.price,
+                        ).replaceAll('Rp ', ''),
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w900,
+                    color: isOutOfStock
+                        ? AppTheme.textTertiary
+                        : (hasCompoundDiscount
+                              ? AppTheme.successColor
+                              : NeoBrutalTheme.primary),
+                    height: 1.0,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

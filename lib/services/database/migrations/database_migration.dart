@@ -1,5 +1,6 @@
 import 'package:sqflite/sqflite.dart';
-import 'package:simple_pos/core/exceptions/app_exceptions.dart' as app_exceptions;
+import 'package:simple_pos/core/exceptions/app_exceptions.dart'
+    as app_exceptions;
 import 'package:simple_pos/core/utils/logger.dart';
 
 /// Database migration orchestrator.
@@ -26,7 +27,11 @@ class DatabaseMigration {
   /// [newVersion] - Target database version
   ///
   /// Throws [app_exceptions.DatabaseException] if migration fails
-  Future<void> upgrade(Database db, {required int oldVersion, required int newVersion}) async {
+  Future<void> upgrade(
+    Database db, {
+    required int oldVersion,
+    required int newVersion,
+  }) async {
     try {
       AppLogger.database(
         'Starting database migration',
@@ -53,6 +58,7 @@ class DatabaseMigration {
         if (oldVersion < 14) await _migrateToV14(db);
         if (oldVersion < 15) await _migrateToV15(db);
         if (oldVersion < 16) await _migrateToV16(db);
+        if (oldVersion < 17) await _migrateToV17(db);
 
         AppLogger.database(
           'Database migration completed successfully',
@@ -82,7 +88,9 @@ class DatabaseMigration {
   /// Creates a backup of all database tables.
   ///
   /// Returns a map of table names to their data.
-  Future<Map<String, List<Map<String, dynamic>>>> _createBackup(Database db) async {
+  Future<Map<String, List<Map<String, dynamic>>>> _createBackup(
+    Database db,
+  ) async {
     AppLogger.database('Creating database backup');
 
     final backup = <String, List<Map<String, dynamic>>>{};
@@ -96,7 +104,10 @@ class DatabaseMigration {
       backup[tableName] = data;
     }
 
-    AppLogger.database('Backup created', details: 'Tables: ${backup.keys.length}');
+    AppLogger.database(
+      'Backup created',
+      details: 'Tables: ${backup.keys.length}',
+    );
     return backup;
   }
 
@@ -135,7 +146,11 @@ class DatabaseMigration {
 
       AppLogger.database('Database restored from backup');
     } catch (e, stackTrace) {
-      AppLogger.error('Failed to restore database from backup', error: e, stackTrace: stackTrace);
+      AppLogger.error(
+        'Failed to restore database from backup',
+        error: e,
+        stackTrace: stackTrace,
+      );
       // Don't throw - we're already in an error state
     }
   }
@@ -304,5 +319,18 @@ class DatabaseMigration {
       'CREATE TABLE IF NOT EXISTS audit_logs (id INTEGER PRIMARY KEY AUTOINCREMENT, action TEXT NOT NULL, entity_type TEXT NOT NULL, entity_id TEXT, description TEXT, username TEXT, user_id TEXT, old_values TEXT, new_values TEXT, ip_address TEXT, user_agent TEXT, created_at INTEGER NOT NULL)',
     );
     AppLogger.database('Migration to version 16 completed');
+  }
+
+  Future<void> _migrateToV17(Database db) async {
+    AppLogger.database('Migrating to version 17');
+    try {
+      await db.execute(
+        'ALTER TABLE transaction_items ADD COLUMN variant_id INTEGER DEFAULT 0',
+      );
+      AppLogger.database('Added variant_id column to transaction_items');
+    } catch (e) {
+      AppLogger.database('variant_id column migration (may already exist): $e');
+    }
+    AppLogger.database('Migration to version 17 completed');
   }
 }

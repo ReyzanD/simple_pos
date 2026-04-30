@@ -6,12 +6,7 @@ import '../utils/responsive_helper.dart';
 import 'animated_counter.dart';
 import 'shimmer_loading.dart';
 
-/// KPI Stats Dashboard showing key performance indicators
-///
-/// Displays quick stats for:
-/// - Today's sales/revenue
-/// - Transaction count
-/// - Items sold
+/// Improved KPI Stats Dashboard with Neo-Brutalism styling
 class KPIStatsDashboard extends StatefulWidget {
   final double todayRevenue;
   final int todayTransactions;
@@ -41,6 +36,7 @@ class _KPIStatsDashboardState extends State<KPIStatsDashboard>
   bool _isExpanded = true;
   late AnimationController _animationController;
   late Animation<double> _expandAnimation;
+  int _pressedCard = -1;
 
   @override
   void initState() {
@@ -82,7 +78,6 @@ class _KPIStatsDashboardState extends State<KPIStatsDashboard>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Header with toggle button
         Padding(
           padding: EdgeInsets.symmetric(
             horizontal: ResponsiveHelper.getContainerPadding(context),
@@ -99,63 +94,65 @@ class _KPIStatsDashboardState extends State<KPIStatsDashboard>
                   'Ringkasan Hari Ini',
                   style: TextStyle(
                     fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.getTextPrimaryColor(context),
+                    fontWeight: FontWeight.w900,
+                    color: Colors.black,
                   ),
                 ),
-                SizedBox(width: NeoBrutalTheme.spaceSM),
+                const SizedBox(width: 8),
                 AnimatedRotation(
                   turns: _isExpanded ? 0 : 0.5,
                   duration: const Duration(milliseconds: 300),
                   curve: Curves.easeInOut,
                   child: Icon(
                     Icons.keyboard_arrow_down,
-                    color: AppTheme.getTextSecondaryColor(context),
+                    color: Colors.black,
+                    size: 24,
                   ),
                 ),
               ],
             ),
           ),
         ),
-        const SizedBox(height: 8),
-        // Collapsible content
         SizeTransition(
           sizeFactor: _expandAnimation,
           axisAlignment: -1.0,
           child: ClipRect(
             child: Padding(
-              padding: ResponsiveHelper.getScreenPadding(context).copyWith(
-                top: 0,
-                bottom: 0,
-              ),
+              padding: ResponsiveHelper.getScreenPadding(
+                context,
+              ).copyWith(top: 0, bottom: 0),
               child: Column(
                 children: [
-                  _KPIStatCard(
+                  _buildKPIStatCard(
                     title: 'Pendapatan',
                     value: widget.todayRevenue,
                     icon: Icons.payments_outlined,
                     color: AppTheme.successColor,
                     isCurrency: true,
+                    cardIndex: 0,
                     onTap: widget.onRevenueTap,
                   ),
-                  const SizedBox(height: 8),
-                  _KPIStatCard(
+                  const SizedBox(height: 12),
+                  _buildKPIStatCard(
                     title: 'Transaksi',
                     value: widget.todayTransactions.toDouble(),
                     icon: Icons.receipt_long_rounded,
-                    color: AppTheme.infoColor,
+                    color: NeoBrutalTheme.primary,
                     isCurrency: false,
+                    cardIndex: 1,
                     onTap: widget.onTransactionsTap,
                   ),
-                  const SizedBox(height: 8),
-                  _KPIStatCard(
+                  const SizedBox(height: 12),
+                  _buildKPIStatCard(
                     title: 'Terjual',
                     value: widget.itemsSold.toDouble(),
                     icon: Icons.shopping_bag_outlined,
-                    color: AppTheme.primaryColor,
+                    color: NeoBrutalTheme.accent,
                     isCurrency: false,
+                    cardIndex: 2,
                     onTap: widget.onItemsSoldTap,
                   ),
+                  const SizedBox(height: 8),
                 ],
               ),
             ),
@@ -165,129 +162,128 @@ class _KPIStatsDashboardState extends State<KPIStatsDashboard>
     );
   }
 
-  Widget _buildShimmerLoading() {
-    return Padding(
-      padding: ResponsiveHelper.getScreenPadding(context).copyWith(
-        top: 0,
-        bottom: 0,
-      ),
-      child: Column(
-        children: const [
-          _KPIStatShimmerCard(),
-          SizedBox(height: 8),
-          _KPIStatShimmerCard(),
-          SizedBox(height: 8),
-          _KPIStatShimmerCard(),
-        ],
-      ),
-    );
-  }
-}
-
-class _KPIStatCard extends StatelessWidget {
-  final String title;
-  final double value;
-  final IconData icon;
-  final Color color;
-  final bool isCurrency;
-  final VoidCallback? onTap;
-
-  const _KPIStatCard({
-    required this.title,
-    required this.value,
-    required this.icon,
-    required this.color,
-    this.isCurrency = true,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isMobile = ResponsiveHelper.isMobile(context);
+  Widget _buildKPIStatCard({
+    required String title,
+    required double value,
+    required IconData icon,
+    required Color color,
+    required bool isCurrency,
+    required int cardIndex,
+    VoidCallback? onTap,
+  }) {
+    final isPressed = _pressedCard == cardIndex;
 
     return GestureDetector(
-      onTap: () {
+      onTapDown: (_) {
+        setState(() => _pressedCard = cardIndex);
+      },
+      onTapUp: (_) {
+        setState(() => _pressedCard = -1);
         if (onTap != null) {
           HapticHelper.lightImpact();
-          onTap!();
+          onTap();
         }
       },
-      child: Container(
-        padding: EdgeInsets.all(isMobile ? 10 : 12),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              color.withValues(alpha: 0.15),
-              color.withValues(alpha: 0.05),
-            ],
-          ),
-          borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusLarge),
-          border: Border.all(
-            color: color.withValues(alpha: 0.3),
-            width: 1,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: color.withValues(alpha: 0.1),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: EdgeInsets.all(isMobile ? 8 : 10),
+      onTapCancel: () {
+        setState(() => _pressedCard = -1);
+      },
+      child: AnimatedBuilder(
+        animation: Listenable.merge([]),
+        builder: (context, _) {
+          final offset = isPressed ? const Offset(4.0, 4.0) : Offset.zero;
+          final shadowAlpha = isPressed ? 0.1 : 0.2;
+
+          return Transform.translate(
+            offset: offset,
+            child: Container(
+              padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
-                icon,
-                color: color,
-                size: isMobile ? 18 : 20,
-              ),
-            ),
-            SizedBox(width: isMobile ? 10 : 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: isMobile ? 11 : 12,
-                      fontWeight: FontWeight.w500,
-                      color: AppTheme.getTextSecondaryColor(context),
-                    ),
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(
+                  NeoBrutalTheme.radiusMedium,
+                ),
+                border: Border.all(color: Colors.black, width: 3),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: shadowAlpha),
+                    offset: const Offset(4, 4),
+                    blurRadius: 0,
                   ),
-                  SizedBox(height: isMobile ? 3 : 4),
-                  isCurrency
-                      ? AnimatedCurrencyCounter(
-                          value: value,
-                          currencySymbol: 'Rp',
-                          showDecimals: false,
+                ],
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.black, width: 2),
+                    ),
+                    child: Icon(icon, color: color, size: 24),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          title,
                           style: TextStyle(
-                            fontSize: isMobile ? 16 : 18,
-                            fontWeight: FontWeight.bold,
-                            color: color,
-                          ),
-                        )
-                      : AnimatedCounter(
-                          value: value.toInt(),
-                          style: TextStyle(
-                            fontSize: isMobile ? 16 : 18,
-                            fontWeight: FontWeight.bold,
-                            color: color,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black87,
+                            height: 1.0,
                           ),
                         ),
+                        const SizedBox(height: 4),
+                        isCurrency
+                            ? AnimatedCurrencyCounter(
+                                value: value,
+                                currencySymbol: 'Rp',
+                                showDecimals: false,
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w900,
+                                  color: color,
+                                  height: 1.0,
+                                ),
+                              )
+                            : AnimatedCounter(
+                                value: value.toInt(),
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w900,
+                                  color: color,
+                                  height: 1.0,
+                                ),
+                              ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
-          ],
-        ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildShimmerLoading() {
+    return Padding(
+      padding: ResponsiveHelper.getScreenPadding(
+        context,
+      ).copyWith(top: 0, bottom: 0),
+      child: Column(
+        children: const [
+          _KPIStatShimmerCard(),
+          SizedBox(height: 12),
+          _KPIStatShimmerCard(),
+          SizedBox(height: 12),
+          _KPIStatShimmerCard(),
+        ],
       ),
     );
   }
@@ -299,26 +295,30 @@ class _KPIStatShimmerCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppTheme.getCardColor(context),
-        borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusLarge),
-        border: Border.all(
-          color: AppTheme.getBorderColor(context),
-          width: 1,
-        ),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium),
+        border: Border.all(color: Colors.black, width: 3),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.2),
+            offset: const Offset(4, 4),
+            blurRadius: 0,
+          ),
+        ],
       ),
       child: const ShimmerLoading(
         child: Row(
           children: [
-            SizedBox(width: 40, height: 40),
-            SizedBox(width: 12),
+            SizedBox(width: 44, height: 44),
+            SizedBox(width: 14),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 ShimmerRectangle(width: 60, height: 12),
-                SizedBox(height: 4),
-                ShimmerRectangle(width: 80, height: 18),
+                SizedBox(height: 6),
+                ShimmerRectangle(width: 120, height: 20),
               ],
             ),
           ],
@@ -335,7 +335,6 @@ class CompactKPIStat extends StatelessWidget {
   final IconData icon;
   final Color? iconColor;
   final VoidCallback? onTap;
-
   const CompactKPIStat({
     super.key,
     required this.label,
@@ -344,11 +343,9 @@ class CompactKPIStat extends StatelessWidget {
     this.iconColor,
     this.onTap,
   });
-
   @override
   Widget build(BuildContext context) {
     final effectiveIconColor = iconColor ?? AppTheme.primaryColor;
-
     return GestureDetector(
       onTap: () {
         if (onTap != null) {
@@ -361,10 +358,7 @@ class CompactKPIStat extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppTheme.getCardColor(context),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: AppTheme.getBorderColor(context),
-            width: 1,
-          ),
+          border: Border.all(color: AppTheme.getBorderColor(context), width: 1),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -375,11 +369,7 @@ class CompactKPIStat extends StatelessWidget {
                 color: effectiveIconColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(
-                icon,
-                size: 16,
-                color: effectiveIconColor,
-              ),
+              child: Icon(icon, size: 16, color: effectiveIconColor),
             ),
             const SizedBox(width: 8),
             Column(
@@ -413,18 +403,13 @@ class CompactKPIStat extends StatelessWidget {
 /// Mini KPI row widget for horizontal display
 class MiniKPIRow extends StatelessWidget {
   final List<MiniKPIItem> items;
-
-  const MiniKPIRow({
-    super.key,
-    required this.items,
-  });
-
+  const MiniKPIRow({super.key, required this.items});
   @override
   Widget build(BuildContext context) {
     return Row(
-      children: items.map((item) => Expanded(
-        child: _MiniKPIItemWidget(item: item),
-      )).toList(),
+      children: items
+          .map((item) => Expanded(child: _MiniKPIItemWidget(item: item)))
+          .toList(),
     );
   }
 }
@@ -434,7 +419,6 @@ class MiniKPIItem {
   final String value;
   final IconData icon;
   final Color color;
-
   const MiniKPIItem({
     required this.label,
     required this.value,
@@ -445,11 +429,7 @@ class MiniKPIItem {
 
 class _MiniKPIItemWidget extends StatelessWidget {
   final MiniKPIItem item;
-
-  const _MiniKPIItemWidget({
-    required this.item,
-  });
-
+  const _MiniKPIItemWidget({required this.item});
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -458,10 +438,7 @@ class _MiniKPIItemWidget extends StatelessWidget {
       decoration: BoxDecoration(
         color: item.color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: item.color.withValues(alpha: 0.3),
-          width: 1,
-        ),
+        border: Border.all(color: item.color.withValues(alpha: 0.3), width: 1),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
