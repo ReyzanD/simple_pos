@@ -23,6 +23,18 @@ abstract class ProductRepository {
   /// Throws [DatabaseException] if update fails
   Future<void> updateProduct(Product product);
 
+  /// Retrieves the current stock quantity for a product
+  /// Throws [NotFoundException] if product doesn't exist
+  /// Throws [DatabaseException] if retrieval fails
+  Future<int> getStock(int productId);
+
+  /// Updates the stock quantity for a product
+  /// Throws [NotFoundException] if product doesn't exist
+  /// Throws [ValidationException] if validation fails
+  /// Throws [DatabaseException] if update fails
+  /// Throws [DatabaseException] if new stock is negative
+  Future<void> updateStock(int productId, int newStock);
+
   /// Deletes a product from the data source
   /// Throws [NotFoundException] if product doesn't exist
   /// Throws [DatabaseException] if deletion fails

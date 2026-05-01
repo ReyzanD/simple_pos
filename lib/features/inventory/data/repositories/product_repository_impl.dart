@@ -251,4 +251,92 @@ class ProductRepositoryImpl implements ProductRepository {
       );
     }
   }
+
+  @override
+  Future<int> getStock(int productId) async {
+    try {
+      AppLogger.useCase('GetStock', details: 'Product ID: $productId');
+
+      Validators.validateProductId(productId);
+
+      final productModel = await localDataSource.getProductById(productId);
+
+      return productModel.stock;
+    } on ValidationException {
+      rethrow;
+    } on NotFoundException {
+      rethrow;
+    } on DatabaseException {
+      rethrow;
+    } catch (e, stackTrace) {
+      AppLogger.error(
+        'Unexpected error in getStock',
+        error: e,
+        stackTrace: stackTrace,
+        tag: 'ProductRepository',
+      );
+      throw DatabaseException(
+        'Gagal mengambil stok produk',
+        operation: 'getStock',
+        originalError: e,
+        stackTrace: stackTrace,
+      );
+    }
+  }
+
+  @override
+  Future<void> updateStock(int productId, int newStock) async {
+    try {
+      AppLogger.useCase('UpdateStock', details: 'Product ID: $productId, New Stock: $newStock');
+
+      Validators.validateProductId(productId);
+
+      if (newStock < 0) {
+        throw ValidationException(
+          'Stok tidak boleh negatif',
+          field: 'stock',
+        );
+      }
+
+      final productModel = await localDataSource.getProductById(productId);
+
+      final updatedProduct = ProductModel(
+        id: productModel.id,
+        name: productModel.name,
+        price: productModel.price,
+        costPrice: productModel.costPrice,
+        stock: newStock,
+        categoryId: productModel.categoryId,
+        supplierId: productModel.supplierId,
+        barcode: productModel.barcode,
+        imagePath: productModel.imagePath,
+        discountPercentage: productModel.discountPercentage,
+        hasVariants: productModel.hasVariants,
+        unitOfMeasurement: productModel.unitOfMeasurement,
+      );
+
+      await localDataSource.updateProduct(updatedProduct);
+
+      AppLogger.info('Stock updated successfully', tag: 'ProductRepository');
+    } on ValidationException {
+      rethrow;
+    } on NotFoundException {
+      rethrow;
+    } on DatabaseException {
+      rethrow;
+    } catch (e, stackTrace) {
+      AppLogger.error(
+        'Unexpected error in updateStock',
+        error: e,
+        stackTrace: stackTrace,
+        tag: 'ProductRepository',
+      );
+      throw DatabaseException(
+        'Gagal mengupdate stok produk',
+        operation: 'updateStock',
+        originalError: e,
+        stackTrace: stackTrace,
+      );
+    }
+  }
 }

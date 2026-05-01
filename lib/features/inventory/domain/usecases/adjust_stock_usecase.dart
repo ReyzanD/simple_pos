@@ -23,7 +23,7 @@ class AdjustStockUseCase {
       throw ValidationException('Adjustment amount cannot be zero');
     }
 
-    final currentStock = 0;
+    final currentStock = await productRepository.getStock(productId);
     final newStock = currentStock + adjustmentAmount;
 
     if (newStock < 0) {
@@ -31,6 +31,8 @@ class AdjustStockUseCase {
         'Adjustment would make stock negative (current: $currentStock, adjustment: $adjustmentAmount)',
       );
     }
+
+    await productRepository.updateStock(productId, newStock);
 
     await stockAdjustmentRepository.recordAdjustment(
       StockAdjustment(
