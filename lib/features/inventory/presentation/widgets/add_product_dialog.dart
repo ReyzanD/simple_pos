@@ -10,6 +10,9 @@ import '../../../shared/presentation/providers.dart';
 import '../widgets/brutal_form_inputs.dart';
 import '../widgets/brutal_auxiliary_dialogs.dart';
 import '../widgets/add_product_components.dart';
+import '../widgets/unit_of_measurement_dropdown.dart';
+import '../widgets/stock_adjustment_section.dart';
+import '../../domain/entities/stock_adjustment.dart';
 
 class AddProductDialog extends ConsumerStatefulWidget {
   final Future<bool> Function({
@@ -21,6 +24,7 @@ class AddProductDialog extends ConsumerStatefulWidget {
     int? supplierId,
     String? barcode,
     String? imagePath,
+    String? unitOfMeasurement,
     bool hasVariants,
   })
   onAdd;
@@ -42,6 +46,7 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
   int? _selectedCategoryId;
   int? _selectedSupplierId;
   String? _imagePath;
+  UnitOfMeasurement _selectedUnit = UnitOfMeasurement.pcs;
   final bool _hasVariants = false;
   bool _isSubmitting = false;
 
@@ -185,6 +190,16 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
           ),
           const SizedBox(height: 16),
 
+          // UNIT OF MEASUREMENT
+          UnitOfMeasurementDropdown(
+            selectedUnit: _selectedUnit,
+            onUnitChanged: (value) {
+              setState(() => _selectedUnit = value);
+            },
+          ),
+
+          const SizedBox(height: 16),
+
           // BARCODE WITH SCAN BUTTON
           BrutalTextFormField(
             controller: _barcodeController,
@@ -256,6 +271,7 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
       categoryId: _selectedCategoryId,
       supplierId: _selectedSupplierId,
       imagePath: _imagePath,
+      unitOfMeasurement: _selectedUnit.name,
       hasVariants: _hasVariants,
     );
 

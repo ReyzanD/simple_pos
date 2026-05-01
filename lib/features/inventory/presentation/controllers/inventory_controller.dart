@@ -117,6 +117,7 @@ class InventoryController extends ChangeNotifier {
     int? supplierId,
     String? barcode,
     String? imagePath,
+    String? unitOfMeasurement,
     double? discountPercentage,
     bool hasVariants = false,
   }) async {
@@ -134,6 +135,7 @@ class InventoryController extends ChangeNotifier {
         supplierId: supplierId,
         barcode: barcode,
         imagePath: imagePath,
+        unitOfMeasurement: unitOfMeasurement ?? 'pcs',
         discountPercentage: discountPercentage,
         hasVariants: hasVariants,
       );

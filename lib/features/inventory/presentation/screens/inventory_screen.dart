@@ -499,6 +499,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
               int? supplierId,
               String? barcode,
               String? imagePath,
+              String? unitOfMeasurement,
               bool hasVariants = false,
             }) async {
               return await controller.addProduct(
@@ -510,6 +511,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
                 supplierId: supplierId,
                 barcode: barcode,
                 imagePath: imagePath,
+                unitOfMeasurement: unitOfMeasurement,
                 hasVariants: hasVariants,
               );
             },
