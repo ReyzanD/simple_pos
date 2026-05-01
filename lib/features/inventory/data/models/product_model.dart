@@ -15,6 +15,7 @@ class ProductModel extends Product {
     super.imagePath,
     super.discountPercentage,
     super.hasVariants,
+    super.unitOfMeasurement = 'pcs',
   });
 
   /// Creates ProductModel from domain Product
@@ -31,6 +32,7 @@ class ProductModel extends Product {
       imagePath: product.imagePath,
       discountPercentage: product.discountPercentage,
       hasVariants: product.hasVariants,
+      unitOfMeasurement: product.unitOfMeasurement,
     );
   }
 
@@ -48,6 +50,7 @@ class ProductModel extends Product {
       imagePath: imagePath,
       discountPercentage: discountPercentage,
       hasVariants: hasVariants,
+      unitOfMeasurement: unitOfMeasurement,
     );
   }
 
@@ -65,6 +68,7 @@ class ProductModel extends Product {
       imagePath: map['image_path'] as String?,
       discountPercentage: (map['discount_percentage'] as num?)?.toDouble(),
       hasVariants: (map['has_variants'] as int? ?? 0) == 1,
+      unitOfMeasurement: map['unit_of_measurement'] as String? ?? 'pcs',
     );
   }
 
@@ -83,6 +87,7 @@ class ProductModel extends Product {
       'image_path': imagePath,
       'discount_percentage': discountPercentage,
       'has_variants': hasVariants ? 1 : 0,
+      'unit_of_measurement': unitOfMeasurement,
     };
   }
 }
