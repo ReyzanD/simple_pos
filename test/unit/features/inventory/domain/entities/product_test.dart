@@ -29,6 +29,24 @@ void main() {
         expect(product.stock, stock);
       });
 
+      test('Product should have unit of measurement property', () {
+        // Arrange & Act
+        final product = Product(
+          id: 1,
+          name: 'Test Product',
+          price: 100.0,
+          costPrice: 80.0,
+          stock: 50,
+          categoryId: 1,
+          supplierId: 1,
+          barcode: '123456',
+          unitOfMeasurement: 'pcs',
+        );
+
+        // Assert
+        expect(product.unitOfMeasurement, equals('pcs'));
+      });
+
       test('should create product without id', () {
         // Arrange
         const name = TestConstants.testProductName;

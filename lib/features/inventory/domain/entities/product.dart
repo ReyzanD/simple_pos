@@ -14,6 +14,7 @@ class Product {
   final String? imagePath;
   final double? discountPercentage;
   final bool hasVariants;
+  final String unitOfMeasurement;
 
   const Product({
     this.id,
@@ -27,6 +28,7 @@ class Product {
     this.imagePath,
     this.discountPercentage,
     this.hasVariants = false,
+    this.unitOfMeasurement = 'pcs',
   });
 
   /// Gets the active product variant (if hasVariants is true)
@@ -167,6 +169,7 @@ class Product {
     String? imagePath,
     double? discountPercentage,
     bool? hasVariants,
+    String? unitOfMeasurement,
   }) {
     return Product(
       id: id ?? this.id,
@@ -180,6 +183,7 @@ class Product {
       imagePath: imagePath ?? this.imagePath,
       discountPercentage: discountPercentage ?? this.discountPercentage,
       hasVariants: hasVariants ?? this.hasVariants,
+      unitOfMeasurement: unitOfMeasurement ?? this.unitOfMeasurement,
     );
   }
 
@@ -197,6 +201,7 @@ class Product {
       'image_path': imagePath,
       'discount_percentage': discountPercentage,
       'has_variants': hasVariants ? 1 : 0,
+      'unit_of_measurement': unitOfMeasurement,
     };
   }
 
@@ -214,12 +219,13 @@ class Product {
       imagePath: map['image_path'] as String?,
       discountPercentage: (map['discount_percentage'] as num?)?.toDouble(),
       hasVariants: (map['has_variants'] as int? ?? 0) == 1,
+      unitOfMeasurement: map['unit_of_measurement'] as String? ?? 'pcs',
     );
   }
 
   @override
   String toString() =>
-      'Product(id: $id, name: $name, price: $price, stock: $stock, categoryId: $categoryId, supplierId: $supplierId, barcode: $barcode, costPrice: $costPrice, imagePath: $imagePath, discountPercentage: $discountPercentage, hasVariants: $hasVariants)';
+      'Product(id: $id, name: $name, price: $price, stock: $stock, categoryId: $categoryId, supplierId: $supplierId, barcode: $barcode, costPrice: $costPrice, imagePath: $imagePath, discountPercentage: $discountPercentage, hasVariants: $hasVariants, unitOfMeasurement: $unitOfMeasurement)';
 
   @override
   bool operator ==(Object other) {
@@ -236,7 +242,8 @@ class Product {
         other.costPrice == costPrice &&
         other.imagePath == imagePath &&
         other.discountPercentage == discountPercentage &&
-        other.hasVariants == hasVariants;
+        other.hasVariants == hasVariants &&
+        other.unitOfMeasurement == unitOfMeasurement;
   }
 
   @override
@@ -251,5 +258,6 @@ class Product {
       costPrice.hashCode ^
       imagePath.hashCode ^
       discountPercentage.hashCode ^
-      hasVariants.hashCode;
+      hasVariants.hashCode ^
+      unitOfMeasurement.hashCode;
 }
