@@ -226,6 +226,7 @@ class InventoryController extends ChangeNotifier {
     int? categoryId,
     int? supplierId,
     String? barcode,
+    String? unitOfMeasurement,
     double? discountPercentage,
   }) async {
     try {
@@ -246,6 +247,7 @@ class InventoryController extends ChangeNotifier {
         supplierId: supplierId,
         barcode: barcode,
         discountPercentage: discountPercentage,
+        unitOfMeasurement: unitOfMeasurement,
       );
 
       await updateProductUseCase.execute(updatedProduct);

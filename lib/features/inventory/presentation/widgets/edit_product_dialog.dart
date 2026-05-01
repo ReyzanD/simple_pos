@@ -8,6 +8,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../core/exceptions/app_exceptions.dart';
 import '../../../shared/presentation/providers.dart';
+import '../widgets/unit_of_measurement_dropdown.dart';
 
 /// Dialog for editing an existing product
 class EditProductDialog extends ConsumerStatefulWidget {
@@ -20,6 +21,7 @@ class EditProductDialog extends ConsumerStatefulWidget {
     int? categoryId,
     int? supplierId,
     String? barcode,
+    String? unitOfMeasurement,
   }) onEdit;
 
   final List<entities.Category> categories;
@@ -49,6 +51,7 @@ class _EditProductDialogState extends ConsumerState<EditProductDialog> {
   String? _errorMessage;
   late int? _selectedCategoryId;
   late int? _selectedSupplierId;
+  late UnitOfMeasurement _selectedUnit = UnitOfMeasurement.pcs;
 
   // Local copy of categories that can be updated when a new category is added
   late List<entities.Category> _categories;
@@ -68,6 +71,7 @@ class _EditProductDialogState extends ConsumerState<EditProductDialog> {
     _barcodeController = TextEditingController(text: widget.product.barcode ?? '');
     _selectedCategoryId = widget.product.categoryId;
     _selectedSupplierId = widget.product.supplierId;
+    _selectedUnit = _parseUnit(widget.product.unitOfMeasurement);
   }
 
   @override
