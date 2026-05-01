@@ -95,6 +95,7 @@ class DatabaseHelper {
           image_path $textNullable,
           discount_percentage $realNullable DEFAULT 0,
           has_variants $intType DEFAULT 0,
+          unit_of_measurement $textType DEFAULT 'pcs',
           FOREIGN KEY (category_id) REFERENCES categories(id),
           FOREIGN KEY (supplier_id) REFERENCES suppliers(id)
         )
@@ -107,6 +108,25 @@ class DatabaseHelper {
       await db.execute('CREATE INDEX idx_products_barcode ON products(barcode)'); // For fast barcode lookups
       await db.execute('CREATE INDEX idx_products_stock ON products(stock)'); // For low stock queries
       await db.execute('CREATE INDEX idx_products_has_variants ON products(has_variants)'); // For variant filtering
+
+      // Create stock_adjustments table
+      await db.execute('''
+        CREATE TABLE stock_adjustments (
+          id $idType,
+          product_id $intType,
+          previous_quantity $intType,
+          new_quantity $intType,
+          adjustment_type $textType,
+          reason $textNullable,
+          created_by $textType,
+          created_at $textType,
+          FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+        )
+      ''');
+
+      // Create indexes for stock_adjustments
+      await db.execute('CREATE INDEX idx_stock_adjustments_product ON stock_adjustments(product_id)');
+      await db.execute('CREATE INDEX idx_stock_adjustments_date ON stock_adjustments(created_at DESC)');
 
       // Create transactions table
       await db.execute('''
@@ -375,6 +395,11 @@ class DatabaseHelper {
       if (oldVersion < 17) {
         // Migration from version 16 to 17 (add variant_id to transaction_items)
         await _migrateToV17(db);
+      }
+
+      if (oldVersion < 18) {
+        // Migration from version 17 to 18 (add unit_of_measurement and stock_adjustments)
+        await _migrateToV18(db);
       }
 
       AppLogger.database('Database upgrade completed successfully');
@@ -1002,6 +1027,55 @@ class DatabaseHelper {
     }
 
     AppLogger.database('Database migration to v17 completed');
+  }
+
+  /// Migration from version 17 to 18
+  /// Add unit_of_measurement column to products table and create stock_adjustments table
+  Future _migrateToV18(Database db) async {
+    AppLogger.database('Migrating database to v18 (adding unit_of_measurement and stock_adjustments)');
+
+    try {
+      // Add unit_of_measurement column to products table
+      await db.execute('''
+        ALTER TABLE products ADD COLUMN unit_of_measurement TEXT DEFAULT 'pcs'
+      ''');
+      AppLogger.database('Added unit_of_measurement column to products table');
+    } catch (e) {
+      // Column might already exist, log but don't fail
+      AppLogger.database('unit_of_measurement column migration (may already exist): $e');
+    }
+
+    try {
+      // Create stock_adjustments table
+      await db.execute('''
+        CREATE TABLE stock_adjustments (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          product_id INTEGER NOT NULL,
+          previous_quantity INTEGER NOT NULL,
+          new_quantity INTEGER NOT NULL,
+          adjustment_type TEXT NOT NULL,
+          reason TEXT,
+          created_by TEXT NOT NULL,
+          created_at TEXT NOT NULL,
+          FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+        )
+      ''');
+      AppLogger.database('Created stock_adjustments table');
+    } catch (e) {
+      // Table might already exist, log but don't fail
+      AppLogger.database('stock_adjustments table migration (may already exist): $e');
+    }
+
+    try {
+      // Create indexes for stock_adjustments
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_stock_adjustments_product ON stock_adjustments(product_id)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_stock_adjustments_date ON stock_adjustments(created_at DESC)');
+      AppLogger.database('Created indexes for stock_adjustments table');
+    } catch (e) {
+      AppLogger.database('stock_adjustments indexes migration (may already exist): $e');
+    }
+
+    AppLogger.database('Database migration to v18 completed');
   }
 
   /// Simple password hash for demo purposes

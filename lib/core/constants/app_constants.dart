@@ -6,7 +6,7 @@ class AppConstants {
 
   // Database
   static const String databaseName = 'pos.db';
-  static const int databaseVersion = 17;
+  static const int databaseVersion = 18;
 
   // Stock thresholds
   static const int lowStockThreshold = 10;
