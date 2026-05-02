@@ -47,17 +47,6 @@ class _ExpenseScreenState extends ConsumerState<ExpenseScreen>
       backgroundColor: NeoBrutalTheme.background, // ✅ Brutal white background
       appBar: AppBar(
         title: const Text('Pengeluaran'),
-        flexibleSpace: Container(
-          decoration: BoxDecoration(
-            color: NeoBrutalTheme.blockYellow, // ✅ Bold yellow background
-            border: Border(
-              bottom: BorderSide(
-                color: Colors.black,
-                width: 6, // ✅ Extra thick bottom border
-              ),
-            ),
-          ),
-        ),
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: Colors.black,

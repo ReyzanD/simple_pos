@@ -11,6 +11,7 @@ import '../widgets/backup_storage_status.dart';
 import '../widgets/backup_list_item.dart';
 import '../widgets/backup_create_dialog.dart';
 import '../widgets/backup_schedule_dialog.dart';
+import '../controllers/backup_controller.dart';
 
 /// BackupScreen
 ///
@@ -56,7 +57,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen>
     );
   }
 
-  Widget _buildBody(controller) {
+  Widget _buildBody(BackupController controller) {
     if (controller.isLoading && controller.backups.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -86,13 +87,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen>
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
       title: const Text('Backup & Restore'),
-      backgroundColor: NeoBrutalTheme.blockYellow,
       elevation: 0,
-      flexibleSpace: Container(
-        decoration: const BoxDecoration(
-          border: Border(bottom: BorderSide(color: Colors.black, width: 6)),
-        ),
-      ),
       bottom: TabBar(
         controller: _tabController,
         indicatorColor: Colors.black,

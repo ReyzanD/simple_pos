@@ -56,7 +56,7 @@ class POSCategoryChips extends StatelessWidget {
                   onTap: () => posController.setCategoryFilter(category),
                 ),
               );
-            }).toList(),
+            }),
           ],
         ),
       ),

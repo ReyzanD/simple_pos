@@ -1,3 +1,5 @@
+// lib/features/inventory/data/repositories/stock_adjustment_repository_impl.dart
+
 import 'package:simple_pos/features/inventory/data/datasources/stock_adjustment_local_datasource.dart';
 import 'package:simple_pos/features/inventory/data/models/stock_adjustment_model.dart';
 import 'package:simple_pos/features/inventory/domain/entities/stock_adjustment.dart';
@@ -17,7 +19,7 @@ class StockAdjustmentRepositoryImpl implements StockAdjustmentRepository {
   @override
   Future<List<StockAdjustment>> getAdjustmentsByProductId(int productId) async {
     final models = await localDataSource.getAdjustmentsByProductId(productId);
-    return models.map((model) => model.toEntity()).toList();
+    return models.map((m) => m.toEntity()).toList();
   }
 
   @override

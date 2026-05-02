@@ -9,7 +9,7 @@ import 'scanner_product_preview.dart';
 /// Scanner bottom bar with controls
 class ScannerBottomBar extends StatelessWidget {
   final String mode;
-  final List<String> scannedBarcodes;
+  final List<Map<String, String>> scannedProducts;
   final String? scannedBarcode;
   final String? validationError;
   final String? detectedFormat;
@@ -27,7 +27,7 @@ class ScannerBottomBar extends StatelessWidget {
   const ScannerBottomBar({
     super.key,
     required this.mode,
-    required this.scannedBarcodes,
+    required this.scannedProducts,
     this.scannedBarcode,
     this.validationError,
     this.detectedFormat,
@@ -63,9 +63,9 @@ class ScannerBottomBar extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           // Continuous mode scan list
-          if (mode == 'continuous' && scannedBarcodes.isNotEmpty)
+          if (mode == 'continuous' && scannedProducts.isNotEmpty)
             ContinuousScanList(
-              scannedBarcodes: scannedBarcodes,
+              scannedProducts: scannedProducts,
               onComplete: onCompleteContinuous!,
             ),
 
@@ -118,7 +118,7 @@ class ScannerBottomBar extends StatelessWidget {
                 Expanded(
                   child: ScannerControlButton(
                     icon: Icons.check_circle,
-                    label: 'Done (${scannedBarcodes.length})',
+                    label: 'Done (${scannedProducts.length})',
                     backgroundColor: AppTheme.successColor,
                     onTap: onCompleteContinuous!,
                   ),

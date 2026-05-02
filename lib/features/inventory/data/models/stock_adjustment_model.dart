@@ -27,7 +27,9 @@ class StockAdjustmentModel {
       productId: json['product_id'] as int,
       previousQuantity: json['previous_quantity'] as int,
       newQuantity: json['new_quantity'] as int,
-      adjustmentType: _parseAdjustmentType(json['adjustment_type'] as String? ?? 'other'),
+      adjustmentType: _parseAdjustmentType(
+        json['adjustment_type'] as String? ?? 'other',
+      ),
       reason: json['reason'] as String?,
       createdBy: json['created_by'] as String,
       createdAt: DateTime.parse(json['created_at'] as String),
@@ -56,11 +58,12 @@ class StockAdjustmentModel {
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
       'product_id': productId,
       'previous_quantity': previousQuantity,
       'new_quantity': newQuantity,
-      'adjustment_type': adjustmentType == StockAdjustmentType.itemReturn ? 'return' : adjustmentType.name,
+      'adjustment_type': adjustmentType == StockAdjustmentType.itemReturn
+          ? 'return'
+          : adjustmentType.name,
       'reason': reason,
       'created_by': createdBy,
       'created_at': createdAt.toIso8601String(),

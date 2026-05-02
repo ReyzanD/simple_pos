@@ -35,6 +35,21 @@ class AudioFeedbackHelper {
     }
   }
 
+  /// Play a continuous scan beep (louder for batch operations)
+  Future<void> playContinuousScanBeep() async {
+    if (_isMuted) return;
+
+    try {
+      // Use alert sound which is typically louder/more distinct
+      await SystemSound.play(SystemSoundType.alert);
+      await HapticFeedback.heavyImpact();
+    } catch (e) {
+      AppLogger.warning('Failed to play continuous scan beep: $e');
+      // Fallback to haptic feedback only
+      await HapticFeedback.heavyImpact();
+    }
+  }
+
   /// Play a success sound (higher pitch beep)
   Future<void> playSuccess() async {
     if (_isMuted) return;

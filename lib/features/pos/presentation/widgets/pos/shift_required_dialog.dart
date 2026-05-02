@@ -41,7 +41,7 @@ class ShiftRequiredDialog extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 12),
-            const Text('Shift Belum Dibuka'),
+            const Expanded(child: Text('Shift Belum Dibuka')),
           ],
         ),
         content: const Text(

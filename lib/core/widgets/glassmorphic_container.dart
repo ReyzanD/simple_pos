@@ -159,7 +159,7 @@ class ModernGradientCard extends StatelessWidget {
                       Color(0xFFF8FAFC),
                     ],
                   )),
-        color: isDark ? AppTheme.darkSurfaceVariant : null,
+        color: isDark ? AppTheme.darkSurface : null,
         borderRadius: BorderRadius.circular(borderRadius),
         boxShadow: isSelected
             ? AppShadows.primaryShadow(0.2)
@@ -169,7 +169,7 @@ class ModernGradientCard extends StatelessWidget {
         margin: const EdgeInsets.all(2),
         decoration: BoxDecoration(
           color: backgroundColor ??
-              (isDark ? AppTheme.darkSurface : AppTheme.lightCard),
+              (isDark ? AppTheme.darkSurface : AppTheme.lightSurface),
           borderRadius: BorderRadius.circular(borderRadius - 2),
         ),
         child: Material(
@@ -682,7 +682,7 @@ class GlassPill extends StatelessWidget {
           decoration: BoxDecoration(
             color: backgroundColor ??
                 (isDark
-                    ? AppTheme.darkSurfaceVariant.withValues(alpha: 0.6)
+                    ? AppTheme.darkSurface.withValues(alpha: 0.6)
                     : Colors.white.withValues(alpha: 0.7)),
             borderRadius: BorderRadius.circular(50),
             border: Border.all(

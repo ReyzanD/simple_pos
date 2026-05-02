@@ -580,7 +580,7 @@ class BackupLocalDataSource {
 
       final fileSize = await zipFile.length();
       AppLogger.info(
-        'ZIP backup created successfully: ${outputPath.split('/').last} (${fileSize} bytes)',
+        'ZIP backup created successfully: ${outputPath.split('/').last} ($fileSize bytes)',
         tag: 'BackupLocalDataSource',
       );
 

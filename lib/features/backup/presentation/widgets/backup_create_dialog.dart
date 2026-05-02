@@ -24,7 +24,7 @@ class _BackupCreateDialogState extends State<BackupCreateDialog> {
   BackupType _selectedType = BackupType.full;
   StorageLocation _selectedLocation = StorageLocation.local;
   BackupDataType _selectedDataType = BackupDataType.all;
-  bool _compress = true;
+  final bool _compress = true;
   bool _isCreating = false;
 
   @override

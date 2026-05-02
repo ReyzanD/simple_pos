@@ -69,7 +69,7 @@ class _ExpenseListTabState extends State<ExpenseListTab> {
     );
   }
 
-  Widget _buildContent(controller) {
+  Widget _buildContent(ExpenseController controller) {
     if (controller.isLoading) {
       return const Center(
         child: CircularProgressIndicator(color: Color(0xFF4F46E5)),

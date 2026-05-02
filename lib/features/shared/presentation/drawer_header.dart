@@ -32,7 +32,7 @@ class UserDrawerHeader extends StatelessWidget {
       margin: EdgeInsets.all(NeoBrutalTheme.spaceMD),
       padding: EdgeInsets.all(NeoBrutalTheme.spaceMD),
       decoration: BoxDecoration(
-        color: NeoBrutalTheme.blockCoral, // ✅ Bold coral background
+        color: NeoBrutalTheme.blockBlue, // ✅ Bold blue background
         borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium),
         border: Border.all(
           color: Colors.black,

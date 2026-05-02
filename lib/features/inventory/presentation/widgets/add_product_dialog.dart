@@ -4,15 +4,12 @@ import '../../../../core/theme/neo_brutal_theme.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/product_image_picker.dart';
 import '../../../inventory/domain/entities/category.dart' as entities;
+import '../../../inventory/domain/entities/product.dart';
 import '../../../inventory/domain/entities/supplier.dart';
-
 import '../../../shared/presentation/providers.dart';
 import '../widgets/brutal_form_inputs.dart';
 import '../widgets/brutal_auxiliary_dialogs.dart';
-import '../widgets/add_product_components.dart';
 import '../widgets/unit_of_measurement_dropdown.dart';
-import '../widgets/stock_adjustment_section.dart';
-import '../../domain/entities/stock_adjustment.dart';
 
 class AddProductDialog extends ConsumerStatefulWidget {
   final Future<bool> Function({
@@ -28,9 +25,16 @@ class AddProductDialog extends ConsumerStatefulWidget {
     bool hasVariants,
   })
   onAdd;
+
+  final Product? productToEdit; // null = add mode, product object = edit mode
   final String? initialBarcode;
 
-  const AddProductDialog({super.key, required this.onAdd, this.initialBarcode});
+  const AddProductDialog({
+    super.key,
+    required this.onAdd,
+    this.productToEdit,
+    this.initialBarcode,
+  });
 
   @override
   ConsumerState<AddProductDialog> createState() => _AddProductDialogState();
@@ -43,6 +47,7 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
   final _costPriceController = TextEditingController();
   final _stockController = TextEditingController();
   final _barcodeController = TextEditingController();
+
   int? _selectedCategoryId;
   int? _selectedSupplierId;
   String? _imagePath;
@@ -50,13 +55,33 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
   final bool _hasVariants = false;
   bool _isSubmitting = false;
 
+  bool get _isEditMode => widget.productToEdit != null;
+
   @override
   void initState() {
     super.initState();
-    if (widget.initialBarcode != null) {
+    if (_isEditMode) {
+      _initializeEditMode();
+    } else if (widget.initialBarcode != null) {
       _barcodeController.text = widget.initialBarcode!;
     }
   }
+
+  void _initializeEditMode() {
+    final product = widget.productToEdit!;
+    _nameController.text = product.name;
+    _priceController.text = product.price.toString();
+    _costPriceController.text = product.costPrice.toString();
+    _stockController.text = product.stock.toString();
+    _barcodeController.text = product.barcode ?? '';
+    _selectedCategoryId = product.categoryId;
+    _selectedSupplierId = product.supplierId;
+    _imagePath = product.imagePath;
+    _selectedUnit = UnitOfMeasurement.values.firstWhere(
+      (u) => u.name == product.unitOfMeasurement,
+      orElse: () => UnitOfMeasurement.pcs,
+    );
+    }
 
   @override
   void dispose() {
@@ -70,7 +95,6 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
 
   @override
   Widget build(BuildContext context) {
-    // Watch categories and suppliers from providers
     final categories = ref.watch(categoryControllerProvider).categories;
     final suppliers = ref.watch(supplierControllerProvider).suppliers;
 
@@ -90,20 +114,44 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
         ),
         child: Column(
           children: [
-            const AddProductHeader(),
+            _buildHeader(),
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(20),
                 child: _buildForm(categories, suppliers),
               ),
             ),
-            AddProductActions(
-              isSubmitting: _isSubmitting,
-              onCancel: () => Navigator.pop(context),
-              onSave: _handleSubmit,
-            ),
+            _buildActions(),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: NeoBrutalTheme.blockBlue,
+        border: const Border(bottom: BorderSide(color: Colors.black, width: 3)),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            _isEditMode ? Icons.edit : Icons.add_circle,
+            size: 24,
+            color: Colors.white,
+          ),
+          const SizedBox(width: 12),
+          Text(
+            _isEditMode ? 'EDIT PRODUK' : 'TAMBAH PRODUK',
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+              color: Colors.white,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -116,15 +164,12 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
       key: _formKey,
       child: Column(
         children: [
-          // IMAGE PICKER
           ProductImagePicker(
             currentImagePath: _imagePath,
             onImageChanged: (p) => setState(() => _imagePath = p),
             size: 120,
           ),
           const SizedBox(height: 24),
-
-          // NAME
           BrutalTextFormField(
             controller: _nameController,
             label: 'NAMA PRODUK',
@@ -138,8 +183,6 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
             },
           ),
           const SizedBox(height: 16),
-
-          // PRICE - FULL WIDTH
           BrutalTextFormField(
             controller: _priceController,
             label: 'HARGA JUAL',
@@ -158,8 +201,6 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
             },
           ),
           const SizedBox(height: 16),
-
-          // COST PRICE - FULL WIDTH
           BrutalTextFormField(
             controller: _costPriceController,
             label: 'HARGA MODAL',
@@ -170,8 +211,6 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
             hintText: 'Opsional',
           ),
           const SizedBox(height: 16),
-
-          // STOCK
           BrutalTextFormField(
             controller: _stockController,
             label: 'STOK',
@@ -189,18 +228,15 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
             },
           ),
           const SizedBox(height: 16),
-
-          // UNIT OF MEASUREMENT
           UnitOfMeasurementDropdown(
             selectedUnit: _selectedUnit,
             onUnitChanged: (value) {
-              setState(() => _selectedUnit = value);
+              if (value != null) {
+                setState(() => _selectedUnit = value);
+              }
             },
           ),
-
           const SizedBox(height: 16),
-
-          // BARCODE WITH SCAN BUTTON
           BrutalTextFormField(
             controller: _barcodeController,
             label: 'BARCODE',
@@ -214,8 +250,6 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
             ),
           ),
           const SizedBox(height: 16),
-
-          // CATEGORY
           BrutalDropdownField<int>(
             label: 'KATEGORI',
             value: _selectedCategoryId,
@@ -228,8 +262,6 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
             onChanged: (v) => setState(() => _selectedCategoryId = v),
           ),
           const SizedBox(height: 16),
-
-          // SUPPLIER
           BrutalDropdownField<int>(
             label: 'SUPPLIER',
             value: _selectedSupplierId,
@@ -246,13 +278,80 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
     );
   }
 
+  Widget _buildActions() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        border: Border(top: BorderSide(color: Colors.black, width: 3)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: GestureDetector(
+              onTap: _isSubmitting ? null : () => Navigator.pop(context),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  border: Border.all(color: Colors.black, width: 2),
+                  borderRadius: BorderRadius.circular(
+                    NeoBrutalTheme.radiusSmall,
+                  ),
+                ),
+                child: const Center(
+                  child: Text(
+                    'BATAL',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      color: Colors.black,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: GestureDetector(
+              onTap: _isSubmitting ? null : _handleSubmit,
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  color: _isEditMode
+                      ? AppTheme.infoColor
+                      : NeoBrutalTheme.blockBlue,
+                  border: Border.all(color: Colors.black, width: 2),
+                  borderRadius: BorderRadius.circular(
+                    NeoBrutalTheme.radiusSmall,
+                  ),
+                ),
+                child: Center(
+                  child: _isSubmitting
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : Text(
+                          _isEditMode ? 'SIMPAN' : 'TAMBAH',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                            color: Colors.white,
+                          ),
+                        ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _scanBarcode() async {
-    // TODO: Implement barcode scanning using mobile_scanner or similar
-    // Example:
-    // final result = await Navigator.push(context, MaterialPageRoute(builder: (_) => BarcodeScannerPage()));
-    // if (result != null && mounted) {
-    //   setState(() => _barcodeController.text = result);
-    // }
+    // TODO: Implement barcode scanning
   }
 
   Future<void> _handleSubmit() async {
@@ -298,7 +397,6 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
             ),
     );
 
-    // Reload categories/suppliers if successfully added
     if (result == true && mounted) {
       if (type == 'category') {
         await ref.read(categoryControllerProvider).loadCategories();

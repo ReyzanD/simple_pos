@@ -23,7 +23,7 @@ class BackupRestoreDialog extends StatefulWidget {
 }
 
 class _BackupRestoreDialogState extends State<BackupRestoreDialog> {
-  RestoreMode _mode = RestoreMode.merge;
+  final RestoreMode _mode = RestoreMode.merge;
   bool _isRestoring = false;
 
   @override
@@ -39,15 +39,11 @@ class _BackupRestoreDialogState extends State<BackupRestoreDialog> {
             title: const Text('Merge'),
             subtitle: const Text('Keep existing data and add missing items'),
             value: RestoreMode.merge,
-            groupValue: _mode,
-            onChanged: (val) => setState(() => _mode = val!),
           ),
           RadioListTile<RestoreMode>(
             title: const Text('Replace'),
             subtitle: const Text('Wipe current data and use backup instead'),
             value: RestoreMode.replaceAll,
-            groupValue: _mode,
-            onChanged: (val) => setState(() => _mode = val!),
           ),
         ],
       ),

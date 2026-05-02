@@ -57,17 +57,6 @@ class _ShiftManagementScreenState extends ConsumerState<ShiftManagementScreen> {
       backgroundColor: NeoBrutalTheme.background, // ✅ Brutal white background
       appBar: AppBar(
         title: const Text('Manajemen Shift'),
-        flexibleSpace: Container(
-          decoration: BoxDecoration(
-            color: NeoBrutalTheme.blockYellow, // ✅ Bold yellow background
-            border: Border(
-              bottom: BorderSide(
-                color: Colors.black,
-                width: 6, // ✅ Extra thick bottom border
-              ),
-            ),
-          ),
-        ),
       ),
       body: () {
         if (controller.isLoading && controller.shiftHistory.isEmpty) {
@@ -80,7 +69,7 @@ class _ShiftManagementScreenState extends ConsumerState<ShiftManagementScreen> {
             await controller.loadShiftHistory();
           },
           color: NeoBrutalTheme.primary, // ✅ Brutal primary color
-          backgroundColor: NeoBrutalTheme.blockYellow.withValues(alpha: 0.3),
+          backgroundColor: NeoBrutalTheme.blockBlue.withValues(alpha: 0.3),
           strokeWidth: 4, // ✅ Thicker indicator
           child: ListView(
             padding: EdgeInsets.all(NeoBrutalTheme.spaceMD),

@@ -18,7 +18,6 @@ void main() {
 
     testWidgets('should display product information', (tester) async {
       // Arrange
-      bool tapped = false;
 
       // Act
       await tester.pumpWidget(
@@ -27,7 +26,7 @@ void main() {
             body: ProductGridItem(
               product: testProduct,
               quantity: 0,
-              onTap: () => tapped = true,
+              onTap: () {},
             ),
           ),
         ),

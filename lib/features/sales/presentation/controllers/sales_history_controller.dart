@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import '../../domain/entities/transaction.dart';
 import '../../domain/entities/payment_method.dart';
+import '../../domain/entities/payment_status.dart';
 import '../../domain/usecases/get_transactions_usecase.dart';
 import '../../../../core/utils/logger.dart';
 
@@ -38,28 +39,35 @@ class SalesHistoryController extends ChangeNotifier {
   DateTime? get endDate => _endDate;
   String get searchQuery => _searchQuery;
 
-  int get transactionCount => _filteredTransactions.length;
+  /// Only count completed transactions for KPI display in the history summary cards
+  List<Transaction> get _completedTransactions =>
+      _filteredTransactions
+          .where((t) => t.paymentStatus == PaymentStatus.completed)
+          .toList();
+
+  int get transactionCount => _completedTransactions.length;
   double get totalRevenue =>
-      _filteredTransactions.fold<double>(0, (sum, t) => sum + t.totalAmount);
+      _completedTransactions.fold<double>(0, (sum, t) => sum + t.totalAmount);
   double get averageTransaction =>
       transactionCount > 0 ? totalRevenue / transactionCount : 0.0;
 
-  /// Get total profit from filtered transactions (revenue - cost of goods sold)
+  /// Get total profit from completed filtered transactions
   double get totalProfit =>
-      _filteredTransactions.fold<double>(0, (sum, t) => sum + t.profit);
+      _completedTransactions.fold<double>(0, (sum, t) => sum + t.profit);
 
-  /// Get total items sold from filtered transactions
+  /// Get total items sold from completed filtered transactions
   int get totalItemsSold =>
-      _filteredTransactions.fold<int>(0, (sum, t) => sum + t.totalItems);
+      _completedTransactions.fold<int>(0, (sum, t) => sum + t.totalItems);
 
-  /// Get today's transactions
+  /// Get today's transactions (only completed — excludes refunded/cancelled)
   List<Transaction> get todayTransactions {
     final now = DateTime.now();
     final startOfDay = DateTime(now.year, now.month, now.day);
     final endOfDay = DateTime(now.year, now.month, now.day, 23, 59, 59, 999);
 
     return _transactions.where((t) {
-      return !t.transactionDate.isBefore(startOfDay) &&
+      return t.paymentStatus == PaymentStatus.completed &&
+          !t.transactionDate.isBefore(startOfDay) &&
           !t.transactionDate.isAfter(endOfDay);
     }).toList();
   }
@@ -86,13 +94,17 @@ class SalesHistoryController extends ChangeNotifier {
       _transactions = result;
       _isLoading = false;
 
-      // Calculate and cache today's items sold
+      // Calculate and cache today's items sold (completed transactions only)
       final now = DateTime.now();
       final startOfDay = DateTime(now.year, now.month, now.day);
-      final todayTx = _transactions
-          .where((t) => !t.transactionDate.isBefore(startOfDay))
+      final completedTodayTx = _transactions
+          .where(
+            (t) =>
+                t.paymentStatus == PaymentStatus.completed &&
+                !t.transactionDate.isBefore(startOfDay),
+          )
           .toList();
-      _cachedTodayItemsSold = todayTx.fold<int>(
+      _cachedTodayItemsSold = completedTodayTx.fold<int>(
         0,
         (sum, t) => sum + t.totalItems,
       );
@@ -100,6 +112,7 @@ class SalesHistoryController extends ChangeNotifier {
       _applyFilters();
 
       // Calculate today's stats for debugging
+      final todayTx = completedTodayTx;
       AppLogger.info('Loaded ${_transactions.length} total transactions');
       AppLogger.info(
         'Today\'s transactions: ${todayTx.length}, revenue: $todayRevenue',

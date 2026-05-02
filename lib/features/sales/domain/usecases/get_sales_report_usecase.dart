@@ -1,6 +1,7 @@
 import '../entities/sales_report.dart';
 import '../entities/transaction.dart';
 import '../entities/payment_method.dart';
+import '../entities/payment_status.dart';
 import '../repositories/transaction_repository.dart';
 import '../../../inventory/domain/repositories/product_repository.dart';
 import '../../../inventory/domain/repositories/category_repository.dart';
@@ -48,12 +49,14 @@ class GetSalesReportUseCase {
       final categories = await categoryRepository.getCategories();
       final categoryMap = {for (var c in categories) c.id!: c};
 
-      // Filter by date range
+      // Filter by date range AND only include completed transactions
       final filtered = transactions.where((t) {
         final date = t.transactionDate;
         final start = DateTime(startDate.year, startDate.month, startDate.day);
         final end = DateTime(endDate.year, endDate.month, endDate.day, 23, 59, 59);
-        return date.isAfter(start) && date.isBefore(end);
+        return t.paymentStatus == PaymentStatus.completed &&
+            date.isAfter(start) &&
+            date.isBefore(end);
       }).toList();
 
       // Calculate totals and actual profit
@@ -377,12 +380,14 @@ class GetSalesReportUseCase {
       );
     }
 
-    // Filter transactions for previous period
+    // Filter transactions for previous period (completed only)
     final previousTransactions = allTransactions.where((t) {
       final date = t.transactionDate;
       final start = DateTime(previousStart.year, previousStart.month, previousStart.day);
       final end = DateTime(previousEnd.year, previousEnd.month, previousEnd.day, 23, 59, 59);
-      return date.isAfter(start) && date.isBefore(end);
+      return t.paymentStatus == PaymentStatus.completed &&
+          date.isAfter(start) &&
+          date.isBefore(end);
     }).toList();
 
     if (previousTransactions.isEmpty) {

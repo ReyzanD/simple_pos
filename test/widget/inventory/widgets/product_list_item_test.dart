@@ -18,8 +18,6 @@ void main() {
 
     testWidgets('should display product information', (tester) async {
       // Arrange
-      bool editPressed = false;
-      bool deletePressed = false;
 
       // Act
       await tester.pumpWidget(
@@ -27,8 +25,8 @@ void main() {
           home: Scaffold(
             body: ProductListItem(
               product: testProduct,
-              onEdit: () => editPressed = true,
-              onDelete: () => deletePressed = true,
+              onEdit: () {},
+              onDelete: () {},
             ),
           ),
         ),

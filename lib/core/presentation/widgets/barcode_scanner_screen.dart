@@ -153,7 +153,7 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> with Widget
   Map<String, String>? _productInfo;
 
   // Continuous mode state
-  final List<String> _scannedBarcodes = [];
+  final List<Map<String, String>> _scannedProducts = [];
   final Set<String> _uniqueBarcodes = {};
 
   // History state
@@ -365,16 +365,24 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> with Widget
   }
 
   void _addContinuousScan(String barcode) {
+    // Look up product info if callback provided
+    final productInfo = widget.productLookup?.call(barcode);
+
     setState(() {
       if (_uniqueBarcodes.add(barcode)) {
-        _scannedBarcodes.add(barcode);
+        _scannedProducts.add({
+          'barcode': barcode,
+          'name': productInfo?['name'] ?? 'Unknown Product',
+          'price': productInfo?['price'] ?? '',
+          'stock': productInfo?['stock'] ?? '',
+        });
       }
       _isScanning = true; // Keep scanning
       _scannedBarcode = null; // Clear to show we're ready for next
     });
 
-    // Brief feedback
-    AudioFeedbackHelper.instance.playClick();
+    // Enhanced feedback for continuous scanning
+    AudioFeedbackHelper.instance.playContinuousScanBeep();
   }
 
   void _resetScanner() {
@@ -448,9 +456,9 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> with Widget
   }
 
   void _completeContinuousScan() {
-    logger.AppLogger.info('_completeContinuousScan called with ${_scannedBarcodes.length} barcodes', tag: 'CAMERA');
+    logger.AppLogger.info('_completeContinuousScan called with ${_scannedProducts.length} products', tag: 'CAMERA');
 
-    if (_scannedBarcodes.isNotEmpty) {
+    if (_scannedProducts.isNotEmpty) {
       // Disable scanning immediately to prevent race condition
       setState(() {
         _isScanning = false;
@@ -467,15 +475,18 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> with Widget
         // Continue anyway - camera will be disposed
       }
 
+      // Extract barcodes for backward compatibility
+      final barcodes = _scannedProducts.map((p) => p['barcode']!).toList();
+
       // Call the callback and let IT handle navigation
       // This prevents double navigation issues
-      widget.onBatchComplete?.call(_scannedBarcodes);
+      widget.onBatchComplete?.call(barcodes);
       logger.AppLogger.info('onBatchComplete callback called', tag: 'CAMERA');
 
       // Note: BufferQueue abandonment errors are expected and harmless during camera stop
       logger.AppLogger.info('Waiting for callback to handle navigation (BufferQueue errors are expected)', tag: 'CAMERA');
     } else {
-      logger.AppLogger.warning('_completeContinuousScan called but no barcodes available', tag: 'CAMERA');
+      logger.AppLogger.warning('_completeContinuousScan called but no products available', tag: 'CAMERA');
     }
   }
 
@@ -642,7 +653,7 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> with Widget
             right: 0,
             child: ScannerBottomBar(
               mode: widget.mode.name,
-              scannedBarcodes: _scannedBarcodes,
+              scannedProducts: _scannedProducts,
               scannedBarcode: _scannedBarcode,
               validationError: _validationError,
               detectedFormat: _detectedFormatName,

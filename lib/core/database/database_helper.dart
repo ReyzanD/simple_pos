@@ -2,9 +2,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:simple_pos/core/exceptions/app_exceptions.dart'
     as app_exceptions;
 import 'package:simple_pos/core/utils/logger.dart';
-import 'package:simple_pos/core/constants/app_constants.dart';
 import 'package:simple_pos/services/database/database_connection.dart';
-
 // DAO Imports
 import 'package:simple_pos/services/database/dao/product_dao.dart';
 import 'package:simple_pos/services/database/dao/transaction_dao.dart';
@@ -17,6 +15,15 @@ import 'package:simple_pos/services/database/dao/user_dao.dart';
 import 'package:simple_pos/features/inventory/data/datasources/daos/product_variant_dao.dart';
 import 'package:simple_pos/features/inventory/data/datasources/daos/variant_attribute_dao.dart';
 
+import '../../services/database/migrations/database_migration.dart';
+
+/// Main database helper class.
+///
+/// Responsibilities:
+/// - Manage database connection lifecycle
+/// - Provide access to database instance
+/// - Coordinate initialization and migration (delegates to DatabaseMigration)
+/// - Expose DAO instances for data operations
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
   DatabaseHelper._init();
@@ -24,7 +31,7 @@ class DatabaseHelper {
   // Delegate to DatabaseConnection for connection management
   final DatabaseConnection _connection = DatabaseConnection.instance;
 
-  // Specialist sub-modules
+  // Specialist DAOs
   final ProductDao products = ProductDao.instance;
   final TransactionDao transactions = TransactionDao.instance;
   final PaymentDao payments = PaymentDao.instance;
@@ -36,24 +43,24 @@ class DatabaseHelper {
   late final ProductVariantDao productVariants = ProductVariantDao(this);
   late final VariantAttributeDao variantAttributes = VariantAttributeDao(this);
 
-  /// Gets the database instance.
+  /// Gets the database instance with automatic setup and migrations.
   ///
-  /// This method now delegates to DatabaseConnection for connection management,
-  /// providing retry logic and better error handling.
+  /// Handles:
+  /// - Connection management via DatabaseConnection
+  /// - Schema creation for new databases
+  /// - Automatic migration for existing databases
   Future<Database> get database async {
     try {
       // Get database from connection manager
       final db = await _connection.database;
 
-      // Check if schema exists, create if not (for new databases)
-      if (!await _isSchemaCreated(db)) {
-        await _createDB(db, AppConstants.databaseVersion);
-      }
+      // Handle setup (creation or migration)
+      await _handleDatabaseSetup(db);
 
       return db;
     } catch (e, stackTrace) {
       AppLogger.error(
-        'Failed to get database',
+        'Gagal mendapatkan database',
         error: e,
         stackTrace: stackTrace,
       );
@@ -65,15 +72,47 @@ class DatabaseHelper {
     }
   }
 
-  /// Check if database schema has been created.
-  Future<bool> _isSchemaCreated(Database db) async {
+  /// Handles database setup (creation or migration).
+  ///
+  /// Logic:
+  /// - If database is new (version = 0): Create schema
+  /// - If database is old: Run migrations
+  /// - If database is newer: Log warning
+  Future<void> _handleDatabaseSetup(Database db) async {
     try {
-      final tables = await db.rawQuery(
-        "SELECT name FROM sqlite_master WHERE type='table'",
+      // Get current database version
+      final userVersion = await db.getVersion();
+
+      if (userVersion == 0) {
+        // New database - create schema at current version
+        AppLogger.database(
+          'Creating new database schema v${DatabaseMigration.currentVersion}',
+        );
+        await DatabaseMigration.createSchema(db);
+        await db.setVersion(DatabaseMigration.currentVersion);
+      } else if (userVersion < DatabaseMigration.currentVersion) {
+        // Existing database - run migrations
+        AppLogger.database(
+          'Running migrations: v$userVersion -> v${DatabaseMigration.currentVersion}',
+        );
+        await DatabaseMigration.runMigrations(
+          db,
+          userVersion,
+          DatabaseMigration.currentVersion,
+        );
+        await db.setVersion(DatabaseMigration.currentVersion);
+      } else if (userVersion > DatabaseMigration.currentVersion) {
+        AppLogger.warning(
+          'Warn: Database version ($userVersion) is newer than app version (${DatabaseMigration.currentVersion})',
+        );
+      }
+    } catch (e, stackTrace) {
+      AppLogger.error(
+        'Database setup failed',
+        error: e,
+        stackTrace: stackTrace,
       );
-      return tables.isNotEmpty;
-    } catch (e) {
-      return false;
+      rethrow;
     }
   }
 
@@ -98,76 +137,8 @@ class DatabaseHelper {
     return _connection.reset();
   }
 
-  Future _createDB(Database db, int version) async {
-    try {
-      AppLogger.database('Creating database schema version $version');
-      const idType = 'INTEGER PRIMARY KEY AUTOINCREMENT';
-      const textType = 'TEXT NOT NULL';
-      const realType = 'REAL NOT NULL';
-      const intType = 'INTEGER NOT NULL';
-      const textNullable = 'TEXT';
-      const intNullable = 'INTEGER';
-      const realNullable = 'REAL';
-
-      // Tables
-      await db.execute(
-        'CREATE TABLE categories (id $idType, name $textType UNIQUE, description $textNullable, discount_percentage $realNullable DEFAULT 0, created_at $textType)',
-      );
-      await db.execute(
-        'CREATE TABLE suppliers (id $idType, name $textType UNIQUE, contact_person $textNullable, phone $textNullable, email $textNullable, address $textNullable, created_at $textType)',
-      );
-      await db.execute(
-        'CREATE TABLE products (id $idType, name $textType UNIQUE, price $realType, stock $intType, category_id $intNullable, supplier_id $intNullable, barcode $textNullable UNIQUE, cost_price $realNullable DEFAULT 0, image_path $textNullable, discount_percentage $realNullable DEFAULT 0, has_variants $intType DEFAULT 0, FOREIGN KEY (category_id) REFERENCES categories(id), FOREIGN KEY (supplier_id) REFERENCES suppliers(id))',
-      );
-      await db.execute(
-        'CREATE TABLE transactions (id $idType, transaction_date $textType, subtotal $realType, tax $realType DEFAULT 0, discount $realType DEFAULT 0, total_amount $realType, payment_method $textType, payment_status $textType DEFAULT "completed", notes $textNullable, created_at $textType, updated_at $textType)',
-      );
-      await db.execute(
-        'CREATE TABLE transaction_items (id $idType, transaction_id $intType, product_id $intType, variant_id $intNullable, product_name $textType, quantity $intType, unit_price $realType, subtotal $realType, FOREIGN KEY (transaction_id) REFERENCES transactions(id) ON DELETE CASCADE, FOREIGN KEY (product_id) REFERENCES products(id))',
-      );
-      await db.execute(
-        'CREATE TABLE shifts (id $idType, user_name $textType, opening_balance $realType DEFAULT 0, opened_at $intType NOT NULL, closed_at $intNullable)',
-      );
-      await db.execute(
-        'CREATE TABLE users (id $idType, username TEXT NOT NULL UNIQUE, password_hash TEXT NOT NULL, full_name TEXT NOT NULL, role TEXT NOT NULL DEFAULT "cashier", is_active INTEGER DEFAULT 1, created_at INTEGER NOT NULL)',
-      );
-      await db.execute(
-        'CREATE TABLE expenses (id $idType, category TEXT NOT NULL, amount REAL NOT NULL, date INTEGER NOT NULL, created_by INTEGER, FOREIGN KEY (created_by) REFERENCES users(id))',
-      );
-
-      // Default Admin
-      final adminPasswordHash = _hashPassword('admin123');
-      await db.insert('users', {
-        'username': 'admin',
-        'password_hash': adminPasswordHash,
-        'full_name': 'Administrator',
-        'role': 'admin',
-        'is_active': 1,
-        'created_at': DateTime.now().millisecondsSinceEpoch ~/ 1000,
-      });
-
-      AppLogger.database('Schema created successfully');
-    } catch (e, stackTrace) {
-      AppLogger.error(
-        'Schema creation failed',
-        error: e,
-        stackTrace: stackTrace,
-      );
-      throw app_exceptions.DatabaseException(
-        'Gagal buat tabel',
-        operation: 'onCreate',
-        originalError: e,
-      );
-    }
-  }
-
-  // Utilities
-  String _hashPassword(String password) {
-    final bytes = password.codeUnits;
-    final hash = bytes.fold<int>(0, (prev, element) => prev + element);
-    return 'simple_hash_$hash';
-  }
-
+  /// Clears all data from all tables (useful for testing/reset).
+  /// WARNING: This deletes ALL data!
   Future<void> clearAllData() async {
     final db = await instance.database;
     final tables = await db.rawQuery(

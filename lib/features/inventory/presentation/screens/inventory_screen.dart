@@ -13,10 +13,13 @@ import '../../../shared/presentation/providers.dart';
 
 // Import extracted inventory widgets
 import '../controllers/inventory_controller.dart';
+import '../providers/inventory_providers.dart';
 import '../widgets/inventory/inventory_app_bar.dart';
 import '../widgets/inventory/inventory_empty_state.dart';
 import '../widgets/add_product_dialog.dart';
 import '../widgets/csv_import_dialog.dart';
+import '../widgets/stock_adjustment_section.dart';
+import '../../domain/entities/stock_adjustment.dart';
 
 /// Inventory management screen using Riverpod
 class InventoryScreen extends ConsumerStatefulWidget {
@@ -79,7 +82,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
     return RefreshIndicator(
       onRefresh: () => ref.read(inventoryControllerProvider).loadProducts(),
       color: NeoBrutalTheme.primary,
-      backgroundColor: NeoBrutalTheme.blockYellow.withValues(alpha: 0.3),
+      backgroundColor: NeoBrutalTheme.blockBlue.withValues(alpha: 0.3),
       strokeWidth: 4,
       child: Column(
         children: [
@@ -190,7 +193,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
                   },
                 ),
               );
-            }).toList(),
+            }),
           ],
         ),
       ),
@@ -324,6 +327,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
                         ),
                 ),
               ),
+
               // Stock Status Badge - Mini bar on bottom of image
               if (isOutOfStock || isLowStock)
                 Container(
@@ -355,6 +359,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
                     ],
                   ),
                 ),
+
               // Product Info - Takes 40% of card height
               Expanded(
                 flex: 4,
@@ -381,6 +386,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
+
                       // Price and Stock at bottom
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -409,22 +415,35 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
                   ),
                 ),
               ),
+
+              // Stock Adjustment Button
+              Padding(
+                padding: const EdgeInsets.all(8),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    icon: const Icon(Icons.add_shopping_cart, size: 16),
+                    label: const Text(
+                      'Add Stock',
+                      style: TextStyle(fontSize: 12),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.successColor,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                    ),
+                    onPressed: () =>
+                        _openStockAdjustmentDialog(context, ref, product),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
       ),
-    ).animate().fadeIn(duration: 300.ms).slideY(begin: 0.1, end: 0);
+    ).animate().fadeIn().slideY(begin: 0.1, end: 0);
   }
 
-  Widget _buildStockIndicator(
-    BuildContext context,
-    bool isLowStock,
-    bool isOutOfStock,
-    int stock,
-  ) {
-    // Stock indicator is now integrated into the product card
-    return const SizedBox.shrink();
-  }
 
   void _showAddProductOptions(BuildContext context, WidgetRef ref) {
     showModalBottomSheet(
@@ -539,6 +558,107 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
     );
   }
 
+  void _openStockAdjustmentDialog(
+    BuildContext context,
+    WidgetRef ref,
+    Product product,
+  ) {
+    // Guard: ensure product has an id before proceeding
+    if (product.id == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Product id is missing. Cannot adjust stock.'),
+          backgroundColor: AppTheme.errorColor,
+        ),
+      );
+      return;
+    }
+
+    final controller = ref.read(inventoryControllerProvider);
+    StockAdjustmentType selectedType = StockAdjustmentType.purchase;
+    int? adjustmentQuantity;
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: AppTheme.successColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(
+                Icons.inventory_2_outlined,
+                color: AppTheme.successColor,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Text('Adjust Stock: ${product.name}'),
+          ],
+        ),
+        content: StatefulBuilder(
+          builder: (context, setDialogState) {
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                StockAdjustmentSection(
+                  selectedType: selectedType,
+                  adjustmentQuantity: adjustmentQuantity,
+                  onTypeChanged: (value) {
+                    if (value != null) {
+                      setDialogState(() => selectedType = value);
+                    }
+                  },
+                  onQuantityChanged: (value) {
+                    setDialogState(() => adjustmentQuantity = value);
+                  },
+                  onAdd: adjustmentQuantity != null && adjustmentQuantity! > 0
+                      ? () async {
+                          // product.id is non-null due to guard
+                          final success = await controller.adjustStock(
+                            productId: product.id!,
+                            adjustmentType: selectedType,
+                            quantity: adjustmentQuantity!,
+                            reason: 'Manual adjustment',
+                            username: 'admin',
+                          );
+                          if (dialogContext.mounted) {
+                            Navigator.pop(dialogContext, success);
+                            if (success) {
+                              ScaffoldMessenger.of(dialogContext).showSnackBar(
+                                SnackBar(
+                                  content: Text('Stock adjusted successfully'),
+                                  backgroundColor: AppTheme.successColor,
+                                ),
+                              );
+                            }
+                          }
+                        }
+                      : null,
+                ),
+              ],
+            );
+          },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    ).then((result) {
+      if (result == true) {
+        controller.loadProducts();
+      }
+    });
+  }
+
   Widget _buildBottomSheetOption({
     required IconData icon,
     required String title,
@@ -588,19 +708,17 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => _ProductDetailScreen(product: product),
+        builder: (context) => ProductDetailScreen(product: product),
       ),
     );
   }
 }
 
-class _ProductDetailScreen extends StatelessWidget {
+class ProductDetailScreen extends ConsumerWidget {
   final Product product;
-
-  const _ProductDetailScreen({required this.product});
-
+  const ProductDetailScreen({super.key, required this.product});
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       backgroundColor: NeoBrutalTheme.background,
       appBar: AppBar(
@@ -609,12 +727,14 @@ class _ProductDetailScreen extends StatelessWidget {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(product.name),
-        flexibleSpace: Container(
-          decoration: BoxDecoration(
-            color: NeoBrutalTheme.blockYellow,
-            border: Border(bottom: BorderSide(color: Colors.black, width: 6)),
+        actions: [
+          // EDIT BUTTON
+          IconButton(
+            icon: const Icon(Icons.edit),
+            onPressed: () => _showEditDialog(context, ref),
+            tooltip: 'Edit Produk',
           ),
-        ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(NeoBrutalTheme.spaceMD),
@@ -657,7 +777,7 @@ class _ProductDetailScreen extends StatelessWidget {
               ),
               SizedBox(height: NeoBrutalTheme.spaceLG),
             ],
-            BrutalSectionHeader(
+            const BrutalSectionHeader(
               title: 'Informasi Produk',
               icon: Icons.info_outline,
             ),
@@ -679,6 +799,7 @@ class _ProductDetailScreen extends StatelessWidget {
             ),
             if (product.barcode != null)
               _buildInfoRow('Barcode', product.barcode!),
+            _buildInfoRow('Satuan', product.unitOfMeasurement),
             SizedBox(height: NeoBrutalTheme.spaceLG),
             Row(
               children: [
@@ -745,7 +866,7 @@ class _ProductDetailScreen extends StatelessWidget {
           ],
         ),
       ),
-    ).animate().fadeIn(duration: 300.ms);
+    );
   }
 
   Widget _buildInfoRow(String label, String value, {Color? valueColor}) {
@@ -778,6 +899,94 @@ class _ProductDetailScreen extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Future<void> _showEditDialog(BuildContext context, WidgetRef ref) async {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AddProductDialog(
+        productToEdit: product,
+        onAdd:
+            ({
+              required String name,
+              required double price,
+              required double costPrice,
+              required int stock,
+              int? categoryId,
+              int? supplierId,
+              String? barcode,
+              String? imagePath,
+              String? unitOfMeasurement,
+              bool hasVariants = false,
+            }) async {
+              try {
+                // Create updated product
+                final updatedProduct = product.copyWith(
+                  name: name,
+                  price: price,
+                  costPrice: costPrice,
+                  stock: stock,
+                  categoryId: categoryId,
+                  supplierId: supplierId,
+                  barcode: barcode,
+                  imagePath: imagePath,
+                  unitOfMeasurement: unitOfMeasurement,
+                );
+                // Call the inventory notifier to update
+                final success = await ref
+                    .read(inventoryNotifierProvider.notifier)
+                    .updateProduct(updatedProduct);
+                if (success && dialogContext.mounted) {
+                  ScaffoldMessenger.of(dialogContext).showSnackBar(
+                    const SnackBar(
+                      content: Text('Produk berhasil diupdate'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                  // Pop the detail screen to go back to list
+                  if (context.mounted) {
+                    Navigator.of(context).pop(true);
+                  }
+                }
+                return success;
+              } catch (e) {
+                if (dialogContext.mounted) {
+                  ScaffoldMessenger.of(dialogContext).showSnackBar(
+                    SnackBar(
+                      content: Text('Error: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+                return false;
+              }
+            },
+      ),
+    );
+  }
+}
+
+// Widget for section header
+class BrutalSectionHeader extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  const BrutalSectionHeader({super.key, required this.title, required this.icon});
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, size: 20, color: Colors.black),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w900,
+            color: Colors.black,
+          ),
+        ),
+      ],
     );
   }
 }

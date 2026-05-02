@@ -5,13 +5,21 @@ import 'package:simple_pos/core/exceptions/app_exceptions.dart'
     as app_exceptions;
 import 'package:simple_pos/core/utils/logger.dart';
 import 'package:simple_pos/core/constants/app_constants.dart';
-import 'package:simple_pos/services/database/migrations/database_migration.dart';
+
+import 'migrations/database_migration.dart';
 
 /// Manages database connections with singleton pattern, connection pooling,
 /// and retry logic with exponential backoff.
 ///
 /// This class extracts the database connection logic from DatabaseHelper,
 /// providing a clean separation of concerns and making testing easier.
+///
+/// Responsibilities:
+/// - Manage database connection lifecycle
+/// - Implement retry logic with exponential backoff
+/// - Queue pending requests during initialization
+/// - Configure database settings (foreign keys, WAL mode)
+/// - Delegate schema creation and migrations to DatabaseMigration
 class DatabaseConnection {
   // Singleton instance
   static final DatabaseConnection instance = DatabaseConnection._internal();
@@ -163,7 +171,7 @@ class DatabaseConnection {
 
       return await openDatabase(
         path,
-        version: AppConstants.databaseVersion,
+        version: DatabaseMigration.currentVersion,
         onCreate: _onCreate,
         onUpgrade: _onUpgrade,
         onConfigure: _onConfigure,
@@ -183,110 +191,68 @@ class DatabaseConnection {
     }
   }
 
-  /// Create database schema for new installations.
+  /// Creates database schema for new installations.
+  ///
+  /// Delegates to DatabaseMigration.createSchema() for consistency
+  /// with the migration system.
   Future<void> _onCreate(Database db, int version) async {
-    AppLogger.database('Creating new database schema (version $version)');
-
-    // Delegate schema creation to DatabaseHelper
-    const idType = 'INTEGER PRIMARY KEY AUTOINCREMENT';
-    const textType = 'TEXT NOT NULL';
-    const realType = 'REAL NOT NULL';
-    const intType = 'INTEGER NOT NULL';
-    const textNullable = 'TEXT';
-    const intNullable = 'INTEGER';
-    const realNullable = 'REAL';
-
-    // Tables
-    await db.execute(
-      'CREATE TABLE categories (id $idType, name $textType UNIQUE, description $textNullable, discount_percentage $realNullable DEFAULT 0, created_at $textType)',
-    );
-    await db.execute(
-      'CREATE TABLE suppliers (id $idType, name $textType UNIQUE, contact_person $textNullable, phone $textNullable, email $textNullable, address $textNullable, created_at $textType)',
-    );
-    await db.execute(
-      'CREATE TABLE products (id $idType, name $textType UNIQUE, price $realType, stock $intType, category_id $intNullable, supplier_id $intNullable, barcode $textNullable UNIQUE, cost_price $realNullable DEFAULT 0, image_path $textNullable, discount_percentage $realNullable DEFAULT 0, has_variants $intType DEFAULT 0, FOREIGN KEY (category_id) REFERENCES categories(id), FOREIGN KEY (supplier_id) REFERENCES suppliers(id))',
-    );
-    await db.execute(
-      'CREATE TABLE transactions (id $idType, transaction_date $textType, subtotal $realType, tax $realType DEFAULT 0, discount $realType DEFAULT 0, total_amount $realType, payment_method $textType, payment_status $textType DEFAULT "completed", notes $textNullable, created_at $textType, updated_at $textType)',
-    );
-    await db.execute(
-      'CREATE TABLE transaction_items (id $idType, transaction_id $intType, product_id $intType, product_name $textType, quantity $intType, unit_price $realType, subtotal $realType, cost_price $realNullable DEFAULT 0, variant_id $intNullable DEFAULT 0, FOREIGN KEY (transaction_id) REFERENCES transactions(id) ON DELETE CASCADE, FOREIGN KEY (product_id) REFERENCES products(id))',
-    );
-    await db.execute(
-      'CREATE TABLE shifts (id $idType, user_name $textType, opening_balance $realType DEFAULT 0, closing_balance $realType DEFAULT 0, cash_sales $realType DEFAULT 0, card_sales $realType DEFAULT 0, qr_sales $realType DEFAULT 0, transfer_sales $realType DEFAULT 0, total_transactions INTEGER DEFAULT 0, opened_at INTEGER NOT NULL, closed_at INTEGER)',
-    );
-    await db.execute(
-      'CREATE TABLE users (id $idType, username TEXT NOT NULL UNIQUE, password_hash TEXT NOT NULL, full_name TEXT NOT NULL, role TEXT NOT NULL DEFAULT "cashier", is_active INTEGER DEFAULT 1, created_at INTEGER NOT NULL, last_login INTEGER)',
-    );
-    await db.execute(
-      'CREATE TABLE user_sessions (id $idType, user_id INTEGER NOT NULL, login_time INTEGER NOT NULL, logout_time INTEGER, opening_cash REAL DEFAULT 0, closing_cash REAL, FOREIGN KEY (user_id) REFERENCES users(id))',
-    );
-    await db.execute(
-      'CREATE TABLE expenses (id $idType, category TEXT NOT NULL, amount REAL NOT NULL, description TEXT, payment_method TEXT DEFAULT "cash", receipt_image TEXT, created_by INTEGER, created_at INTEGER NOT NULL, date INTEGER NOT NULL, FOREIGN KEY (created_by) REFERENCES users(id))',
-    );
-    await db.execute(
-      'CREATE TABLE cash_counts (id $idType, shift_id INTEGER NOT NULL, denomination INTEGER NOT NULL, count INTEGER NOT NULL DEFAULT 0, counted_at INTEGER NOT NULL, counted_by TEXT NOT NULL, FOREIGN KEY (shift_id) REFERENCES shifts(id) ON DELETE CASCADE)',
-    );
-    await db.execute(
-      'CREATE TABLE audit_logs (id $idType, action TEXT NOT NULL, entity_type TEXT NOT NULL, entity_id TEXT, description TEXT, username TEXT, user_id TEXT, old_values TEXT, new_values TEXT, ip_address TEXT, user_agent TEXT, created_at INTEGER NOT NULL)',
-    );
-    await db.execute(
-      'CREATE TABLE held_carts (id $idType, customer_name TEXT NOT NULL, cart_data TEXT NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL)',
-    );
-    await db.execute(
-      'CREATE TABLE promotions (id $idType, name TEXT NOT NULL, description TEXT NOT NULL, discount_percentage REAL NOT NULL, start_date TEXT, end_date TEXT, is_enabled INTEGER NOT NULL DEFAULT 1, created_at TEXT NOT NULL)',
-    );
-    await db.execute(
-      'CREATE TABLE discount_presets (id $idType, name TEXT NOT NULL, description TEXT NOT NULL, discount_percentage REAL NOT NULL, created_at TEXT NOT NULL)',
-    );
-    await db.execute(
-      'CREATE TABLE variant_attributes (id $idType, product_id INTEGER NOT NULL, attribute_name TEXT NOT NULL, attribute_values TEXT NOT NULL, sort_order INTEGER DEFAULT 0, FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE)',
-    );
-    await db.execute(
-      'CREATE TABLE product_variants (id $idType, product_id INTEGER NOT NULL, name TEXT NOT NULL, sku TEXT, barcode TEXT, price REAL NOT NULL, cost_price REAL DEFAULT 0, stock INTEGER DEFAULT 0, attributes TEXT, is_active INTEGER DEFAULT 1, created_at TEXT NOT NULL, FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE)',
-    );
-    await db.execute(
-      'CREATE TABLE payments (id $idType, transaction_id $intType, payment_method $textType, amount $realType, cash_received $realType, card_last_4_digits $textNullable, payment_date $textType, FOREIGN KEY (transaction_id) REFERENCES transactions(id) ON DELETE CASCADE)',
-    );
-    // Indexes
-    await db.execute(
-      'CREATE INDEX IF NOT EXISTS idx_products_barcode ON products(barcode)',
-    );
-    await db.execute(
-      'CREATE INDEX IF NOT EXISTS idx_transactions_created_at ON transactions(created_at)',
-    );
-
-    // Default Admin
-    final adminPasswordHash = _hashPassword('admin123');
-    await db.insert('users', {
-      'username': 'admin',
-      'password_hash': adminPasswordHash,
-      'full_name': 'Administrator',
-      'role': 'admin',
-      'is_active': 1,
-      'created_at': DateTime.now().millisecondsSinceEpoch ~/ 1000,
-    });
-
-    AppLogger.database('Database schema created successfully');
+    try {
+      AppLogger.database('Creating new database schema (version $version)');
+      await DatabaseMigration.createSchema(db);
+      AppLogger.database('Database schema created successfully');
+    } catch (e, stackTrace) {
+      AppLogger.error(
+        'Schema creation failed',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      rethrow;
+    }
   }
 
-  /// Upgrade existing database to new version.
+  /// Upgrades existing database to new version.
+  ///
+  /// Delegates to DatabaseMigration.runMigrations() to handle
+  /// all schema changes incrementally.
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    AppLogger.database('Upgrading database from v$oldVersion to v$newVersion');
-
-    final migration = DatabaseMigration();
-    await migration.upgrade(db, oldVersion: oldVersion, newVersion: newVersion);
-
-    AppLogger.database('Database upgrade completed');
+    try {
+      AppLogger.database(
+        'Upgrading database from v$oldVersion to v$newVersion',
+      );
+      await DatabaseMigration.runMigrations(db, oldVersion, newVersion);
+      AppLogger.database('Database upgrade completed');
+    } catch (e, stackTrace) {
+      AppLogger.error(
+        'Database upgrade failed',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      rethrow;
+    }
   }
 
-  /// Configure database settings.
+  /// Configures database settings.
+  ///
+  /// Enables:
+  /// - Foreign key constraints
+  /// - WAL (Write-Ahead Logging) mode for better concurrency
   Future<void> _onConfigure(Database db) async {
-    // Enable foreign keys
-    await db.execute('PRAGMA foreign_keys = ON');
-    // Set WAL mode for better concurrency
-    await db.rawQuery('PRAGMA journal_mode = WAL');
-    AppLogger.database('Database configured with foreign keys and WAL mode');
+    try {
+      // Enable foreign keys
+      await db.execute('PRAGMA foreign_keys = ON');
+
+      // Set WAL mode for better concurrency
+      await db.rawQuery('PRAGMA journal_mode = WAL');
+
+      AppLogger.database('Database configured with foreign keys and WAL mode');
+    } catch (e, stackTrace) {
+      AppLogger.error(
+        'Database configuration failed - ignoring non-critical error',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      // Don't throw - configuration is not critical
+    }
   }
 
   /// Closes the database connection and cleans up resources.
@@ -315,8 +281,8 @@ class DatabaseConnection {
           );
         }
       }
-      _pendingRequests.clear();
 
+      _pendingRequests.clear();
       _isInitialized = false;
 
       AppLogger.database('Database connection closed successfully');
@@ -341,11 +307,4 @@ class DatabaseConnection {
 
   /// Checks if the database is initialized and open.
   bool get isOpen => _database != null && _database!.isOpen;
-
-  /// Simple password hashing (for demo purposes - use proper hashing in production).
-  String _hashPassword(String password) {
-    final bytes = password.codeUnits;
-    final hash = bytes.fold<int>(0, (prev, element) => prev + element);
-    return 'simple_hash_$hash';
-  }
 }

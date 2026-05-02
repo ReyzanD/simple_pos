@@ -15,7 +15,7 @@ class CartController extends ChangeNotifier {
   // State
   final List<TransactionItem> _items = [];
   double _discount = 0.0;
-  double _taxRate = 0.0; // e.g., 0.11 for 11%
+  final double _taxRate = 0.0; // e.g., 0.11 for 11%
   PaymentMethod _selectedPaymentMethod = PaymentMethod.cash;
 
   // Getters

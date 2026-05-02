@@ -11,7 +11,9 @@ class StockAdjustmentLocalDataSource {
     await db.insert('stock_adjustments', adjustment.toJson());
   }
 
-  Future<List<StockAdjustmentModel>> getAdjustmentsByProductId(int productId) async {
+  Future<List<StockAdjustmentModel>> getAdjustmentsByProductId(
+    int productId,
+  ) async {
     final db = await databaseHelper.database;
     final List<Map<String, dynamic>> maps = await db.query(
       'stock_adjustments',

@@ -24,6 +24,7 @@ class PaymentModel extends Payment {
     );
   }
 
+  @override
   Map<String, dynamic> toMap() {
     return {
       if (id != null) 'id': id,

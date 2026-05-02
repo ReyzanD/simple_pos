@@ -206,7 +206,7 @@ class GetSalesAnalyticsUseCase {
       );
     }
     if (lowStockProducts > totalProducts * 0.2) {
-      alerts.add('⚠️ ${lowStockProducts} produk dengan stok rendah');
+      alerts.add('⚠️ $lowStockProducts produk dengan stok rendah');
     }
     if (outOfStockProducts > 0) {
       alerts.add('⚠️ $outOfStockProducts produk habis stok');

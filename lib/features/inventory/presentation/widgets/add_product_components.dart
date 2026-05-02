@@ -9,7 +9,7 @@ class AddProductHeader extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(NeoBrutalTheme.spaceLG),
       decoration: BoxDecoration(
-        color: NeoBrutalTheme.blockYellow,
+        color: NeoBrutalTheme.blockBlue,
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(20),
           topRight: Radius.circular(20),
@@ -33,13 +33,14 @@ class AddProductHeader extends StatelessWidget {
                     fontWeight: FontWeight.w900,
                     fontSize: 24,
                     letterSpacing: 2,
+                    color: Colors.white,
                   ),
                 ),
                 Text(
                   'INVENTORY MANAGEMENT',
                   style: NeoBrutalTheme.labelSmall.copyWith(
                     fontWeight: FontWeight.w700,
-                    color: Colors.black54,
+                    color: Colors.white70,
                   ),
                 ),
               ],

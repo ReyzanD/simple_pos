@@ -47,12 +47,15 @@ class ProductGridWidget extends StatelessWidget {
               padding: EdgeInsets.only(
                 bottom: ResponsiveHelper.getCardSpacing(context),
               ),
-              child: ProductGridItem(
-                product: product,
-                quantity: getQuantity(product) ?? 0,
-                onTap: () => onTap(product),
-                onAddAnimation: onAddAnimation,
-                index: index,
+              child: SizedBox(
+                height: 240, // Constrain height in list view to prevent layout exception
+                child: ProductGridItem(
+                  product: product,
+                  quantity: getQuantity(product) ?? 0,
+                  onTap: () => onTap(product),
+                  onAddAnimation: onAddAnimation,
+                  index: index,
+                ),
               ),
             );
           },

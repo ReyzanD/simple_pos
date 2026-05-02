@@ -22,7 +22,6 @@ class SalesReportScreen extends ConsumerWidget {
       backgroundColor: NeoBrutalTheme.background,
       appBar: AppBar(
         title: const Text('Laporan Penjualan'),
-        backgroundColor: NeoBrutalTheme.blockYellow,
         leading: IconButton(
           icon: const Icon(Icons.menu),
           onPressed: () => context
@@ -101,10 +100,12 @@ class SalesReportScreen extends ConsumerWidget {
             : () async {
                 final file = await controller.exportSalesReport();
                 if (file != null) {
-                  await Share.shareXFiles(
-                    [XFile(file.path)],
-                    subject: 'Laporan Penjualan',
-                    text: 'Laporan penjualan dari aplikasi POS',
+                  await SharePlus.instance.share(
+                    ShareParams(
+                      files: [XFile(file.path)],
+                      subject: 'Laporan Penjualan',
+                      text: 'Laporan penjualan dari aplikasi POS',
+                    ),
                   );
                 }
               },

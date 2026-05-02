@@ -305,12 +305,7 @@ class MainNavigationState extends ConsumerState<MainNavigation>
 
                     if (shouldAdd == true) {
                       // Navigate to add product dialog
-                      final categoryController = ref.read(
-                        categoryControllerProvider,
-                      );
-                      final supplierController = ref.read(
-                        supplierControllerProvider,
-                      );
+
 
                       if (!mounted) return false;
 
@@ -327,6 +322,7 @@ class MainNavigationState extends ConsumerState<MainNavigation>
                                 int? supplierId,
                                 String? barcode,
                                 String? imagePath,
+                                String? unitOfMeasurement,
                                 bool hasVariants = false,
                               }) async {
                                 return await inventoryController.addProduct(
@@ -338,6 +334,7 @@ class MainNavigationState extends ConsumerState<MainNavigation>
                                   supplierId: supplierId,
                                   barcode: barcode,
                                   imagePath: imagePath,
+                                  unitOfMeasurement: unitOfMeasurement,
                                   hasVariants: hasVariants,
                                 );
                               },
@@ -521,7 +518,7 @@ class _GlassBottomNavState extends State<_GlassBottomNav> {
       height:
           (widget.isCompact ? 60 : 70) + MediaQuery.of(context).padding.bottom,
       decoration: BoxDecoration(
-        color: NeoBrutalTheme.accent,
+        color: NeoBrutalTheme.blockBlue,
         borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium),
         border: Border.all(color: Colors.black, width: 3),
         boxShadow: [
@@ -625,13 +622,21 @@ class _GlassBottomNavState extends State<_GlassBottomNav> {
   }
 
   Widget _buildCompactNavItem(IconData icon, bool isSelected, bool isPressed) {
-    return SizedBox(
-      height: 40,
+    return Container(
+      height: 44,
+      width: 44,
+      decoration: isSelected
+          ? BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
+              border: Border.all(color: Colors.black, width: 2),
+            )
+          : null,
       child: Center(
         child: Icon(
           icon,
           size: 24,
-          color: isSelected ? NeoBrutalTheme.primary : Colors.black,
+          color: isSelected ? Colors.black : Colors.white,
         ),
       ),
     );
@@ -643,28 +648,38 @@ class _GlassBottomNavState extends State<_GlassBottomNav> {
     bool isSelected,
     bool isPressed,
   ) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(
-          icon,
-          size: 24,
-          color: isSelected ? NeoBrutalTheme.primary : Colors.black,
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-            color: Colors.black,
-            height: 1.0,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: isSelected
+          ? BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
+              border: Border.all(color: Colors.black, width: 2),
+            )
+          : null,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            icon,
+            size: 24,
+            color: isSelected ? Colors.black : Colors.white,
           ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-      ],
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: isSelected ? FontWeight.w900 : FontWeight.w600,
+              color: isSelected ? Colors.black : Colors.white,
+              height: 1.0,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
     );
   }
 
@@ -707,7 +722,7 @@ class _GlassBottomNavState extends State<_GlassBottomNav> {
                         horizontal: widget.isCompact ? 4 : 8,
                       ),
                       decoration: BoxDecoration(
-                        color: NeoBrutalTheme.secondary,
+                        color: Colors.white,
                         borderRadius: BorderRadius.circular(
                           widget.isCompact ? 8 : NeoBrutalTheme.radiusMedium,
                         ),
@@ -722,7 +737,7 @@ class _GlassBottomNavState extends State<_GlassBottomNav> {
                       ),
                       child: Icon(
                         Icons.qr_code_scanner_rounded,
-                        color: Colors.white,
+                        color: NeoBrutalTheme.primary,
                         size: 24,
                       ),
                     ),

@@ -16,7 +16,7 @@ class InventoryEmptyState extends StatelessWidget {
             width: 120,
             height: 120,
             decoration: BoxDecoration(
-              color: NeoBrutalTheme.blockYellow,
+              color: NeoBrutalTheme.blockBlue,
               borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusLarge),
               border: Border.all(color: Colors.black, width: 4),
               boxShadow: NeoBrutalTheme.chunkyShadow,

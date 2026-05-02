@@ -42,17 +42,6 @@ class _DiscountManagementScreenState extends State<DiscountManagementScreen>
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text('Manajemen Diskon'),
-        flexibleSpace: Container(
-          decoration: BoxDecoration(
-            color: NeoBrutalTheme.blockYellow, // ✅ Bold yellow background
-            border: Border(
-              bottom: BorderSide(
-                color: Colors.black,
-                width: 6, // ✅ Extra thick bottom border
-              ),
-            ),
-          ),
-        ),
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: Colors.black,

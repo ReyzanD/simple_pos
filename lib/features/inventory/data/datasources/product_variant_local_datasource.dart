@@ -195,12 +195,13 @@ class VariantAttributeLocalDataSourceImpl
   @override
   Future<void> deleteAttribute(int id) async {
     final rows = await databaseHelper.productVariants.delete(id);
-    if (rows == 0)
+    if (rows == 0) {
       throw app_exceptions.NotFoundException(
         'Atribut tidak ditemukan',
         resourceType: 'Atribut',
         resourceId: id.toString(),
       );
+    }
   }
 
   @override

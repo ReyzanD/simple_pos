@@ -54,17 +54,6 @@ class SalesHistoryScreen extends StatelessWidget {
                 ),
               ),
             ],
-            flexibleSpace: Container(
-              decoration: BoxDecoration(
-                color: NeoBrutalTheme.blockYellow, // ✅ Bold yellow background
-                border: Border(
-                  bottom: BorderSide(
-                    color: Colors.black,
-                    width: 6, // ✅ Extra thick bottom border
-                  ),
-                ),
-              ),
-            ),
           ),
           body: controller.isLoading
               ? const Center(child: CircularProgressIndicator())

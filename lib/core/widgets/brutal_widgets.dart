@@ -223,7 +223,7 @@ class BrutalStatCard extends StatelessWidget {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: NeoBrutalTheme.blockYellow,
+                    color: NeoBrutalTheme.blockBlue,
                     borderRadius: BorderRadius.circular(
                       NeoBrutalTheme.radiusSmall,
                     ),
@@ -286,7 +286,7 @@ class BrutalSectionHeader extends StatelessWidget {
   });
   @override
   Widget build(BuildContext context) {
-    final bgColor = backgroundColor ?? NeoBrutalTheme.blockYellow;
+    final bgColor = backgroundColor ?? NeoBrutalTheme.blockBlue;
     return Container(
       margin: const EdgeInsets.symmetric(
         horizontal: NeoBrutalTheme.spaceMD,
@@ -336,7 +336,7 @@ class BrutalSectionHeader extends StatelessWidget {
               ],
             ),
           ),
-          if (action != null) action!,
+          ?action,
         ],
       ),
     ).animate().fadeIn(duration: 300.ms);
@@ -548,7 +548,7 @@ class BrutalFab extends StatelessWidget {
   });
   @override
   Widget build(BuildContext context) {
-    final bgColor = backgroundColor ?? NeoBrutalTheme.secondary;
+    final bgColor = backgroundColor ?? NeoBrutalTheme.primary;
     final txtColor = textColor ?? Colors.white;
     return Container(
       decoration: BoxDecoration(

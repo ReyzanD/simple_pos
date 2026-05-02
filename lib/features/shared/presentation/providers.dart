@@ -25,6 +25,9 @@ import '../../expenses/domain/usecases/get_expense_summary_usecase.dart';
 import '../../expenses/domain/usecases/get_expense_count_by_category_usecase.dart';
 
 // --- Inventory (Suppliers) ---
+import '../../inventory/data/datasources/stock_adjustment_local_datasource_impl.dart';
+import '../../inventory/data/repositories/stock_adjustment_repository_impl.dart';
+import '../../inventory/domain/repositories/stock_adjustment_repository.dart';
 import '../../inventory/presentation/controllers/supplier_controller.dart';
 import '../../inventory/domain/usecases/supplier_usecases.dart';
 
@@ -70,6 +73,7 @@ import '../../inventory/domain/usecases/update_product_usecase.dart';
 import '../../inventory/domain/usecases/delete_product_usecase.dart';
 import '../../inventory/domain/usecases/search_products_usecase.dart';
 import '../../inventory/domain/usecases/import_products_from_csv_usecase.dart';
+import '../../inventory/domain/usecases/adjust_stock_usecase.dart';
 import '../../inventory/presentation/controllers/inventory_controller.dart';
 
 // --- POS ---
@@ -193,25 +197,44 @@ final _productLocalDataSourceProvider = Provider(
     databaseHelper: ref.watch(databaseHelperProvider),
   ),
 );
-
 final _categoryLocalDataSourceProvider = Provider(
   (ref) => CategoryLocalDataSourceImpl(
     databaseHelper: ref.watch(databaseHelperProvider),
   ),
 );
-
 final productRepositoryProvider = Provider(
   (ref) => ProductRepositoryImpl(
     localDataSource: ref.watch(_productLocalDataSourceProvider),
   ),
 );
-
 final categoryRepositoryProvider = Provider(
   (ref) => CategoryRepositoryImpl(
     localDataSource: ref.watch(_categoryLocalDataSourceProvider),
   ),
 );
 
+// STOCK ADJUSTMENT - data source
+final _stockAdjustmentLocalDataSourceProvider =
+    Provider<StockAdjustmentLocalDataSourceImpl>(
+      (ref) => StockAdjustmentLocalDataSourceImpl(
+        databaseHelper: ref.watch(databaseHelperProvider),
+      ),
+    );
+// STOCK ADJUSTMENT - repository
+final stockAdjustmentRepositoryProvider = Provider<StockAdjustmentRepository>(
+  (ref) => StockAdjustmentRepositoryImpl(
+    localDataSource: ref.watch(_stockAdjustmentLocalDataSourceProvider),
+  ),
+);
+// STOCK ADJUSTMENT - use case
+final _adjustStockUseCaseProvider = Provider(
+  (ref) => AdjustStockUseCase(
+    productRepository: ref.watch(productRepositoryProvider),
+    stockAdjustmentRepository: ref.watch(stockAdjustmentRepositoryProvider),
+  ),
+);
+
+// Use cases for inventory
 final _getProductsUseCaseProvider = Provider(
   (ref) => GetProductsUseCase(repository: ref.watch(productRepositoryProvider)),
 );
@@ -246,6 +269,7 @@ final inventoryControllerProvider = ChangeNotifierProvider<InventoryController>(
     importProductsFromCsvUseCase: ref.watch(
       _importProductsFromCsvUseCaseProvider,
     ),
+    adjustStockUseCase: ref.watch(_adjustStockUseCaseProvider),
   ),
 );
 
@@ -311,6 +335,8 @@ final _refundTransactionUseCaseProvider = Provider(
   (ref) => RefundTransactionUseCase(
     transactionRepository: ref.watch(_transactionRepositoryProvider),
     productRepository: ref.watch(productRepositoryProvider),
+    productVariantRepository: ref.watch(_productVariantRepositoryProvider),
+    stockAdjustmentRepository: ref.watch(stockAdjustmentRepositoryProvider),
   ),
 );
 final refundControllerProvider = ChangeNotifierProvider<RefundController>(

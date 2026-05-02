@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../domain/entities/stock_adjustment.dart';
 
 class StockHistoryDialog extends StatelessWidget {
   final int productId;

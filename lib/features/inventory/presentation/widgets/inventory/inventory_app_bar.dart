@@ -62,14 +62,6 @@ class InventoryAppBar extends StatelessWidget implements PreferredSizeWidget {
           ),
         ),
       ],
-      flexibleSpace: Container(
-        decoration: BoxDecoration(
-          color: NeoBrutalTheme.blockYellow,
-          border: const Border(
-            bottom: BorderSide(color: Colors.black, width: 6),
-          ),
-        ),
-      ),
     );
   }
 }

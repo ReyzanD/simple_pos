@@ -36,7 +36,7 @@ class POSKPIDashboard extends StatelessWidget {
           padding: EdgeInsets.only(
             left: NeoBrutalTheme.spaceMD,
             right: NeoBrutalTheme.spaceMD,
-            top: NeoBrutalTheme.spaceSM,
+            top: NeoBrutalTheme.spaceXS,
             bottom: 0, // Reduced to save space
           ),
           child: BrutalCard(

@@ -90,17 +90,6 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
             ),
           ),
         ],
-        flexibleSpace: Container(
-          decoration: BoxDecoration(
-            color: NeoBrutalTheme.blockYellow,
-            border: Border(
-              bottom: BorderSide(
-                color: Colors.black,
-                width: 6,
-              ),
-            ),
-          ),
-        ),
       ),
       body: controller.isLoading && !controller.hasReport
           ? const LoadingIndicator(message: 'Memuat analitik...')
@@ -126,7 +115,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
     return RefreshIndicator(
       onRefresh: ref.read(analyticsControllerProvider).refresh,
       color: NeoBrutalTheme.primary,
-      backgroundColor: NeoBrutalTheme.blockYellow.withValues(alpha: 0.3),
+      backgroundColor: NeoBrutalTheme.blockBlue.withValues(alpha: 0.3),
       strokeWidth: 4,
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),

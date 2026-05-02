@@ -378,6 +378,7 @@ class _EditProductDialogState extends ConsumerState<EditProductDialog> {
         categoryId: _selectedCategoryId,
         supplierId: _selectedSupplierId,
         barcode: barcode,
+        unitOfMeasurement: _selectedUnit.name,
       );
 
       if (mounted) {
@@ -610,6 +611,16 @@ class _EditProductDialogState extends ConsumerState<EditProductDialog> {
               : const Text('Update'),
         ),
       ],
+    );
+  }
+
+  UnitOfMeasurement _parseUnit(String? unitString) {
+    if (unitString == null || unitString.isEmpty) {
+      return UnitOfMeasurement.pcs;
+    }
+    return UnitOfMeasurement.values.firstWhere(
+      (unit) => unit.name == unitString,
+      orElse: () => UnitOfMeasurement.pcs,
     );
   }
 }

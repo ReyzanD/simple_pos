@@ -3,12 +3,12 @@ import 'package:simple_pos/core/theme/app_theme.dart';
 
 /// Continuous scan list widget
 class ContinuousScanList extends StatelessWidget {
-  final List<String> scannedBarcodes;
+  final List<Map<String, String>> scannedProducts;
   final VoidCallback onComplete;
 
   const ContinuousScanList({
     super.key,
-    required this.scannedBarcodes,
+    required this.scannedProducts,
     required this.onComplete,
   });
 
@@ -44,7 +44,7 @@ class ContinuousScanList extends StatelessWidget {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      'Scanned: ${scannedBarcodes.length}',
+                      'Scanned: ${scannedProducts.length}',
                       style: const TextStyle(
                         fontWeight: FontWeight.w600,
                         color: AppTheme.primaryColor,
@@ -67,9 +67,13 @@ class ContinuousScanList extends StatelessWidget {
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.symmetric(vertical: 8),
-              itemCount: scannedBarcodes.length,
+              itemCount: scannedProducts.length,
               itemBuilder: (context, index) {
-                final barcode = scannedBarcodes[index];
+                final product = scannedProducts[index];
+                final name = product['name'] ?? 'Unknown';
+                final price = product['price'] ?? '';
+                final stock = product['stock'] ?? '';
+
                 return Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 12,
@@ -97,12 +101,39 @@ class ContinuousScanList extends StatelessWidget {
                       ),
                       const SizedBox(width: 8),
                       Expanded(
-                        child: Text(
-                          barcode,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                          ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              name,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            if (price.isNotEmpty)
+                              Text(
+                                price,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: AppTheme.textSecondary,
+                                ),
+                              ),
+                            if (stock.isNotEmpty)
+                              Text(
+                                'Stock: $stock',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: stock != '0'
+                                      ? AppTheme.successColor
+                                      : AppTheme.errorColor,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                          ],
                         ),
                       ),
                     ],

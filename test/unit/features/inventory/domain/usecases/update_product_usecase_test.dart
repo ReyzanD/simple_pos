@@ -34,7 +34,7 @@ void main() {
           .thenAnswer((_) async => true);
       when(mockRepository.updateProduct(any))
           .thenAnswer((_) async {
-            return null;
+            return;
           });
 
       // Act
@@ -162,7 +162,7 @@ void main() {
           .thenAnswer((_) async => true);
       when(mockRepository.updateProduct(any))
           .thenAnswer((_) async {
-            return null;
+            return;
           });
 
       // Act

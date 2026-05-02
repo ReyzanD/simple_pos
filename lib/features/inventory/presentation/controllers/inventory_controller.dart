@@ -1,11 +1,13 @@
 import 'package:flutter/foundation.dart';
 import '../../domain/entities/product.dart';
+import '../../domain/entities/stock_adjustment.dart';
 import '../../domain/usecases/add_product_usecase.dart';
 import '../../domain/usecases/delete_product_usecase.dart';
 import '../../domain/usecases/get_products_usecase.dart';
 import '../../domain/usecases/search_products_usecase.dart';
 import '../../domain/usecases/update_product_usecase.dart';
 import '../../domain/usecases/import_products_from_csv_usecase.dart';
+import '../../domain/usecases/adjust_stock_usecase.dart';
 import '../../../../core/exceptions/app_exceptions.dart';
 import '../../../../core/utils/logger.dart';
 import '../../../../core/utils/csv_import_helper.dart';
@@ -24,6 +26,7 @@ class InventoryController extends ChangeNotifier {
   final DeleteProductUseCase deleteProductUseCase;
   final SearchProductsUseCase searchProductsUseCase;
   final ImportProductsFromCsvUseCase importProductsFromCsvUseCase;
+  final AdjustStockUseCase adjustStockUseCase;
 
   bool _disposed = false;
 
@@ -34,6 +37,7 @@ class InventoryController extends ChangeNotifier {
     required this.deleteProductUseCase,
     required this.searchProductsUseCase,
     required this.importProductsFromCsvUseCase,
+    required this.adjustStockUseCase,
   });
 
   @override
@@ -433,6 +437,71 @@ class InventoryController extends ChangeNotifier {
         'Failed to add stock - InventoryController',
         error: e,
         stackTrace: stackTrace,
+      );
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  /// Adjust stock for a product
+  Future<bool> adjustStock({
+    required int productId,
+    required StockAdjustmentType adjustmentType,
+    required int quantity,
+    required String reason,
+    required String username,
+  }) async {
+    try {
+      AppLogger.ui('Adjusting stock', details: 'InventoryController');
+      _setLoading(true);
+      _clearError();
+
+      // Find the product
+      final product = _products.firstWhere((p) => p.id == productId);
+
+      // Calculate new stock based on adjustment type
+      int newStock;
+      switch (adjustmentType) {
+        case StockAdjustmentType.purchase:
+        case StockAdjustmentType.manual:
+          newStock = product.stock + quantity;
+          break;
+        case StockAdjustmentType.sale:
+        case StockAdjustmentType.damage:
+        case StockAdjustmentType.itemReturn:
+          newStock = product.stock - quantity;
+          break;
+        case StockAdjustmentType.set:
+          newStock = quantity;
+          break;
+        case StockAdjustmentType.other:
+          newStock = product.stock + quantity;
+          break;
+      }
+
+      // Validate new stock
+      if (newStock < 0) {
+        throw ValidationException('Stok tidak bisa negatif');
+      }
+
+      // Call the use case
+      await adjustStockUseCase.execute(
+        productId: productId,
+        adjustmentAmount: newStock - product.stock,
+        adjustmentType: adjustmentType,
+        reason: reason,
+        createdBy: username,
+      );
+
+      AppLogger.info('Stock adjusted successfully - InventoryController');
+      return true;
+    } on AppException catch (e) {
+      _setError(e);
+      AppLogger.error(
+        'Failed to adjust stock - InventoryController',
+        error: e,
+        stackTrace: StackTrace.current,
       );
       return false;
     } finally {

@@ -20,8 +20,8 @@ class CartModalHeader extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            NeoBrutalTheme.blockYellow,
-            NeoBrutalTheme.blockYellow.withValues(alpha: 0.85),
+            NeoBrutalTheme.blockBlue,
+            NeoBrutalTheme.blockBlue.withValues(alpha: 0.85),
           ],
         ),
         borderRadius: const BorderRadius.only(
@@ -67,7 +67,7 @@ class CartModalHeader extends StatelessWidget {
                   'KERANJANG',
                   style: NeoBrutalTheme.headlineLarge.copyWith(
                     fontWeight: FontWeight.w900,
-                    color: Colors.black,
+                    color: Colors.white,
                     letterSpacing: 3,
                     fontSize: 22,
                   ),
@@ -77,7 +77,7 @@ class CartModalHeader extends StatelessWidget {
                     '${cartItems.length} PRODUK',
                     style: NeoBrutalTheme.labelSmall.copyWith(
                       fontWeight: FontWeight.w700,
-                      color: Colors.black.withValues(alpha: 0.6),
+                      color: Colors.white.withValues(alpha: 0.8),
                       letterSpacing: 1,
                     ),
                   ),

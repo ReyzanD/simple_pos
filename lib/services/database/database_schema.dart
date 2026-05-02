@@ -320,6 +320,24 @@ class DatabaseSchema {
     AppLogger.database('Audit logs table created');
   }
 
+  /// Creates the stock_adjustments table
+  static Future<void> createStockAdjustmentsTable(Database db) async {
+    await db.execute('''\
+    CREATE TABLE stock_adjustments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      product_id INTEGER NOT NULL,
+      previous_quantity INTEGER NOT NULL,
+      new_quantity INTEGER NOT NULL,
+      adjustment_type TEXT NOT NULL,
+      reason TEXT,
+      created_by TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      FOREIGN KEY (product_id) REFERENCES products(id)
+    )
+  ''');
+    AppLogger.database('Stock adjustments table created');
+  }
+
   /// Creates all database tables
   static Future<void> createAllTables(Database db) async {
     AppLogger.database('Creating all database tables');
@@ -341,6 +359,7 @@ class DatabaseSchema {
     await createProductVariantsTable(db);
     await createCashCountsTable(db);
     await createAuditLogsTable(db);
+    await createStockAdjustmentsTable(db);
 
     AppLogger.database('All tables created successfully');
   }
@@ -350,83 +369,141 @@ class DatabaseSchema {
   /// Creates indexes for the products table
   static Future<void> createProductIndexes(Database db) async {
     await db.execute('CREATE INDEX idx_products_name ON products(name)');
-    await db.execute('CREATE INDEX idx_products_category ON products(category_id)');
-    await db.execute('CREATE INDEX idx_products_supplier ON products(supplier_id)');
+    await db.execute(
+      'CREATE INDEX idx_products_category ON products(category_id)',
+    );
+    await db.execute(
+      'CREATE INDEX idx_products_supplier ON products(supplier_id)',
+    );
     await db.execute('CREATE INDEX idx_products_barcode ON products(barcode)');
     await db.execute('CREATE INDEX idx_products_stock ON products(stock)');
-    await db.execute('CREATE INDEX idx_products_has_variants ON products(has_variants)');
+    await db.execute(
+      'CREATE INDEX idx_products_has_variants ON products(has_variants)',
+    );
     AppLogger.database('Product indexes created');
   }
 
   /// Creates indexes for the transactions and transaction_items tables
   static Future<void> createTransactionIndexes(Database db) async {
-    await db.execute('CREATE INDEX idx_transactions_date ON transactions(transaction_date)');
-    await db.execute('CREATE INDEX idx_transactions_created_at ON transactions(created_at)');
-    await db.execute('CREATE INDEX idx_transactions_payment_method ON transactions(payment_method)');
-    await db.execute('CREATE INDEX idx_transaction_items_transaction ON transaction_items(transaction_id)');
-    await db.execute('CREATE INDEX idx_transaction_items_product ON transaction_items(product_id)');
+    await db.execute(
+      'CREATE INDEX idx_transactions_date ON transactions(transaction_date)',
+    );
+    await db.execute(
+      'CREATE INDEX idx_transactions_created_at ON transactions(created_at)',
+    );
+    await db.execute(
+      'CREATE INDEX idx_transactions_payment_method ON transactions(payment_method)',
+    );
+    await db.execute(
+      'CREATE INDEX idx_transaction_items_transaction ON transaction_items(transaction_id)',
+    );
+    await db.execute(
+      'CREATE INDEX idx_transaction_items_product ON transaction_items(product_id)',
+    );
     AppLogger.database('Transaction indexes created');
   }
 
   /// Creates indexes for the promotions table
   static Future<void> createPromotionIndexes(Database db) async {
-    await db.execute('CREATE INDEX idx_promotions_enabled ON promotions(is_enabled)');
-    await db.execute('CREATE INDEX idx_promotions_dates ON promotions(start_date, end_date)');
+    await db.execute(
+      'CREATE INDEX idx_promotions_enabled ON promotions(is_enabled)',
+    );
+    await db.execute(
+      'CREATE INDEX idx_promotions_dates ON promotions(start_date, end_date)',
+    );
     AppLogger.database('Promotion indexes created');
   }
 
   /// Creates indexes for the shifts table
   static Future<void> createShiftIndexes(Database db) async {
-    await db.execute('CREATE INDEX idx_shifts_opened_at ON shifts(opened_at DESC)');
+    await db.execute(
+      'CREATE INDEX idx_shifts_opened_at ON shifts(opened_at DESC)',
+    );
     await db.execute('CREATE INDEX idx_shifts_closed_at ON shifts(closed_at)');
     AppLogger.database('Shift indexes created');
   }
 
   /// Creates indexes for the users and user_sessions tables
   static Future<void> createUserIndexes(Database db) async {
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)');
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_users_role ON users(role)');
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_user_sessions_user ON user_sessions(user_id)');
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_user_sessions_login_time ON user_sessions(login_time DESC)');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_users_role ON users(role)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_user_sessions_user ON user_sessions(user_id)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_user_sessions_login_time ON user_sessions(login_time DESC)',
+    );
     AppLogger.database('User indexes created');
   }
 
   /// Creates indexes for the expenses table
   static Future<void> createExpenseIndexes(Database db) async {
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_expenses_date ON expenses(date DESC)');
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_expenses_category ON expenses(category)');
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_expenses_created_by ON expenses(created_by)');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_expenses_date ON expenses(date DESC)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_expenses_category ON expenses(category)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_expenses_created_by ON expenses(created_by)',
+    );
     AppLogger.database('Expense indexes created');
   }
 
   /// Creates indexes for the held_carts table
   static Future<void> createHeldCartIndexes(Database db) async {
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_held_carts_created ON held_carts(created_at DESC)');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_held_carts_created ON held_carts(created_at DESC)',
+    );
     AppLogger.database('Held cart indexes created');
   }
 
   /// Creates indexes for the variant tables
   static Future<void> createVariantIndexes(Database db) async {
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_product_variants_product_id ON product_variants(product_id)');
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_product_variants_sku ON product_variants(sku)');
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_product_variants_barcode ON product_variants(barcode)');
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_variant_attributes_product_id ON variant_attributes(product_id)');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_product_variants_product_id ON product_variants(product_id)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_product_variants_sku ON product_variants(sku)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_product_variants_barcode ON product_variants(barcode)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_variant_attributes_product_id ON variant_attributes(product_id)',
+    );
     AppLogger.database('Variant indexes created');
   }
 
   /// Creates indexes for the cash_counts table
   static Future<void> createCashCountIndexes(Database db) async {
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_cash_counts_shift ON cash_counts(shift_id)');
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_cash_counts_denomination ON cash_counts(denomination)');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_cash_counts_shift ON cash_counts(shift_id)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_cash_counts_denomination ON cash_counts(denomination)',
+    );
     AppLogger.database('Cash count indexes created');
   }
 
   /// Creates indexes for the audit_logs table
   static Future<void> createAuditLogIndexes(Database db) async {
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_audit_logs_entity ON audit_logs(entity_type, entity_id)');
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON audit_logs(created_at DESC)');
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_audit_logs_action ON audit_logs(action)');
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_audit_logs_user ON audit_logs(username)');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_audit_logs_entity ON audit_logs(entity_type, entity_id)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON audit_logs(created_at DESC)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_audit_logs_action ON audit_logs(action)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_audit_logs_user ON audit_logs(username)',
+    );
     AppLogger.database('Audit log indexes created');
   }
 
@@ -460,7 +537,11 @@ class DatabaseSchema {
   }
 
   /// Checks if an index exists for a given table
-  static Future<bool> indexExists(Database db, String indexName, String tableName) async {
+  static Future<bool> indexExists(
+    Database db,
+    String indexName,
+    String tableName,
+  ) async {
     final result = await db.rawQuery(
       "SELECT name FROM sqlite_master WHERE type='index' AND name=? AND tbl_name=?",
       [indexName, tableName],
@@ -471,9 +552,15 @@ class DatabaseSchema {
   // ==================== Migration Methods ====================
 
   /// Executes migration from oldVersion to newVersion
-  static Future<void> executeMigration(Database db, int oldVersion, int newVersion) async {
+  static Future<void> executeMigration(
+    Database db,
+    int oldVersion,
+    int newVersion,
+  ) async {
     try {
-      AppLogger.database('Upgrading database from v$oldVersion to v$newVersion');
+      AppLogger.database(
+        'Upgrading database from v$oldVersion to v$newVersion',
+      );
 
       if (oldVersion < 2) {
         await _migrateToV2(db);
@@ -583,12 +670,20 @@ class DatabaseSchema {
     await db.execute('ALTER TABLE products ADD COLUMN category_id INTEGER');
     await db.execute('ALTER TABLE products ADD COLUMN supplier_id INTEGER');
     await db.execute('ALTER TABLE products ADD COLUMN barcode TEXT');
-    await db.execute('ALTER TABLE products ADD COLUMN cost_price REAL DEFAULT 0');
+    await db.execute(
+      'ALTER TABLE products ADD COLUMN cost_price REAL DEFAULT 0',
+    );
 
     // Create indexes for products
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_products_name ON products(name)');
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_products_category ON products(category_id)');
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_products_supplier ON products(supplier_id)');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_products_name ON products(name)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_products_category ON products(category_id)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_products_supplier ON products(supplier_id)',
+    );
 
     // Create transactions table
     await db.execute('''
@@ -637,8 +732,12 @@ class DatabaseSchema {
     ''');
 
     // Create indexes for transactions
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(transaction_date)');
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_transaction_items_transaction ON transaction_items(transaction_id)');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(transaction_date)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_transaction_items_transaction ON transaction_items(transaction_id)',
+    );
 
     AppLogger.database('Database migration to v2 completed');
   }
@@ -653,7 +752,9 @@ class DatabaseSchema {
   /// Migration from version 3 to 4
   static Future<void> _migrateToV4(Database db) async {
     AppLogger.database('Migrating database to v4');
-    await db.execute('ALTER TABLE products ADD COLUMN discount_percentage REAL DEFAULT 0');
+    await db.execute(
+      'ALTER TABLE products ADD COLUMN discount_percentage REAL DEFAULT 0',
+    );
     AppLogger.database('Database migration to v4 completed');
   }
 
@@ -662,7 +763,9 @@ class DatabaseSchema {
     AppLogger.database('Migrating database to v5');
 
     // Add discount_percentage column to categories table
-    await db.execute('ALTER TABLE categories ADD COLUMN discount_percentage REAL DEFAULT 0');
+    await db.execute(
+      'ALTER TABLE categories ADD COLUMN discount_percentage REAL DEFAULT 0',
+    );
 
     // Create promotions table
     await db.execute('''
@@ -690,8 +793,12 @@ class DatabaseSchema {
     ''');
 
     // Create indexes for promotions and discount_presets
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_promotions_enabled ON promotions(is_enabled)');
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_promotions_dates ON promotions(start_date, end_date)');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_promotions_enabled ON promotions(is_enabled)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_promotions_dates ON promotions(start_date, end_date)',
+    );
 
     AppLogger.database('Database migration to v5 completed');
   }
@@ -710,7 +817,9 @@ class DatabaseSchema {
       )
     ''');
 
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_held_carts_created ON held_carts(created_at DESC)');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_held_carts_created ON held_carts(created_at DESC)',
+    );
 
     AppLogger.database('Database migration to v6 completed');
   }
@@ -719,7 +828,9 @@ class DatabaseSchema {
   static Future<void> _migrateToV7(Database db) async {
     AppLogger.database('Migrating database to v7');
 
-    await db.execute('ALTER TABLE products ADD COLUMN has_variants INTEGER DEFAULT 0');
+    await db.execute(
+      'ALTER TABLE products ADD COLUMN has_variants INTEGER DEFAULT 0',
+    );
 
     await db.execute('''
       CREATE TABLE variant_attributes (
@@ -749,10 +860,18 @@ class DatabaseSchema {
       )
     ''');
 
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_product_variants_product_id ON product_variants(product_id)');
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_product_variants_sku ON product_variants(sku)');
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_product_variants_barcode ON product_variants(barcode)');
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_variant_attributes_product_id ON variant_attributes(product_id)');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_product_variants_product_id ON product_variants(product_id)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_product_variants_sku ON product_variants(sku)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_product_variants_barcode ON product_variants(barcode)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_variant_attributes_product_id ON variant_attributes(product_id)',
+    );
 
     AppLogger.database('Database migration to v7 completed');
   }
@@ -762,7 +881,9 @@ class DatabaseSchema {
     AppLogger.database('Migrating database to v8');
 
     try {
-      await db.execute('ALTER TABLE products ADD COLUMN has_variants INTEGER DEFAULT 0');
+      await db.execute(
+        'ALTER TABLE products ADD COLUMN has_variants INTEGER DEFAULT 0',
+      );
       AppLogger.database('Added has_variants column to products table');
     } catch (e) {
       AppLogger.database('has_variants column already exists or error: $e');
@@ -778,7 +899,9 @@ class DatabaseSchema {
           updated_at TEXT NOT NULL
         )
       ''');
-      await db.execute('CREATE INDEX IF NOT EXISTS idx_held_carts_created ON held_carts(created_at DESC)');
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_held_carts_created ON held_carts(created_at DESC)',
+      );
       AppLogger.database('Ensured held_carts table exists');
     } catch (e) {
       AppLogger.database('held_carts table error: $e');
@@ -813,10 +936,18 @@ class DatabaseSchema {
         )
       ''');
 
-      await db.execute('CREATE INDEX IF NOT EXISTS idx_product_variants_product_id ON product_variants(product_id)');
-      await db.execute('CREATE INDEX IF NOT EXISTS idx_product_variants_sku ON product_variants(sku)');
-      await db.execute('CREATE INDEX IF NOT EXISTS idx_product_variants_barcode ON product_variants(barcode)');
-      await db.execute('CREATE INDEX IF NOT EXISTS idx_variant_attributes_product_id ON variant_attributes(product_id)');
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_product_variants_product_id ON product_variants(product_id)',
+      );
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_product_variants_sku ON product_variants(sku)',
+      );
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_product_variants_barcode ON product_variants(barcode)',
+      );
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_variant_attributes_product_id ON variant_attributes(product_id)',
+      );
 
       AppLogger.database('Ensured variant tables exist');
     } catch (e) {
@@ -840,7 +971,9 @@ class DatabaseSchema {
           updated_at TEXT NOT NULL
         )
       ''');
-      await db.execute('CREATE INDEX IF NOT EXISTS idx_held_carts_created ON held_carts(created_at DESC)');
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_held_carts_created ON held_carts(created_at DESC)',
+      );
       AppLogger.database('Ensured held_carts table exists');
     } catch (e) {
       AppLogger.database('held_carts table error: $e');
@@ -875,10 +1008,18 @@ class DatabaseSchema {
         )
       ''');
 
-      await db.execute('CREATE INDEX IF NOT EXISTS idx_product_variants_product_id ON product_variants(product_id)');
-      await db.execute('CREATE INDEX IF NOT EXISTS idx_product_variants_sku ON product_variants(sku)');
-      await db.execute('CREATE INDEX IF NOT EXISTS idx_product_variants_barcode ON product_variants(barcode)');
-      await db.execute('CREATE INDEX IF NOT EXISTS idx_variant_attributes_product_id ON variant_attributes(product_id)');
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_product_variants_product_id ON product_variants(product_id)',
+      );
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_product_variants_sku ON product_variants(sku)',
+      );
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_product_variants_barcode ON product_variants(barcode)',
+      );
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_variant_attributes_product_id ON variant_attributes(product_id)',
+      );
 
       AppLogger.database('Ensured variant tables exist');
     } catch (e) {
@@ -893,7 +1034,9 @@ class DatabaseSchema {
     AppLogger.database('Migrating database to v10');
 
     try {
-      await db.execute('ALTER TABLE transaction_items ADD COLUMN cost_price REAL DEFAULT 0');
+      await db.execute(
+        'ALTER TABLE transaction_items ADD COLUMN cost_price REAL DEFAULT 0',
+      );
       AppLogger.database('Added cost_price column to transaction_items table');
     } catch (e) {
       AppLogger.database('cost_price column migration (may already exist): $e');
@@ -922,8 +1065,12 @@ class DatabaseSchema {
       )
     ''');
 
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_shifts_opened_at ON shifts(opened_at DESC)');
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_shifts_closed_at ON shifts(closed_at)');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_shifts_opened_at ON shifts(opened_at DESC)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_shifts_closed_at ON shifts(closed_at)',
+    );
 
     AppLogger.database('Database migration to v11 completed');
   }
@@ -957,10 +1104,18 @@ class DatabaseSchema {
       )
     ''');
 
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)');
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_users_role ON users(role)');
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_user_sessions_user ON user_sessions(user_id)');
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_user_sessions_login_time ON user_sessions(login_time DESC)');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_users_role ON users(role)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_user_sessions_user ON user_sessions(user_id)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_user_sessions_login_time ON user_sessions(login_time DESC)',
+    );
 
     // Create default admin user
     final adminPasswordHash = _hashPassword('admin123');
@@ -995,9 +1150,15 @@ class DatabaseSchema {
       )
     ''');
 
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_expenses_date ON expenses(date DESC)');
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_expenses_category ON expenses(category)');
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_expenses_created_by ON expenses(created_by)');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_expenses_date ON expenses(date DESC)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_expenses_category ON expenses(category)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_expenses_created_by ON expenses(created_by)',
+    );
 
     AppLogger.database('Database migration to v13 completed');
   }
@@ -1018,23 +1179,41 @@ class DatabaseSchema {
       )
     ''');
 
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_cash_counts_shift ON cash_counts(shift_id)');
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_cash_counts_denomination ON cash_counts(denomination)');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_cash_counts_shift ON cash_counts(shift_id)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_cash_counts_denomination ON cash_counts(denomination)',
+    );
 
     AppLogger.database('Database migration to v14 completed');
   }
 
   /// Migration from version 14 to 15
   static Future<void> _migrateToV15(Database db) async {
-    AppLogger.database('Migrating database to v15 (adding performance indexes)');
+    AppLogger.database(
+      'Migrating database to v15 (adding performance indexes)',
+    );
 
     try {
-      await db.execute('CREATE INDEX IF NOT EXISTS idx_products_barcode ON products(barcode)');
-      await db.execute('CREATE INDEX IF NOT EXISTS idx_products_stock ON products(stock)');
-      await db.execute('CREATE INDEX IF NOT EXISTS idx_products_has_variants ON products(has_variants)');
-      await db.execute('CREATE INDEX IF NOT EXISTS idx_transactions_created_at ON transactions(created_at)');
-      await db.execute('CREATE INDEX IF NOT EXISTS idx_transactions_payment_method ON transactions(payment_method)');
-      await db.execute('CREATE INDEX IF NOT EXISTS idx_transaction_items_product ON transaction_items(product_id)');
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_products_barcode ON products(barcode)',
+      );
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_products_stock ON products(stock)',
+      );
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_products_has_variants ON products(has_variants)',
+      );
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_transactions_created_at ON transactions(created_at)',
+      );
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_transactions_payment_method ON transactions(payment_method)',
+      );
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_transaction_items_product ON transaction_items(product_id)',
+      );
       AppLogger.database('Performance indexes created successfully');
     } catch (e, stackTrace) {
       AppLogger.error(
@@ -1071,10 +1250,18 @@ class DatabaseSchema {
         )
       ''');
 
-      await db.execute('CREATE INDEX IF NOT EXISTS idx_audit_logs_entity ON audit_logs(entity_type, entity_id)');
-      await db.execute('CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON audit_logs(created_at DESC)');
-      await db.execute('CREATE INDEX IF NOT EXISTS idx_audit_logs_action ON audit_logs(action)');
-      await db.execute('CREATE INDEX IF NOT EXISTS idx_audit_logs_user ON audit_logs(username)');
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_audit_logs_entity ON audit_logs(entity_type, entity_id)',
+      );
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON audit_logs(created_at DESC)',
+      );
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_audit_logs_action ON audit_logs(action)',
+      );
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_audit_logs_user ON audit_logs(username)',
+      );
 
       AppLogger.database('Audit logs table created successfully');
     } catch (e, stackTrace) {

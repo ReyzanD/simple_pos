@@ -152,7 +152,6 @@ class POSScreenState extends ConsumerState<POSScreen>
     }
 
     return Scaffold(
-      extendBodyBehindAppBar: true,
       appBar: AppBar(
         leading: Container(
           margin: EdgeInsets.all(NeoBrutalTheme.spaceXS),
@@ -170,10 +169,7 @@ class POSScreenState extends ConsumerState<POSScreen>
             },
           ),
         ),
-        title: const Text(
-          'Checkout Cart',
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.w900),
-        ),
+        title: const Text('Checkout Cart'),
         actions: [
           Container(
             margin: EdgeInsets.all(NeoBrutalTheme.spaceXS),
@@ -189,17 +185,6 @@ class POSScreenState extends ConsumerState<POSScreen>
             ),
           ),
         ],
-        flexibleSpace: Container(
-          decoration: BoxDecoration(
-            color: NeoBrutalTheme.blockYellow, // ✅ Bold yellow background
-            border: Border(
-              bottom: BorderSide(
-                color: Colors.black,
-                width: 6, // ✅ Extra thick bottom border
-              ),
-            ),
-          ),
-        ),
       ),
       floatingActionButton: Padding(
         padding: EdgeInsets.only(
@@ -266,7 +251,6 @@ class POSScreenState extends ConsumerState<POSScreen>
                     SliverToBoxAdapter(
                       child: Column(
                         children: [
-                          const SizedBox(height: kToolbarHeight + 20),
                           // KPI Dashboard
                           POSKPIDashboard(
                             todayRevenue: salesController.todayRevenue,
@@ -341,7 +325,7 @@ class POSScreenState extends ConsumerState<POSScreen>
       final variantController = ref.read(productVariantControllerProvider);
       await variantController.loadVariants(product.id!);
 
-      if (!mounted) return; // ✅
+      if (!context.mounted) return; // ✅
 
       if (variantController.hasVariants) {
         final selectedVariant = await VariantSelectorDialog.show(
@@ -350,7 +334,7 @@ class POSScreenState extends ConsumerState<POSScreen>
           variants: variantController.variants,
         );
 
-        if (!mounted) return; // ✅
+        if (!context.mounted) return; // ✅
 
         if (selectedVariant != null) {
           final success = await controller.addToCartWithVariant(
@@ -358,7 +342,7 @@ class POSScreenState extends ConsumerState<POSScreen>
             selectedVariant,
           );
 
-          if (!mounted) return; // ✅
+          if (!context.mounted) return; // ✅
 
           if (success) {
             _cartIconKey.currentState?.bumpAnimation();
@@ -373,7 +357,7 @@ class POSScreenState extends ConsumerState<POSScreen>
 
     final success = await controller.addToCart(product);
 
-    if (!mounted) return; // ✅
+    if (!context.mounted) return; // ✅
 
     if (success) {
       _cartIconKey.currentState?.bumpAnimation();
@@ -478,7 +462,7 @@ class POSScreenState extends ConsumerState<POSScreen>
       await Future.delayed(const Duration(milliseconds: 300));
       await salesController.refresh();
       widget.onCheckoutSuccess?.call();
-      if (!mounted) return; // ✅ single clean guard after all awaits
+      if (!context.mounted) return; // ✅ single clean guard after all awaits
       try {
         SuccessAnimationOverlay.show(
           context,
@@ -486,7 +470,7 @@ class POSScreenState extends ConsumerState<POSScreen>
         ); // ✅
       } catch (_) {}
       if (controller.lastTransaction != null) {
-        if (!mounted) return; // ✅ second guard before the next async call
+        if (!context.mounted) return; // ✅ second guard before the next async call
         try {
           await PrintReceiptDialog.show(
             context: context, // ✅ safe
@@ -497,7 +481,7 @@ class POSScreenState extends ConsumerState<POSScreen>
         } catch (_) {}
       }
     } else if (controller.hasError) {
-      if (!mounted) return; // ✅ State.mounted guard
+      if (!context.mounted) return; // ✅ State.mounted guard
       scaffoldMessenger.showSnackBar(
         SnackBar(
           content: Text(controller.error!.userMessage),
@@ -515,7 +499,7 @@ class POSScreenState extends ConsumerState<POSScreen>
 
   void _handleHoldOrder(BuildContext context, POSController controller) async {
     final held = await showHoldOrderDialog(context, controller);
-    if (!mounted) return; // ✅ clean standalone guard after await
+    if (!context.mounted) return; // ✅ clean standalone guard after await
     if (held == true) {
       // ✅ separate condition with curly braces
       Navigator.of(context).pop();

@@ -147,7 +147,7 @@ class _KPIStatsDashboardState extends State<KPIStatsDashboard>
                     title: 'Terjual',
                     value: widget.itemsSold.toDouble(),
                     icon: Icons.shopping_bag_outlined,
-                    color: NeoBrutalTheme.accent,
+                    color: NeoBrutalTheme.blockCoral,
                     isCurrency: false,
                     cardIndex: 2,
                     onTap: widget.onItemsSoldTap,

@@ -53,7 +53,7 @@ class ReportSummarySection extends StatelessWidget {
               title: 'Laba Kotor',
               value: CurrencyFormatter.format(report.totalProfit),
               icon: Icons.trending_up,
-              color: AppTheme.warningColor,
+              color: NeoBrutalTheme.blockPurple,
             ),
             200,
           ),

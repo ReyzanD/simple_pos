@@ -6,7 +6,6 @@ import 'package:simple_pos/core/constants/app_constants.dart';
 /// Integration tests for database migrations
 void main() {
   late DatabaseHelper databaseHelper;
-  late String dbPath;
 
   setUp(() async {
     // Use in-memory database for testing

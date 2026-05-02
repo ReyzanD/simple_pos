@@ -169,7 +169,7 @@ class CategoryColors {
     NeoBrutalTheme.secondary, // Vibrant Coral
     NeoBrutalTheme.warning, // Orange
     NeoBrutalTheme.error, // Bright Red
-    NeoBrutalTheme.accent, // Bright Yellow
+    NeoBrutalTheme.primaryLight, // Light Blue
     NeoBrutalTheme.success, // Bold Green
     NeoBrutalTheme.blockPurple, // Purple
     NeoBrutalTheme.blockPink, // Pink

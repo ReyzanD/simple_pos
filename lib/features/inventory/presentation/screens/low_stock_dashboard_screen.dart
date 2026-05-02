@@ -86,17 +86,6 @@ class _LowStockDashboardScreenState extends ConsumerState<LowStockDashboardScree
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text('Dashboard Stok Rendah'),
-        flexibleSpace: Container(
-          decoration: BoxDecoration(
-            color: NeoBrutalTheme.blockYellow, // ✅ Bold yellow background
-            border: Border(
-              bottom: BorderSide(
-                color: Colors.black,
-                width: 6, // ✅ Extra thick bottom border
-              ),
-            ),
-          ),
-        ),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -222,7 +211,7 @@ class _LowStockDashboardScreenState extends ConsumerState<LowStockDashboardScree
     return RefreshIndicator(
       onRefresh: _loadLowStockData,
       color: NeoBrutalTheme.primary, // ✅ Brutal primary color
-      backgroundColor: NeoBrutalTheme.blockYellow.withValues(alpha: 0.3),
+      backgroundColor: NeoBrutalTheme.blockBlue.withValues(alpha: 0.3),
       strokeWidth: 4, // ✅ Thicker indicator
       child: SingleChildScrollView(
         padding: EdgeInsets.all(NeoBrutalTheme.spaceMD),
