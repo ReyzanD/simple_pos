@@ -4,6 +4,7 @@ import 'package:simple_pos/core/widgets/category_icons.dart';
 import 'package:simple_pos/core/widgets/brutal_widgets.dart';
 import 'package:simple_pos/features/pos/presentation/controllers/pos_controller.dart';
 import 'package:simple_pos/features/inventory/presentation/controllers/category_controller.dart';
+import 'package:simple_pos/l10n/app_localizations.dart';
 
 /// POS Category Chips - Horizontal scrollable category filter
 ///
@@ -33,7 +34,7 @@ class POSCategoryChips extends StatelessWidget {
           children: [
             // "SEMUA" button
             ResponsiveCategoryChip(
-              label: 'Semua',
+              label: AppLocalizations.of(context)!.category_semua,
               icon: Icons.apps_rounded,
               color: AppTheme.primaryColor,
               isSelected: isSemuaSelected,

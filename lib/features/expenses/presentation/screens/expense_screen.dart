@@ -42,17 +42,19 @@ class _ExpenseScreenState extends ConsumerState<ExpenseScreen>
   @override
   Widget build(BuildContext context) {
     final controller = ref.watch(expenseControllerProvider);
+    final borderColor = NeoBrutalTheme.getBorderColor(context);
+    final textColor = NeoBrutalTheme.getTextColor(context);
 
     return Scaffold(
-      backgroundColor: NeoBrutalTheme.background, // ✅ Brutal white background
+      backgroundColor: NeoBrutalTheme.background,
       appBar: AppBar(
         title: const Text('Pengeluaran'),
         bottom: TabBar(
           controller: _tabController,
-          indicatorColor: Colors.black,
-          labelColor: Colors.black,
-          unselectedLabelColor: Colors.black.withValues(alpha: 0.5),
-          indicatorWeight: 4, // ✅ Bold indicator
+          indicatorColor: borderColor,
+          labelColor: textColor,
+          unselectedLabelColor: textColor.withValues(alpha: 0.5),
+          indicatorWeight: 4,
           labelStyle: NeoBrutalTheme.labelLarge.copyWith(
             fontWeight: FontWeight.w800,
           ),
@@ -73,18 +75,17 @@ class _ExpenseScreenState extends ConsumerState<ExpenseScreen>
       ),
       floatingActionButton: _currentTab == 0
           ? FloatingActionButton.extended(
-              heroTag: 'expense_fab', // ✅ Unique hero tag
+              heroTag: 'expense_fab',
               onPressed: () => _showAddDialog(context),
               icon: const Icon(Icons.add),
               label: const Text('Tambah'),
-              backgroundColor: NeoBrutalTheme.secondary, // ✅ Brutal secondary color
+              backgroundColor: NeoBrutalTheme.secondary,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium), // ✅ Brutal 8px
-                side: BorderSide(
-                  color: Colors.black,
-                  width: 4, // ✅ Bold 4px border
+                borderRadius: BorderRadius.circular(
+                  NeoBrutalTheme.radiusMedium,
                 ),
+                side: BorderSide(color: borderColor, width: 4),
               ),
               elevation: 6,
             )

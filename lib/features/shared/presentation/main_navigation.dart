@@ -23,6 +23,7 @@ import 'drawer_header.dart';
 import 'drawer_sections.dart';
 import '../../users/presentation/controllers/auth_controller.dart';
 import '../../inventory/presentation/widgets/add_product_dialog.dart';
+import 'package:simple_pos/l10n/app_localizations.dart';
 
 /// Main navigation widget with floating glassmorphic bottom tab bar
 /// Shows login screen if not authenticated, otherwise shows main app
@@ -230,7 +231,11 @@ class MainNavigationState extends ConsumerState<MainNavigation>
                       await showDialog(
                         context: context,
                         builder: (dialogContext) => AlertDialog(
-                          title: const Text('Product Found'),
+                          title: Text(
+                            AppLocalizations.of(
+                              dialogContext,
+                            )!.nav_product_found,
+                          ),
                           content: Column(
                             mainAxisSize: MainAxisSize.min,
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -255,7 +260,9 @@ class MainNavigationState extends ConsumerState<MainNavigation>
                           actions: [
                             TextButton(
                               onPressed: () => Navigator.pop(dialogContext),
-                              child: const Text('Close'),
+                              child: Text(
+                                AppLocalizations.of(dialogContext)!.nav_close,
+                              ),
                             ),
                             ElevatedButton(
                               onPressed: () {
@@ -268,7 +275,11 @@ class MainNavigationState extends ConsumerState<MainNavigation>
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppTheme.primaryColor,
                               ),
-                              child: const Text('View in Inventory'),
+                              child: Text(
+                                AppLocalizations.of(
+                                  dialogContext,
+                                )!.nav_view_inventory,
+                              ),
                             ),
                           ],
                         ),
@@ -282,13 +293,19 @@ class MainNavigationState extends ConsumerState<MainNavigation>
                     final shouldAdd = await showDialog<bool>(
                       context: context,
                       builder: (dialogContext) => AlertDialog(
-                        title: const Text('Product Not Found'),
+                        title: Text(
+                          AppLocalizations.of(
+                            dialogContext,
+                          )!.nav_product_not_found,
+                        ),
                         content: Text('Barcode $barcode is not in inventory.'),
                         actions: [
                           TextButton(
                             onPressed: () =>
                                 Navigator.pop(dialogContext, false),
-                            child: const Text('Cancel'),
+                            child: Text(
+                              AppLocalizations.of(dialogContext)!.common_cancel,
+                            ),
                           ),
                           ElevatedButton(
                             onPressed: () {
@@ -297,7 +314,11 @@ class MainNavigationState extends ConsumerState<MainNavigation>
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppTheme.primaryColor,
                             ),
-                            child: const Text('Add Product'),
+                            child: Text(
+                              AppLocalizations.of(
+                                dialogContext,
+                              )!.nav_add_product,
+                            ),
                           ),
                         ],
                       ),
@@ -305,7 +326,6 @@ class MainNavigationState extends ConsumerState<MainNavigation>
 
                     if (shouldAdd == true) {
                       // Navigate to add product dialog
-
 
                       if (!mounted) return false;
 
@@ -375,16 +395,20 @@ class MainNavigationState extends ConsumerState<MainNavigation>
         if (result != null && result is String && mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Scanned: $result'),
+              content: Text(
+                '${AppLocalizations.of(context)!.nav_scanned}: $result',
+              ),
               action: SnackBarAction(
-                label: 'Copy',
+                label: AppLocalizations.of(context)!.common_copy,
                 textColor: AppTheme.primaryColor,
                 onPressed: () async {
                   await Clipboard.setData(ClipboardData(text: result));
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Copied to clipboard'),
+                      SnackBar(
+                        content: Text(
+                          AppLocalizations.of(context)!.common_copied,
+                        ),
                         duration: Duration(seconds: 1),
                       ),
                     );
@@ -514,13 +538,16 @@ class _GlassBottomNavState extends State<_GlassBottomNav> {
   int _pressedIndex = -1;
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final borderColor = isDark ? NeoBrutalTheme.darkBorder : Colors.black;
+
     return Container(
       height:
           (widget.isCompact ? 60 : 70) + MediaQuery.of(context).padding.bottom,
       decoration: BoxDecoration(
         color: NeoBrutalTheme.blockBlue,
         borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium),
-        border: Border.all(color: Colors.black, width: 3),
+        border: Border.all(color: borderColor, width: 3),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.3),
@@ -541,13 +568,13 @@ class _GlassBottomNavState extends State<_GlassBottomNav> {
                 _buildNavItem(
                   context: context,
                   icon: Icons.point_of_sale_rounded,
-                  label: 'POS',
+                  label: AppLocalizations.of(context)!.nav_pos,
                   index: 0,
                 ),
                 _buildNavItem(
                   context: context,
                   icon: Icons.inventory_2_outlined,
-                  label: 'Inventory',
+                  label: AppLocalizations.of(context)!.nav_inventory,
                   index: 1,
                 ),
               ],
@@ -562,13 +589,13 @@ class _GlassBottomNavState extends State<_GlassBottomNav> {
                 _buildNavItem(
                   context: context,
                   icon: Icons.history_rounded,
-                  label: 'History',
+                  label: AppLocalizations.of(context)!.nav_history,
                   index: 2,
                 ),
                 _buildNavItem(
                   context: context,
                   icon: Icons.bar_chart_rounded,
-                  label: 'Reports',
+                  label: AppLocalizations.of(context)!.nav_reports,
                   index: 3,
                 ),
               ],
@@ -622,6 +649,7 @@ class _GlassBottomNavState extends State<_GlassBottomNav> {
   }
 
   Widget _buildCompactNavItem(IconData icon, bool isSelected, bool isPressed) {
+    final borderColor = Colors.black;
     return Container(
       height: 44,
       width: 44,
@@ -629,7 +657,7 @@ class _GlassBottomNavState extends State<_GlassBottomNav> {
           ? BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
-              border: Border.all(color: Colors.black, width: 2),
+              border: Border.all(color: borderColor, width: 2),
             )
           : null,
       child: Center(
@@ -648,24 +676,21 @@ class _GlassBottomNavState extends State<_GlassBottomNav> {
     bool isSelected,
     bool isPressed,
   ) {
+    final borderColor = Colors.black;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: isSelected
           ? BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
-              border: Border.all(color: Colors.black, width: 2),
+              border: Border.all(color: borderColor, width: 2),
             )
           : null,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            icon,
-            size: 24,
-            color: isSelected ? Colors.black : Colors.white,
-          ),
+          Icon(icon, size: 24, color: isSelected ? Colors.black : Colors.white),
           const SizedBox(height: 2),
           Text(
             label,
@@ -691,7 +716,7 @@ class _GlassBottomNavState extends State<_GlassBottomNav> {
         return Transform.scale(
           scale: widget.scannerAnimation.value,
           child: Tooltip(
-            message: 'Scan QR Code',
+            message: AppLocalizations.of(context)!.nav_scan_qr,
             waitDuration: const Duration(milliseconds: 500),
             showDuration: const Duration(seconds: 2),
             child: GestureDetector(

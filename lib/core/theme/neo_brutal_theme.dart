@@ -42,9 +42,13 @@ class NeoBrutalTheme {
   static const Color errorDark = Color(0xFFCC0044);
 
   /// Background Colors - Bold, not subtle
-  static const Color background = Color(0xFFFFFFFF); // ✅ Pure white - let borders and shadows create contrast
+  static const Color background = Color(
+    0xFFFFFFFF,
+  ); // ✅ Pure white - let borders and shadows create contrast
   static const Color surface = Color(0xFFFFFFFF); // ✅ White for cards
-  static const Color surfaceVariant = Color(0xFFF5F5F5); // ✅ Very light gray for subtle variation
+  static const Color surfaceVariant = Color(
+    0xFFF5F5F5,
+  ); // ✅ Very light gray for subtle variation
 
   /// Dark Mode
   static const Color darkBackground = Color(0xFF0A0A0A);
@@ -228,11 +232,11 @@ class NeoBrutalTheme {
   // BOLD BORDER RADIUS
   // ============================================
 
-  static const double radiusNone = 0;      // Sharp corners (very brutal)
-  static const double radiusSmall = 4;      // Slightly rounded
-  static const double radiusMedium = 8;     // Moderately rounded
-  static const double radiusLarge = 12;     // Well rounded
-  static const double radiusXLarge = 16;    // Very rounded
+  static const double radiusNone = 0; // Sharp corners (very brutal)
+  static const double radiusSmall = 4; // Slightly rounded
+  static const double radiusMedium = 8; // Moderately rounded
+  static const double radiusLarge = 12; // Well rounded
+  static const double radiusXLarge = 16; // Very rounded
 
   // ============================================
   // GENEROUS SPACING
@@ -263,12 +267,30 @@ class NeoBrutalTheme {
 
   /// Get appropriate text color
   static Color getTextColor(BuildContext context) {
-    return Colors.black;
+    return Theme.of(context).brightness == Brightness.dark
+        ? Colors.white
+        : Colors.black;
   }
 
   /// Get secondary text color
   static Color getSecondaryTextColor(BuildContext context) {
-    return Colors.black87;
+    return Theme.of(context).brightness == Brightness.dark
+        ? Colors.white70
+        : Colors.black87;
+  }
+
+  /// Get tertiary text color
+  static Color getTertiaryTextColor(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? Colors.white54
+        : Colors.black54;
+  }
+
+  /// Get border color
+  static Color getBorderColor(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? darkBorder
+        : Colors.black;
   }
 
   /// Get card color
@@ -283,5 +305,19 @@ class NeoBrutalTheme {
     return Theme.of(context).brightness == Brightness.dark
         ? darkBackground
         : background;
+  }
+
+  /// Get surface variant color
+  static Color getSurfaceVariantColor(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? const Color(0xFF2A2A2A)
+        : surfaceVariant;
+  }
+
+  /// Get shadow color
+  static Color getShadowColor(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? Colors.black.withValues(alpha: 0.5)
+        : Colors.black.withValues(alpha: 0.3);
   }
 }

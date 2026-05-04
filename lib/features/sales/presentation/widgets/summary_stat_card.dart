@@ -26,21 +26,20 @@ class SummaryStatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final borderColor = NeoBrutalTheme.getBorderColor(context);
+    final textColor = NeoBrutalTheme.getTextColor(context);
+    final secondaryTextColor = NeoBrutalTheme.getSecondaryTextColor(context);
     return Container(
       padding: EdgeInsets.all(NeoBrutalTheme.spaceMD),
       decoration: BoxDecoration(
-        color: AppTheme.getCardColor(context),
-        borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium), // ✅ Brutal 8px radius
-        border: Border.all(
-          color: Colors.black, // ✅ Bold black border
-          width: 4, // ✅ Bold 4px border
-        ),
-        boxShadow: NeoBrutalTheme.chunkyShadow, // ✅ Chunky brutal shadow
+        color: NeoBrutalTheme.getCardColor(context),
+        borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium),
+        border: Border.all(color: borderColor, width: 4),
+        boxShadow: NeoBrutalTheme.chunkyShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Icon + Title row
           Row(
             children: [
               Container(
@@ -48,18 +47,13 @@ class SummaryStatCard extends StatelessWidget {
                 height: 48,
                 decoration: BoxDecoration(
                   color: color,
-                  borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
-                  border: Border.all(
-                    color: Colors.black,
-                    width: 3, // ✅ Bold 3px icon border
+                  borderRadius: BorderRadius.circular(
+                    NeoBrutalTheme.radiusSmall,
                   ),
+                  border: Border.all(color: borderColor, width: 3),
                   boxShadow: NeoBrutalTheme.chunkyShadow,
                 ),
-                child: Icon(
-                  icon,
-                  color: Colors.white,
-                  size: 24,
-                ),
+                child: Icon(icon, color: Colors.white, size: 24),
               ),
               SizedBox(width: NeoBrutalTheme.spaceSM),
               Expanded(
@@ -67,14 +61,13 @@ class SummaryStatCard extends StatelessWidget {
                   title,
                   style: NeoBrutalTheme.bodyMedium.copyWith(
                     fontWeight: FontWeight.w700,
-                    color: Colors.black,
+                    color: textColor,
                   ),
                 ),
               ),
             ],
           ),
           SizedBox(height: NeoBrutalTheme.spaceSM),
-          // Value
           Text(
             value,
             style: NeoBrutalTheme.headlineMedium.copyWith(
@@ -87,7 +80,7 @@ class SummaryStatCard extends StatelessWidget {
             Text(
               subtitle!,
               style: NeoBrutalTheme.bodySmall.copyWith(
-                color: AppTheme.textSecondary,
+                color: secondaryTextColor,
                 fontWeight: FontWeight.w600,
               ),
             ),

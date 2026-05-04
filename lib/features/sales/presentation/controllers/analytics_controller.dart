@@ -12,9 +12,7 @@ class AnalyticsController extends ChangeNotifier {
 
   bool _disposed = false;
 
-  AnalyticsController({
-    required this.getSalesAnalyticsUseCase,
-  });
+  AnalyticsController({required this.getSalesAnalyticsUseCase});
 
   @override
   void dispose() {
@@ -29,6 +27,7 @@ class AnalyticsController extends ChangeNotifier {
   DateTime _startDate = DateTime.now().subtract(const Duration(days: 30));
   DateTime _endDate = DateTime.now();
   int _forecastDays = 7;
+  ChartMetric _selectedMetric = ChartMetric.revenue;
 
   // Getters
   SalesAnalyticsReport? get report => _report;
@@ -39,6 +38,7 @@ class AnalyticsController extends ChangeNotifier {
   DateTime get startDate => _startDate;
   DateTime get endDate => _endDate;
   int get forecastDays => _forecastDays;
+  ChartMetric get selectedMetric => _selectedMetric;
 
   /// Load analytics report
   Future<void> loadAnalytics() async {
@@ -53,17 +53,24 @@ class AnalyticsController extends ChangeNotifier {
         forecastDays: _forecastDays,
       );
 
-      AppLogger.info('Sales analytics loaded successfully - AnalyticsController');
+      AppLogger.info(
+        'Sales analytics loaded successfully - AnalyticsController',
+      );
     } on AppException catch (e) {
       _setError(e);
-      AppLogger.error('Failed to load sales analytics - AnalyticsController', error: e);
+      AppLogger.error(
+        'Failed to load sales analytics - AnalyticsController',
+        error: e,
+      );
     } catch (e, stackTrace) {
-      _setError(DatabaseException(
-        'Gagal memuat analitik penjualan',
-        operation: 'loadAnalytics',
-        originalError: e,
-        stackTrace: stackTrace,
-      ));
+      _setError(
+        DatabaseException(
+          'Gagal memuat analitik penjualan',
+          operation: 'loadAnalytics',
+          originalError: e,
+          stackTrace: stackTrace,
+        ),
+      );
       AppLogger.error(
         'Unexpected error loading sales analytics - AnalyticsController',
         error: e,
@@ -135,6 +142,12 @@ class AnalyticsController extends ChangeNotifier {
       _forecastDays = days;
       loadAnalytics();
     }
+  }
+
+  /// Set selected metric for trend chart
+  void setMetric(ChartMetric metric) {
+    _selectedMetric = metric;
+    notifyListeners();
   }
 
   /// Refresh analytics

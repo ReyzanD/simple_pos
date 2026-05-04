@@ -402,6 +402,16 @@ class DatabaseHelper {
         await _migrateToV18(db);
       }
 
+      if (oldVersion < 19) {
+        // Migration from version 18 to 19 (add category_id to transaction_items)
+        await _migrateToV19(db);
+      }
+
+      if (oldVersion < 20) {
+        // Migration from version 19 to 20 (add cashier_id and cashier_name to transactions)
+        await _migrateToV20(db);
+      }
+
       AppLogger.database('Database upgrade completed successfully');
     } catch (e, stackTrace) {
       AppLogger.error(
@@ -1076,6 +1086,63 @@ class DatabaseHelper {
     }
 
     AppLogger.database('Database migration to v18 completed');
+  }
+
+  /// Migration from version 18 to 19
+  /// Add category_id column to transaction_items table
+  Future _migrateToV19(Database db) async {
+    AppLogger.database('Migrating database to v19 (adding category_id to transaction_items)');
+
+    try {
+      await db.execute('''
+        ALTER TABLE transaction_items ADD COLUMN category_id INTEGER DEFAULT 0
+      ''');
+      AppLogger.database('Added category_id column to transaction_items table');
+    } catch (e) {
+      AppLogger.database('category_id column migration (may already exist): $e');
+    }
+
+    try {
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_transaction_items_category ON transaction_items(category_id)');
+      AppLogger.database('Created index for transaction_items category_id');
+    } catch (e) {
+      AppLogger.database('transaction_items category index migration (may already exist): $e');
+    }
+
+    AppLogger.database('Database migration to v19 completed');
+  }
+
+  /// Migration from version 19 to 20
+  /// Add cashier_id and cashier_name columns to transactions table
+  Future _migrateToV20(Database db) async {
+    AppLogger.database('Migrating database to v20 (adding cashier tracking to transactions)');
+
+    try {
+      await db.execute('''
+        ALTER TABLE transactions ADD COLUMN cashier_id INTEGER DEFAULT 0
+      ''');
+      AppLogger.database('Added cashier_id column to transactions table');
+    } catch (e) {
+      AppLogger.database('cashier_id column migration (may already exist): $e');
+    }
+
+    try {
+      await db.execute('''
+        ALTER TABLE transactions ADD COLUMN cashier_name TEXT DEFAULT ''
+      ''');
+      AppLogger.database('Added cashier_name column to transactions table');
+    } catch (e) {
+      AppLogger.database('cashier_name column migration (may already exist): $e');
+    }
+
+    try {
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_transactions_cashier ON transactions(cashier_id)');
+      AppLogger.database('Created index for transactions cashier_id');
+    } catch (e) {
+      AppLogger.database('transactions cashier index migration (may already exist): $e');
+    }
+
+    AppLogger.database('Database migration to v20 completed');
   }
 
   /// Simple password hash for demo purposes

@@ -25,6 +25,7 @@ class ExportSalesToCsvUseCase {
       ]);
       rows.add(['Total Transaksi', report.totalTransactions.toString()]);
       rows.add(['Total Pendapatan', _formatCurrency(report.totalRevenue)]);
+      rows.add(['Total Pajak', _formatCurrency(report.totalTax)]);
       rows.add(['Total Laba', _formatCurrency(report.totalProfit)]);
       rows.add([
         'Rata-rata Transaksi',
@@ -35,12 +36,13 @@ class ExportSalesToCsvUseCase {
 
       // Daily breakdown
       rows.add(['BREAKDOWN HARIAN']);
-      rows.add(['Tanggal', 'Jumlah Transaksi', 'Pendapatan', 'Laba']);
+      rows.add(['Tanggal', 'Jumlah Transaksi', 'Pendapatan', 'Pajak', 'Laba']);
       for (final daily in report.dailyBreakdown) {
         rows.add([
           '${daily.date.day}/${daily.date.month}/${daily.date.year}',
           daily.transactionCount.toString(),
           _formatCurrency(daily.revenue),
+          _formatCurrency(daily.tax),
           _formatCurrency(daily.profit),
         ]);
       }

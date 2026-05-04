@@ -5,6 +5,7 @@ import '../utils/haptic_helper.dart';
 import '../utils/responsive_helper.dart';
 import 'animated_counter.dart';
 import 'shimmer_loading.dart';
+import 'package:simple_pos/l10n/app_localizations.dart';
 
 /// Improved KPI Stats Dashboard with Neo-Brutalism styling
 class KPIStatsDashboard extends StatefulWidget {
@@ -72,8 +73,11 @@ class _KPIStatsDashboardState extends State<KPIStatsDashboard>
   @override
   Widget build(BuildContext context) {
     if (widget.isLoading) {
-      return _buildShimmerLoading();
+      return _buildShimmerLoading(context);
     }
+
+    final textColor = NeoBrutalTheme.getTextColor(context);
+    final secondaryTextColor = NeoBrutalTheme.getSecondaryTextColor(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -91,11 +95,11 @@ class _KPIStatsDashboardState extends State<KPIStatsDashboard>
             child: Row(
               children: [
                 Text(
-                  'Ringkasan Hari Ini',
+                  AppLocalizations.of(context)!.kpi_today_summary,
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w900,
-                    color: Colors.black,
+                    color: textColor,
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -105,7 +109,7 @@ class _KPIStatsDashboardState extends State<KPIStatsDashboard>
                   curve: Curves.easeInOut,
                   child: Icon(
                     Icons.keyboard_arrow_down,
-                    color: Colors.black,
+                    color: secondaryTextColor,
                     size: 24,
                   ),
                 ),
@@ -124,7 +128,7 @@ class _KPIStatsDashboardState extends State<KPIStatsDashboard>
               child: Column(
                 children: [
                   _buildKPIStatCard(
-                    title: 'Pendapatan',
+                    title: AppLocalizations.of(context)!.kpi_revenue,
                     value: widget.todayRevenue,
                     icon: Icons.payments_outlined,
                     color: AppTheme.successColor,
@@ -134,7 +138,7 @@ class _KPIStatsDashboardState extends State<KPIStatsDashboard>
                   ),
                   const SizedBox(height: 12),
                   _buildKPIStatCard(
-                    title: 'Transaksi',
+                    title: AppLocalizations.of(context)!.kpi_transactions,
                     value: widget.todayTransactions.toDouble(),
                     icon: Icons.receipt_long_rounded,
                     color: NeoBrutalTheme.primary,
@@ -144,7 +148,7 @@ class _KPIStatsDashboardState extends State<KPIStatsDashboard>
                   ),
                   const SizedBox(height: 12),
                   _buildKPIStatCard(
-                    title: 'Terjual',
+                    title: AppLocalizations.of(context)!.kpi_items_sold,
                     value: widget.itemsSold.toDouble(),
                     icon: Icons.shopping_bag_outlined,
                     color: NeoBrutalTheme.blockCoral,
@@ -172,6 +176,9 @@ class _KPIStatsDashboardState extends State<KPIStatsDashboard>
     VoidCallback? onTap,
   }) {
     final isPressed = _pressedCard == cardIndex;
+    final borderColor = NeoBrutalTheme.getBorderColor(context);
+    final cardColor = NeoBrutalTheme.getCardColor(context);
+    final secondaryTextColor = NeoBrutalTheme.getSecondaryTextColor(context);
 
     return GestureDetector(
       onTapDown: (_) {
@@ -198,11 +205,11 @@ class _KPIStatsDashboardState extends State<KPIStatsDashboard>
             child: Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: cardColor,
                 borderRadius: BorderRadius.circular(
                   NeoBrutalTheme.radiusMedium,
                 ),
-                border: Border.all(color: Colors.black, width: 3),
+                border: Border.all(color: borderColor, width: 3),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: shadowAlpha),
@@ -218,7 +225,7 @@ class _KPIStatsDashboardState extends State<KPIStatsDashboard>
                     decoration: BoxDecoration(
                       color: color.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.black, width: 2),
+                      border: Border.all(color: borderColor, width: 2),
                     ),
                     child: Icon(icon, color: color, size: 24),
                   ),
@@ -233,7 +240,7 @@ class _KPIStatsDashboardState extends State<KPIStatsDashboard>
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: Colors.black87,
+                            color: secondaryTextColor,
                             height: 1.0,
                           ),
                         ),
@@ -271,7 +278,7 @@ class _KPIStatsDashboardState extends State<KPIStatsDashboard>
     );
   }
 
-  Widget _buildShimmerLoading() {
+  Widget _buildShimmerLoading(BuildContext context) {
     return Padding(
       padding: ResponsiveHelper.getScreenPadding(
         context,
@@ -294,12 +301,14 @@ class _KPIStatShimmerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final borderColor = NeoBrutalTheme.getBorderColor(context);
+    final cardColor = NeoBrutalTheme.getCardColor(context);
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardColor,
         borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium),
-        border: Border.all(color: Colors.black, width: 3),
+        border: Border.all(color: borderColor, width: 3),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.2),

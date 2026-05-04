@@ -184,6 +184,8 @@ class MockCreateTransactionUseCase extends _i1.Mock
     String? notes,
     double? tax = 0.0,
     double? discount = 0.0,
+    int? cashierId,
+    String? cashierName,
   }) =>
       (super.noSuchMethod(
             Invocation.method(#execute, [], {
@@ -194,6 +196,8 @@ class MockCreateTransactionUseCase extends _i1.Mock
               #notes: notes,
               #tax: tax,
               #discount: discount,
+              #cashierId: cashierId,
+              #cashierName: cashierName,
             }),
             returnValue: _i6.Future<_i5.Transaction>.value(
               _FakeTransaction_3(
@@ -206,6 +210,8 @@ class MockCreateTransactionUseCase extends _i1.Mock
                   #notes: notes,
                   #tax: tax,
                   #discount: discount,
+                  #cashierId: cashierId,
+                  #cashierName: cashierName,
                 }),
               ),
             ),

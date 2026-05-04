@@ -10,6 +10,7 @@ import '../../../../core/widgets/category_icons.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/utils/responsive_helper.dart';
 import '../../../shared/presentation/providers.dart';
+import '../../../../l10n/app_localizations.dart';
 
 // Import extracted inventory widgets
 import '../controllers/inventory_controller.dart';
@@ -45,7 +46,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
     final isLoading = controller.isLoading;
 
     return Scaffold(
-      backgroundColor: NeoBrutalTheme.background,
+      backgroundColor: NeoBrutalTheme.getBackgroundColor(context),
       appBar: InventoryAppBar(
         onMenuTap: () {
           final mainNavState = context
@@ -62,7 +63,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
           bottom: ResponsiveHelper.getFABBottomOffset(context),
         ),
         child: BrutalFab(
-          label: 'Tambah Produk',
+          label: AppLocalizations.of(context)!.product_tambah_produk,
           icon: Icons.add,
           onPressed: () => _showAddProductOptions(context, ref),
         ),
@@ -162,7 +163,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
           children: [
             // Fixed "SEMUA" button
             ResponsiveCategoryChip(
-              label: 'Semua',
+              label: AppLocalizations.of(context)!.category_semua,
               icon: Icons.apps_rounded,
               color: AppTheme.primaryColor,
               isSelected: isSemuaSelected,
@@ -201,38 +202,38 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
   }
 
   Widget _buildSimpleSearchBar(BuildContext context, WidgetRef ref) {
+    final borderColor = NeoBrutalTheme.getBorderColor(context);
+    final secondaryTextColor = NeoBrutalTheme.getSecondaryTextColor(context);
+    final textColor = NeoBrutalTheme.getTextColor(context);
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: ResponsiveHelper.getContainerPadding(context),
         vertical: ResponsiveHelper.getContainerPadding(context) * 0.75,
       ),
       decoration: BoxDecoration(
-        color: NeoBrutalTheme.background,
+        color: NeoBrutalTheme.getBackgroundColor(context),
         borderRadius: BorderRadius.circular(
           ResponsiveHelper.getBorderRadius(context),
         ),
-        border: Border.all(color: Colors.black, width: 3),
+        border: Border.all(color: borderColor, width: 3),
         boxShadow: NeoBrutalTheme.chunkyShadow,
       ),
       child: Row(
         children: [
           Icon(
             Icons.search,
-            color: AppTheme.textSecondary,
+            color: secondaryTextColor,
             size: ResponsiveHelper.getIconSize(context) + 4,
           ),
           SizedBox(width: ResponsiveHelper.getCardSpacing(context) * 0.5),
           Expanded(
             child: TextField(
-              decoration: const InputDecoration(
-                hintText: 'Cari produk...',
+              decoration: InputDecoration(
+                hintText: AppLocalizations.of(context)!.product_search,
                 border: InputBorder.none,
-                hintStyle: TextStyle(
-                  color: AppTheme.textSecondary,
-                  fontSize: 16,
-                ),
+                hintStyle: TextStyle(color: secondaryTextColor, fontSize: 16),
               ),
-              style: const TextStyle(color: AppTheme.textPrimary, fontSize: 16),
+              style: TextStyle(color: textColor, fontSize: 16),
               onChanged: (query) {
                 ref.read(inventoryControllerProvider).searchProducts(query);
               },
@@ -255,16 +256,28 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
     WidgetRef ref,
     Product product,
   ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isOutOfStock = product.isOutOfStock;
     final isLowStock = product.isLowStock;
+    final borderColor = NeoBrutalTheme.getBorderColor(context);
+    final textColor = NeoBrutalTheme.getTextColor(context);
+    final secondaryTextColor = NeoBrutalTheme.getSecondaryTextColor(context);
+    final imageBgColor = isDark
+        ? const Color(0xFF2A2A3A)
+        : const Color(0xFFE8EEFF);
+    final outOfStockBg = isDark
+        ? const Color(0xFF2A2A2A)
+        : const Color(0xFFF3F4F6);
 
     return GestureDetector(
       onTap: () => _showProductDetails(context, product),
       child: Container(
         decoration: BoxDecoration(
-          color: isOutOfStock ? const Color(0xFFF3F4F6) : Colors.white,
+          color: isOutOfStock
+              ? outOfStockBg
+              : NeoBrutalTheme.getCardColor(context),
           borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
-          border: Border.all(color: Colors.black, width: 2.5),
+          border: Border.all(color: borderColor, width: 2.5),
           boxShadow: NeoBrutalTheme.chunkyShadow,
         ),
         child: ClipRRect(
@@ -277,7 +290,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
                 flex: 6,
                 child: Container(
                   width: double.infinity,
-                  color: const Color(0xFFE8EEFF),
+                  color: imageBgColor,
                   child:
                       product.imagePath != null && product.imagePath!.isNotEmpty
                       ? Image.network(
@@ -285,7 +298,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) {
                             return Container(
-                              color: const Color(0xFFE8EEFF),
+                              color: imageBgColor,
                               child: Icon(
                                 Icons.image_not_supported_outlined,
                                 color: NeoBrutalTheme.primary,
@@ -296,7 +309,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
                           loadingBuilder: (context, child, loadingProgress) {
                             if (loadingProgress == null) return child;
                             return Container(
-                              color: const Color(0xFFE8EEFF),
+                              color: imageBgColor,
                               child: Center(
                                 child: SizedBox(
                                   width: 24,
@@ -318,7 +331,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
                           },
                         )
                       : Container(
-                          color: const Color(0xFFE8EEFF),
+                          color: imageBgColor,
                           child: Icon(
                             Icons.image_outlined,
                             color: NeoBrutalTheme.primary,
@@ -348,7 +361,13 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        isOutOfStock ? 'HABIS' : 'STOK RENDAH',
+                        isOutOfStock
+                            ? AppLocalizations.of(
+                                context,
+                              )!.product_out_of_stock_badge
+                            : AppLocalizations.of(
+                                context,
+                              )!.product_stock_low_badge(product.stock),
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 10,
@@ -379,7 +398,9 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
-                            color: isOutOfStock ? Colors.grey : Colors.black,
+                            color: isOutOfStock
+                                ? secondaryTextColor.withValues(alpha: 0.5)
+                                : textColor,
                             height: 1.1,
                           ),
                           maxLines: 2,
@@ -400,13 +421,13 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
                             ),
                           ),
                           Text(
-                            'Stok: ${product.stock}',
+                            '${AppLocalizations.of(context)!.product_stok}: ${product.stock}',
                             style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w600,
                               color: isOutOfStock
-                                  ? Colors.grey
-                                  : Colors.black54,
+                                  ? secondaryTextColor.withValues(alpha: 0.5)
+                                  : secondaryTextColor,
                             ),
                           ),
                         ],
@@ -423,9 +444,9 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
                   width: double.infinity,
                   child: ElevatedButton.icon(
                     icon: const Icon(Icons.add_shopping_cart, size: 16),
-                    label: const Text(
-                      'Add Stock',
-                      style: TextStyle(fontSize: 12),
+                    label: Text(
+                      AppLocalizations.of(context)!.product_adjust_stock,
+                      style: const TextStyle(fontSize: 12),
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.successColor,
@@ -444,19 +465,20 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
     ).animate().fadeIn().slideY(begin: 0.1, end: 0);
   }
 
-
   void _showAddProductOptions(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final borderColor = NeoBrutalTheme.getBorderColor(context);
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
         padding: EdgeInsets.all(NeoBrutalTheme.spaceMD),
         decoration: BoxDecoration(
-          color: NeoBrutalTheme.background,
+          color: NeoBrutalTheme.getCardColor(context),
           borderRadius: BorderRadius.vertical(
             top: Radius.circular(NeoBrutalTheme.radiusLarge),
           ),
-          border: Border.all(color: Colors.black, width: 3),
+          border: Border.all(color: borderColor, width: 3),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -466,19 +488,20 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
               height: 4,
               margin: EdgeInsets.only(bottom: NeoBrutalTheme.spaceMD),
               decoration: BoxDecoration(
-                color: Colors.black26,
+                color: isDark ? Colors.white24 : Colors.black26,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
             BrutalSectionHeader(
-              title: 'Tambah Produk',
+              title: AppLocalizations.of(context)!.product_tambah_produk,
               icon: Icons.add_circle_outline,
             ),
             SizedBox(height: NeoBrutalTheme.spaceSM),
             _buildBottomSheetOption(
+              context: context,
               icon: Icons.edit_note,
-              title: 'Tambah Produk Manual',
-              subtitle: 'Masukkan produk satu per satu',
+              title: AppLocalizations.of(context)!.product_tambah_manual,
+              subtitle: AppLocalizations.of(context)!.product_manual_hint,
               color: NeoBrutalTheme.primary,
               onTap: () {
                 Navigator.pop(context);
@@ -487,9 +510,10 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
             ),
             SizedBox(height: NeoBrutalTheme.spaceSM),
             _buildBottomSheetOption(
+              context: context,
               icon: Icons.upload_file,
-              title: 'Import dari CSV',
-              subtitle: 'Import banyak produk sekaligus',
+              title: AppLocalizations.of(context)!.product_import_csv,
+              subtitle: AppLocalizations.of(context)!.product_import_hint,
               color: NeoBrutalTheme.secondary,
               onTap: () {
                 Navigator.pop(context);
@@ -567,7 +591,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
     if (product.id == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Product id is missing. Cannot adjust stock.'),
+          content: Text(AppLocalizations.of(context)!.product_stock_missing),
           backgroundColor: AppTheme.errorColor,
         ),
       );
@@ -598,7 +622,9 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
               ),
             ),
             const SizedBox(width: 12),
-            Text('Adjust Stock: ${product.name}'),
+            Text(
+              '${AppLocalizations.of(context)!.product_adjust_stock}: ${product.name}',
+            ),
           ],
         ),
         content: StatefulBuilder(
@@ -624,7 +650,9 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
                             productId: product.id!,
                             adjustmentType: selectedType,
                             quantity: adjustmentQuantity!,
-                            reason: 'Manual adjustment',
+                            reason: AppLocalizations.of(
+                              context,
+                            )!.product_manual_adjustment,
                             username: 'admin',
                           );
                           if (dialogContext.mounted) {
@@ -632,7 +660,11 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
                             if (success) {
                               ScaffoldMessenger.of(dialogContext).showSnackBar(
                                 SnackBar(
-                                  content: Text('Stock adjusted successfully'),
+                                  content: Text(
+                                    AppLocalizations.of(
+                                      context,
+                                    )!.product_stock_adjusted,
+                                  ),
                                   backgroundColor: AppTheme.successColor,
                                 ),
                               );
@@ -648,7 +680,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context)!.common_cancel),
           ),
         ],
       ),
@@ -660,20 +692,24 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
   }
 
   Widget _buildBottomSheetOption({
+    required BuildContext context,
     required IconData icon,
     required String title,
     required String subtitle,
     required Color color,
     required VoidCallback onTap,
   }) {
+    final borderColor = NeoBrutalTheme.getBorderColor(context);
+    final textColor = NeoBrutalTheme.getTextColor(context);
+    final secondaryTextColor = NeoBrutalTheme.getSecondaryTextColor(context);
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: EdgeInsets.all(NeoBrutalTheme.spaceMD),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: NeoBrutalTheme.getCardColor(context),
           borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
-          border: Border.all(color: Colors.black, width: 3),
+          border: Border.all(color: borderColor, width: 3),
           boxShadow: NeoBrutalTheme.chunkyShadow,
         ),
         child: Row(
@@ -684,7 +720,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
               decoration: BoxDecoration(
                 color: color,
                 borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
-                border: Border.all(color: Colors.black, width: 3),
+                border: Border.all(color: borderColor, width: 3),
               ),
               child: Icon(icon, color: Colors.white),
             ),
@@ -693,8 +729,18 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: NeoBrutalTheme.headlineSmall),
-                  Text(subtitle, style: NeoBrutalTheme.bodySmall),
+                  Text(
+                    title,
+                    style: NeoBrutalTheme.headlineSmall.copyWith(
+                      color: textColor,
+                    ),
+                  ),
+                  Text(
+                    subtitle,
+                    style: NeoBrutalTheme.bodySmall.copyWith(
+                      color: secondaryTextColor,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -719,8 +765,10 @@ class ProductDetailScreen extends ConsumerWidget {
   const ProductDetailScreen({super.key, required this.product});
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final borderColor = NeoBrutalTheme.getBorderColor(context);
+    final secondaryTextColor = NeoBrutalTheme.getSecondaryTextColor(context);
     return Scaffold(
-      backgroundColor: NeoBrutalTheme.background,
+      backgroundColor: NeoBrutalTheme.getBackgroundColor(context),
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
@@ -732,7 +780,7 @@ class ProductDetailScreen extends ConsumerWidget {
           IconButton(
             icon: const Icon(Icons.edit),
             onPressed: () => _showEditDialog(context, ref),
-            tooltip: 'Edit Produk',
+            tooltip: AppLocalizations.of(context)!.product_edit_produk,
           ),
         ],
       ),
@@ -747,11 +795,11 @@ class ProductDetailScreen extends ConsumerWidget {
                   width: 200,
                   height: 200,
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: NeoBrutalTheme.getCardColor(context),
                     borderRadius: BorderRadius.circular(
                       NeoBrutalTheme.radiusLarge,
                     ),
-                    border: Border.all(color: Colors.black, width: 3),
+                    border: Border.all(color: borderColor, width: 3),
                     boxShadow: NeoBrutalTheme.chunkyShadow,
                   ),
                   child: ClipRRect(
@@ -763,11 +811,11 @@ class ProductDetailScreen extends ConsumerWidget {
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) {
                         return Container(
-                          color: NeoBrutalTheme.background,
-                          child: const Icon(
+                          color: NeoBrutalTheme.getBackgroundColor(context),
+                          child: Icon(
                             Icons.broken_image,
                             size: 60,
-                            color: Colors.grey,
+                            color: secondaryTextColor,
                           ),
                         );
                       },
@@ -777,19 +825,29 @@ class ProductDetailScreen extends ConsumerWidget {
               ),
               SizedBox(height: NeoBrutalTheme.spaceLG),
             ],
-            const BrutalSectionHeader(
-              title: 'Informasi Produk',
+            BrutalSectionHeader(
+              title: AppLocalizations.of(context)!.product_information,
               icon: Icons.info_outline,
             ),
             SizedBox(height: NeoBrutalTheme.spaceMD),
-            _buildInfoRow('Nama', product.name),
-            _buildInfoRow('Harga', CurrencyFormatter.format(product.price)),
             _buildInfoRow(
-              'Harga Pokok',
+              context,
+              AppLocalizations.of(context)!.product_nama,
+              product.name,
+            ),
+            _buildInfoRow(
+              context,
+              AppLocalizations.of(context)!.product_harga,
+              CurrencyFormatter.format(product.price),
+            ),
+            _buildInfoRow(
+              context,
+              AppLocalizations.of(context)!.product_harga_pokok,
               CurrencyFormatter.format(product.costPrice),
             ),
             _buildInfoRow(
-              'Stok',
+              context,
+              AppLocalizations.of(context)!.product_stok,
               product.stock.toString(),
               valueColor: product.isLowStock
                   ? AppTheme.warningColor
@@ -798,8 +856,16 @@ class ProductDetailScreen extends ConsumerWidget {
                   : AppTheme.successColor,
             ),
             if (product.barcode != null)
-              _buildInfoRow('Barcode', product.barcode!),
-            _buildInfoRow('Satuan', product.unitOfMeasurement),
+              _buildInfoRow(
+                context,
+                AppLocalizations.of(context)!.product_barcode_label,
+                product.barcode!,
+              ),
+            _buildInfoRow(
+              context,
+              AppLocalizations.of(context)!.product_satuan,
+              product.unitOfMeasurement,
+            ),
             SizedBox(height: NeoBrutalTheme.spaceLG),
             Row(
               children: [
@@ -814,15 +880,17 @@ class ProductDetailScreen extends ConsumerWidget {
                       borderRadius: BorderRadius.circular(
                         NeoBrutalTheme.radiusSmall,
                       ),
-                      border: Border.all(color: Colors.black, width: 2),
+                      border: Border.all(color: borderColor, width: 2),
                     ),
-                    child: const Row(
+                    child: Row(
                       children: [
                         Icon(Icons.warning, color: Colors.white, size: 16),
-                        SizedBox(width: NeoBrutalTheme.spaceXS),
+                        const SizedBox(width: NeoBrutalTheme.spaceXS),
                         Text(
-                          'Stok Rendah',
-                          style: TextStyle(
+                          AppLocalizations.of(
+                            context,
+                          )!.product_stock_low_badge(product.stock),
+                          style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
                             fontSize: 12,
@@ -844,15 +912,17 @@ class ProductDetailScreen extends ConsumerWidget {
                       borderRadius: BorderRadius.circular(
                         NeoBrutalTheme.radiusSmall,
                       ),
-                      border: Border.all(color: Colors.black, width: 2),
+                      border: Border.all(color: borderColor, width: 2),
                     ),
-                    child: const Row(
+                    child: Row(
                       children: [
                         Icon(Icons.block, color: Colors.white, size: 16),
-                        SizedBox(width: NeoBrutalTheme.spaceXS),
+                        const SizedBox(width: NeoBrutalTheme.spaceXS),
                         Text(
-                          'Habis',
-                          style: TextStyle(
+                          AppLocalizations.of(
+                            context,
+                          )!.product_out_of_stock_badge,
+                          style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
                             fontSize: 12,
@@ -869,7 +939,14 @@ class ProductDetailScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildInfoRow(String label, String value, {Color? valueColor}) {
+  Widget _buildInfoRow(
+    BuildContext context,
+    String label,
+    String value, {
+    Color? valueColor,
+  }) {
+    final secondaryTextColor = NeoBrutalTheme.getSecondaryTextColor(context);
+    final textColor = NeoBrutalTheme.getTextColor(context);
     return Padding(
       padding: EdgeInsets.only(bottom: NeoBrutalTheme.spaceMD),
       child: Row(
@@ -879,10 +956,10 @@ class ProductDetailScreen extends ConsumerWidget {
             flex: 1,
             child: Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: AppTheme.textSecondary,
+                color: secondaryTextColor,
               ),
             ),
           ),
@@ -893,7 +970,7 @@ class ProductDetailScreen extends ConsumerWidget {
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: valueColor ?? AppTheme.textPrimary,
+                color: valueColor ?? textColor,
               ),
             ),
           ),
@@ -939,14 +1016,29 @@ class ProductDetailScreen extends ConsumerWidget {
                     .updateProduct(updatedProduct);
                 if (success && dialogContext.mounted) {
                   ScaffoldMessenger.of(dialogContext).showSnackBar(
-                    const SnackBar(
-                      content: Text('Produk berhasil diupdate'),
-                      backgroundColor: Colors.green,
+                    SnackBar(
+                      content: Text(
+                        AppLocalizations.of(context)!.product_update_success_id,
+                      ),
+                      backgroundColor: AppTheme.successColor,
                     ),
                   );
                   // Pop the detail screen to go back to list
                   if (context.mounted) {
-                    Navigator.of(context).pop(true);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          AppLocalizations.of(
+                            context,
+                          )!.product_update_success_id,
+                        ),
+                        backgroundColor: AppTheme.successColor,
+                      ),
+                    );
+                    // Pop the detail screen to go back to list
+                    if (context.mounted) {
+                      Navigator.of(context).pop(true);
+                    }
                   }
                 }
                 return success;
@@ -954,8 +1046,10 @@ class ProductDetailScreen extends ConsumerWidget {
                 if (dialogContext.mounted) {
                   ScaffoldMessenger.of(dialogContext).showSnackBar(
                     SnackBar(
-                      content: Text('Error: $e'),
-                      backgroundColor: Colors.red,
+                      content: Text(
+                        '${AppLocalizations.of(context)!.common_error}: $e',
+                      ),
+                      backgroundColor: AppTheme.errorColor,
                     ),
                   );
                 }
@@ -971,19 +1065,24 @@ class ProductDetailScreen extends ConsumerWidget {
 class BrutalSectionHeader extends StatelessWidget {
   final String title;
   final IconData icon;
-  const BrutalSectionHeader({super.key, required this.title, required this.icon});
+  const BrutalSectionHeader({
+    super.key,
+    required this.title,
+    required this.icon,
+  });
   @override
   Widget build(BuildContext context) {
+    final textColor = NeoBrutalTheme.getTextColor(context);
     return Row(
       children: [
-        Icon(icon, size: 20, color: Colors.black),
+        Icon(icon, size: 20, color: textColor),
         const SizedBox(width: 8),
         Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w900,
-            color: Colors.black,
+            color: textColor,
           ),
         ),
       ],

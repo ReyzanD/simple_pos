@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../animations/animation_constants.dart';
 import '../theme/app_theme.dart';
+import 'package:simple_pos/l10n/app_localizations.dart';
 
 /// Animated empty state widget with floating icon animation
 class AnimatedEmptyState extends StatefulWidget {
@@ -25,67 +26,82 @@ class AnimatedEmptyState extends StatefulWidget {
 
   // Preset factory methods for common empty states
 
-  factory AnimatedEmptyState.noProducts({VoidCallback? onAction}) =>
-      AnimatedEmptyState(
-        icon: Icons.inventory_2_outlined,
-        title: 'Belum Ada Produk',
-        subtitle: 'Mulai tambahkan produk ke inventaris Anda',
-        actionText: 'Tambah Produk',
-        onAction: onAction,
-      );
+  factory AnimatedEmptyState.noProducts({
+    VoidCallback? onAction,
+    required BuildContext context,
+  }) => AnimatedEmptyState(
+    icon: Icons.inventory_2_outlined,
+    title: 'Tidak ada produk',
+    subtitle: AppLocalizations.of(context).empty_state_get_started,
+    actionText: 'Tambah',
+    onAction: onAction,
+  );
 
-  factory AnimatedEmptyState.noTransactions({VoidCallback? onAction}) =>
-      AnimatedEmptyState(
-        icon: Icons.receipt_long_outlined,
-        title: 'Belum Ada Transaksi',
-        subtitle: 'Transaksi penjualan Anda akan muncul di sini',
-        actionText: 'Mulai Transaksi',
-        onAction: onAction,
-      );
+  factory AnimatedEmptyState.noTransactions({
+    VoidCallback? onAction,
+    required BuildContext context,
+  }) => AnimatedEmptyState(
+    icon: Icons.receipt_long_outlined,
+    title: 'Tidak ada transaksi',
+    subtitle: 'Transaksi penjualan Anda akan muncul di sini',
+    actionText: 'Mulai Transaksi',
+    onAction: onAction,
+  );
 
-  factory AnimatedEmptyState.noExpenses({VoidCallback? onAction}) =>
-      AnimatedEmptyState(
-        icon: Icons.receipt_long_outlined,
-        title: 'Belum Ada Pengeluaran',
-        subtitle: 'Catat pengeluaran operasional toko',
-        actionText: 'Tambah Pengeluaran',
-        onAction: onAction,
-      );
+  factory AnimatedEmptyState.noExpenses({
+    VoidCallback? onAction,
+    required BuildContext context,
+  }) => AnimatedEmptyState(
+    icon: Icons.receipt_long_outlined,
+    title: 'Belum Ada Pengeluaran',
+    subtitle: 'Catat pengeluaran operasional toko',
+    actionText: 'Tambah Pengeluaran',
+    onAction: onAction,
+  );
 
-  factory AnimatedEmptyState.noSuppliers({VoidCallback? onAction}) =>
-      AnimatedEmptyState(
-        icon: Icons.local_shipping_outlined,
-        title: 'Belum Ada Pemasok',
-        subtitle: 'Tambahkan pemasok untuk inventori Anda',
-        actionText: 'Tambah Pemasok',
-        onAction: onAction,
-      );
+  factory AnimatedEmptyState.noSuppliers({
+    VoidCallback? onAction,
+    required BuildContext context,
+  }) => AnimatedEmptyState(
+    icon: Icons.local_shipping_outlined,
+    title: 'Belum Ada Pemasok',
+    subtitle: 'Tambahkan pemasok untuk inventori Anda',
+    actionText: 'Tambah Pemasok',
+    onAction: onAction,
+  );
 
-  factory AnimatedEmptyState.noCategories({VoidCallback? onAction}) =>
-      AnimatedEmptyState(
-        icon: Icons.category_outlined,
-        title: 'Belum Ada Kategori',
-        subtitle: 'Kategori membantu mengelola produk',
-        actionText: 'Tambah Kategori',
-        onAction: onAction,
-      );
+  factory AnimatedEmptyState.noCategories({
+    VoidCallback? onAction,
+    required BuildContext context,
+  }) => AnimatedEmptyState(
+    icon: Icons.category_outlined,
+    title: 'Belum Ada Kategori',
+    subtitle: 'Kategori membantu mengelola produk',
+    actionText: 'Tambah Kategori',
+    onAction: onAction,
+  );
 
-  factory AnimatedEmptyState.searchNoResults({String? query}) =>
-      AnimatedEmptyState(
-        icon: Icons.search_off_rounded,
-        title: 'Tidak Ditemukan',
-        subtitle:
-            query != null ? 'Tidak ada hasil untuk "$query"' : 'Coba kata kunci lain',
-      );
+  factory AnimatedEmptyState.searchNoResults({
+    String? query,
+    required BuildContext context,
+  }) => AnimatedEmptyState(
+    icon: Icons.search_off_rounded,
+    title: AppLocalizations.of(context).empty_state_no_results,
+    subtitle: query != null
+        ? 'Tidak ada hasil untuk "$query"'
+        : AppLocalizations.of(context).empty_state_try_again,
+  );
 
-  factory AnimatedEmptyState.noNetwork({VoidCallback? onRetry}) =>
-      AnimatedEmptyState(
-        icon: Icons.cloud_off_rounded,
-        title: 'Tidak Ada Koneksi',
-        subtitle: 'Periksa koneksi internet Anda',
-        actionText: 'Coba Lagi',
-        onAction: onRetry,
-      );
+  factory AnimatedEmptyState.noNetwork({
+    VoidCallback? onRetry,
+    required BuildContext context,
+  }) => AnimatedEmptyState(
+    icon: Icons.cloud_off_rounded,
+    title: 'Tidak Ada Koneksi',
+    subtitle: 'Periksa koneksi internet Anda',
+    actionText: AppLocalizations.of(context).common_retry,
+    onAction: onRetry,
+  );
 
   @override
   State<AnimatedEmptyState> createState() => _AnimatedEmptyStateState();
@@ -108,13 +124,9 @@ class _AnimatedEmptyStateState extends State<AnimatedEmptyState>
       duration: const Duration(milliseconds: 2000),
     )..repeat(reverse: true);
 
-    _floatAnimation = Tween<double>(
-      begin: -10,
-      end: 10,
-    ).animate(CurvedAnimation(
-      parent: _floatController,
-      curve: Curves.easeInOut,
-    ));
+    _floatAnimation = Tween<double>(begin: -10, end: 10).animate(
+      CurvedAnimation(parent: _floatController, curve: Curves.easeInOut),
+    );
 
     // Fade in animation on appearance
     _fadeController = AnimationController(
@@ -122,13 +134,12 @@ class _AnimatedEmptyStateState extends State<AnimatedEmptyState>
       duration: AnimationDurations.normal,
     );
 
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _fadeController,
-      curve: AnimationCurves.decelerate,
-    ));
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _fadeController,
+        curve: AnimationCurves.decelerate,
+      ),
+    );
 
     _fadeController.forward();
   }
@@ -171,9 +182,9 @@ class _AnimatedEmptyStateState extends State<AnimatedEmptyState>
               // Title
               Text(
                 widget.title,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: AppTheme.textPrimary,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(color: AppTheme.textPrimary),
                 textAlign: TextAlign.center,
               ),
               if (widget.subtitle != null) ...[
@@ -181,8 +192,8 @@ class _AnimatedEmptyStateState extends State<AnimatedEmptyState>
                 Text(
                   widget.subtitle!,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppTheme.textSecondary,
-                      ),
+                    color: AppTheme.textSecondary,
+                  ),
                   textAlign: TextAlign.center,
                 ),
               ],
@@ -232,21 +243,13 @@ class _AnimatedIconContainerState extends State<_AnimatedIconContainer>
       duration: const Duration(milliseconds: 1500),
     )..repeat(reverse: true);
 
-    _pulseAnimation = Tween<double>(
-      begin: 1.0,
-      end: 1.05,
-    ).animate(CurvedAnimation(
-      parent: _pulseController,
-      curve: Curves.easeInOut,
-    ));
+    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.05).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
 
-    _glowAnimation = Tween<double>(
-      begin: 0.0,
-      end: 0.15,
-    ).animate(CurvedAnimation(
-      parent: _pulseController,
-      curve: Curves.easeInOut,
-    ));
+    _glowAnimation = Tween<double>(begin: 0.0, end: 0.15).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
   }
 
   @override
@@ -286,10 +289,7 @@ class _PulseActionButton extends StatefulWidget {
   final String text;
   final VoidCallback onPressed;
 
-  const _PulseActionButton({
-    required this.text,
-    required this.onPressed,
-  });
+  const _PulseActionButton({required this.text, required this.onPressed});
 
   @override
   State<_PulseActionButton> createState() => _PulseActionButtonState();
@@ -310,21 +310,13 @@ class _PulseActionButtonState extends State<_PulseActionButton>
       duration: const Duration(milliseconds: 1000),
     )..repeat(reverse: true);
 
-    _scaleAnimation = Tween<double>(
-      begin: 1.0,
-      end: 1.03,
-    ).animate(CurvedAnimation(
-      parent: _pulseController,
-      curve: Curves.easeInOut,
-    ));
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.03).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
 
-    _shadowAnimation = Tween<double>(
-      begin: 4.0,
-      end: 8.0,
-    ).animate(CurvedAnimation(
-      parent: _pulseController,
-      curve: Curves.easeInOut,
-    ));
+    _shadowAnimation = Tween<double>(begin: 4.0, end: 8.0).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
   }
 
   @override
@@ -357,10 +349,7 @@ class _PulseActionButtonState extends State<_PulseActionButton>
             ),
             child: Text(
               widget.text,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
           ),
         );
@@ -405,10 +394,7 @@ class _EmptyStateIllustrationState extends State<EmptyStateIllustration>
     _floatAnimation = Tween<double>(
       begin: -8,
       end: 8,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeInOut,
-    ));
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
@@ -436,11 +422,7 @@ class _EmptyStateIllustrationState extends State<EmptyStateIllustration>
                   color: color.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
-                  widget.icon,
-                  size: widget.size,
-                  color: color,
-                ),
+                child: Icon(widget.icon, size: widget.size, color: color),
               ),
               if (widget.label != null) ...[
                 const SizedBox(height: 16),

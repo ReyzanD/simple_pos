@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/category.dart';
 import '../../../shared/presentation/providers.dart';
 import '../../../../core/constants/ui_constants.dart';
+import '../../../../core/theme/app_theme.dart';
+import '../../../../l10n/app_localizations.dart';
 
 /// Screen for managing categories
 class CategoryScreen extends ConsumerWidget {
@@ -13,18 +15,16 @@ class CategoryScreen extends ConsumerWidget {
     final controller = ref.watch(categoryControllerProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Kategori'),
-      ),
+      appBar: AppBar(title: Text(AppLocalizations.of(context)!.category_title)),
       body: controller.isLoading
           ? const Center(child: CircularProgressIndicator())
           : controller.categories.isEmpty
-              ? _buildEmptyState(context)
-              : _buildCategoryList(controller),
+          ? _buildEmptyState(context)
+          : _buildCategoryList(controller),
       floatingActionButton: FloatingActionButton(
         heroTag: 'category_fab', // ✅ Unique hero tag
         onPressed: () => _showAddEditDialog(context, controller),
-        tooltip: 'Tambah Kategori',
+        tooltip: AppLocalizations.of(context)!.category_add,
         child: const Icon(Icons.add),
       ),
     );
@@ -35,25 +35,19 @@ class CategoryScreen extends ConsumerWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.category,
-            size: 64,
-            color: Colors.grey.shade400,
-          ),
+          Icon(Icons.category, size: 64, color: AppTheme.textTertiary),
           const SizedBox(height: UIConstants.spacingMedium),
           Text(
-            'Tidak ada kategori',
+            AppLocalizations.of(context)!.category_noCategories,
             style: TextStyle(
               fontSize: UIConstants.fontSizeLarge,
-              color: Colors.grey.shade600,
+              color: AppTheme.textSecondary,
             ),
           ),
           const SizedBox(height: UIConstants.spacingSmall),
           Text(
-            'Tekan + untuk menambah kategori',
-            style: TextStyle(
-              color: Colors.grey.shade500,
-            ),
+            AppLocalizations.of(context)!.category_noCategories,
+            style: TextStyle(color: AppTheme.textTertiary),
           ),
         ],
       ),
@@ -71,16 +65,17 @@ class CategoryScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildCategoryCard(BuildContext context, Category category, dynamic controller) {
+  Widget _buildCategoryCard(
+    BuildContext context,
+    Category category,
+    dynamic controller,
+  ) {
     return Card(
       margin: const EdgeInsets.only(bottom: UIConstants.spacingSmall),
       child: ListTile(
         leading: CircleAvatar(
           backgroundColor: UIConstants.primaryColor.withValues(alpha: 0.1),
-          child: Icon(
-            Icons.category,
-            color: UIConstants.primaryColor,
-          ),
+          child: Icon(Icons.category, color: UIConstants.primaryColor),
         ),
         title: Text(
           category.name,
@@ -94,11 +89,18 @@ class CategoryScreen extends ConsumerWidget {
           children: [
             IconButton(
               icon: const Icon(Icons.edit, size: 20),
-              onPressed: () => _showAddEditDialog(context, controller, category),
+              onPressed: () =>
+                  _showAddEditDialog(context, controller, category),
+              tooltip: AppLocalizations.of(context)!.common_edit,
             ),
             IconButton(
-              icon: const Icon(Icons.delete, size: 20, color: Colors.red),
+              icon: const Icon(
+                Icons.delete,
+                size: 20,
+                color: AppTheme.errorColor,
+              ),
               onPressed: () => _showDeleteDialog(context, category, controller),
+              tooltip: AppLocalizations.of(context)!.common_delete,
             ),
           ],
         ),
@@ -112,7 +114,9 @@ class CategoryScreen extends ConsumerWidget {
     Category? category,
   ]) async {
     final nameController = TextEditingController(text: category?.name ?? '');
-    final descriptionController = TextEditingController(text: category?.description ?? '');
+    final descriptionController = TextEditingController(
+      text: category?.description ?? '',
+    );
     final formKey = GlobalKey<FormState>();
 
     final isEditing = category != null;
@@ -120,7 +124,11 @@ class CategoryScreen extends ConsumerWidget {
     await showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(isEditing ? 'Edit Kategori' : 'Tambah Kategori'),
+        title: Text(
+          isEditing
+              ? AppLocalizations.of(context)!.category_edit
+              : AppLocalizations.of(context)!.category_add,
+        ),
         content: Form(
           key: formKey,
           child: Column(
@@ -128,16 +136,16 @@ class CategoryScreen extends ConsumerWidget {
             children: [
               TextFormField(
                 controller: nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Nama Kategori',
+                decoration: InputDecoration(
+                  labelText: AppLocalizations.of(context)!.category_name,
                   border: OutlineInputBorder(),
                 ),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
-                    return 'Nama kategori wajib diisi';
+                    return AppLocalizations.of(context)!.category_nameRequired;
                   }
                   if (value.trim().length < 2) {
-                    return 'Nama kategori minimal 2 karakter';
+                    return AppLocalizations.of(context)!.category_nameTooShort;
                   }
                   return null;
                 },
@@ -145,8 +153,8 @@ class CategoryScreen extends ConsumerWidget {
               const SizedBox(height: UIConstants.spacingMedium),
               TextField(
                 controller: descriptionController,
-                decoration: const InputDecoration(
-                  labelText: 'Deskripsi (Opsional)',
+                decoration: InputDecoration(
+                  labelText: AppLocalizations.of(context)!.category_description,
                   border: OutlineInputBorder(),
                 ),
                 maxLines: 2,
@@ -157,7 +165,7 @@ class CategoryScreen extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Batal'),
+            child: Text(AppLocalizations.of(context)!.common_cancel),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -180,16 +188,25 @@ class CategoryScreen extends ConsumerWidget {
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text(success
-                          ? 'Kategori berhasil disimpan'
-                          : controller.errorMessage ?? 'Gagal menyimpan kategori'),
-                      backgroundColor: success ? Colors.green : Colors.red,
+                      content: Text(
+                        success
+                            ? AppLocalizations.of(context)!.category_addSuccess
+                            : controller.errorMessage ??
+                                  AppLocalizations.of(context)!.common_error,
+                      ),
+                      backgroundColor: success
+                          ? AppTheme.successColor
+                          : AppTheme.errorColor,
                     ),
                   );
                 }
               }
             },
-            child: Text(isEditing ? 'Simpan' : 'Tambah'),
+            child: Text(
+              isEditing
+                  ? AppLocalizations.of(context)!.common_save
+                  : AppLocalizations.of(context)!.category_add,
+            ),
           ),
         ],
       ),
@@ -204,21 +221,19 @@ class CategoryScreen extends ConsumerWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Hapus Kategori'),
-        content: Text(
-          'Apakah Anda yakin ingin menghapus kategori "${category.name}"?',
-        ),
+        title: Text(AppLocalizations.of(context)!.category_delete),
+        content: Text(AppLocalizations.of(context)!.category_deleteConfirm),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Batal'),
+            child: Text(AppLocalizations.of(context)!.common_cancel),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
+              backgroundColor: AppTheme.errorColor,
             ),
-            child: const Text('Hapus'),
+            child: Text(AppLocalizations.of(context)!.common_delete),
           ),
         ],
       ),
@@ -229,10 +244,15 @@ class CategoryScreen extends ConsumerWidget {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(success
-                ? 'Kategori berhasil dihapus'
-                : controller.errorMessage ?? 'Gagal menghapus kategori'),
-            backgroundColor: success ? Colors.green : Colors.red,
+            content: Text(
+              success
+                  ? AppLocalizations.of(context).category_deleteSuccess
+                  : controller.errorMessage ??
+                        AppLocalizations.of(context).common_error,
+            ),
+            backgroundColor: success
+                ? AppTheme.successColor
+                : AppTheme.errorColor,
           ),
         );
       }

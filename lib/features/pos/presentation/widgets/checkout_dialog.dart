@@ -6,10 +6,12 @@ import '../../../sales/presentation/widgets/payment_method_selector.dart';
 import '../../../inventory/presentation/controllers/category_controller.dart';
 import '../../domain/entities/cart_item.dart';
 import '../../../sales/presentation/controllers/discount_controller.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/constants/ui_constants.dart';
 import '../../../settings/presentation/controllers/settings_controller.dart';
 import '../../../shared/presentation/providers.dart';
+import 'package:simple_pos/l10n/app_localizations.dart';
 
 /// Dialog for checkout with payment processing
 class CheckoutDialog extends ConsumerStatefulWidget {
@@ -18,7 +20,12 @@ class CheckoutDialog extends ConsumerStatefulWidget {
     required PaymentMethod paymentMethod,
     double? cashReceived,
     String? cardLast4Digits,
-  }) onConfirm;
+    double tax,
+    double discount,
+    int? cashierId,
+    String? cashierName,
+  })
+  onConfirm;
 
   const CheckoutDialog({
     super.key,
@@ -36,7 +43,8 @@ class _CheckoutDialogState extends ConsumerState<CheckoutDialog> {
   String? _cardLast4Digits;
   bool _isProcessing = false;
   String? _errorMessage;
-  final ValidatePaymentUseCase _validatePaymentUseCase = ValidatePaymentUseCase();
+  final ValidatePaymentUseCase _validatePaymentUseCase =
+      ValidatePaymentUseCase();
 
   double _subtotal(
     List<CartItem> cartItems,
@@ -56,13 +64,15 @@ class _CheckoutDialogState extends ConsumerState<CheckoutDialog> {
 
       double? promotionDiscount;
       if (discountController.activePromotions.isNotEmpty) {
-        promotionDiscount = discountController.activePromotions.first.discountPercentage;
+        promotionDiscount =
+            discountController.activePromotions.first.discountPercentage;
       }
 
-      return sum + item.getCompoundTotalPrice(
-        categoryDiscount: categoryDiscount,
-        promotionDiscount: promotionDiscount,
-      );
+      return sum +
+          item.getCompoundTotalPrice(
+            categoryDiscount: categoryDiscount,
+            promotionDiscount: promotionDiscount,
+          );
     });
   }
 
@@ -84,7 +94,8 @@ class _CheckoutDialogState extends ConsumerState<CheckoutDialog> {
 
       double? promotionDiscount;
       if (discountController.activePromotions.isNotEmpty) {
-        promotionDiscount = discountController.activePromotions.first.discountPercentage;
+        promotionDiscount =
+            discountController.activePromotions.first.discountPercentage;
       }
 
       final breakdown = item.getCompoundDiscountBreakdown(
@@ -98,24 +109,33 @@ class _CheckoutDialogState extends ConsumerState<CheckoutDialog> {
 
   double _tax(double subtotal, SettingsController settingsController) {
     if (!settingsController.taxEnabled) return 0;
-    return subtotal * 0.11;
+    return subtotal * settingsController.taxRate;
   }
 
   double _totalAmount(double subtotal, double tax) => subtotal + tax;
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final categoryController = ref.watch(categoryControllerProvider);
     final discountController = ref.watch(discountControllerProvider);
     final settingsController = ref.watch(settingsControllerProvider);
 
-    final subtotal = _subtotal(widget.cart, categoryController, discountController);
-    final totalDiscount = _totalDiscount(widget.cart, categoryController, discountController);
+    final subtotal = _subtotal(
+      widget.cart,
+      categoryController,
+      discountController,
+    );
+    final totalDiscount = _totalDiscount(
+      widget.cart,
+      categoryController,
+      discountController,
+    );
     final tax = _tax(subtotal, settingsController);
     final totalAmount = _totalAmount(subtotal, tax);
 
     return AlertDialog(
-      title: const Text('Konfirmasi Checkout'),
+      title: Text(AppLocalizations.of(context)!.checkout_confirm),
       content: SizedBox(
         width: 500,
         child: SingleChildScrollView(
@@ -123,62 +143,79 @@ class _CheckoutDialogState extends ConsumerState<CheckoutDialog> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-            // Order Summary
-            _buildOrderSummary(categoryController, discountController, subtotal, totalDiscount, tax, totalAmount),
-            const Divider(height: UIConstants.spacingLarge),
-            const SizedBox(height: UIConstants.spacingSmall),
-
-            // Payment Method Selector
-            PaymentMethodSelector(
-              initialMethod: _selectedPaymentMethod,
-              totalAmount: totalAmount,
-              onPaymentSelected: (method, {cashReceived, cardLast4Digits}) {
-                setState(() {
-                  _selectedPaymentMethod = method;
-                  _cashReceived = cashReceived;
-                  _cardLast4Digits = cardLast4Digits;
-                  _errorMessage = null;
-                });
-              },
-              onValueChange: (cashReceived) {
-                setState(() {
-                  _cashReceived = cashReceived;
-                });
-              },
-            ),
-
-            // Error Message
-            if (_errorMessage != null) ...[
-              const SizedBox(height: UIConstants.spacingMedium),
-              Container(
-                padding: const EdgeInsets.all(UIConstants.paddingSmall),
-                decoration: BoxDecoration(
-                  color: Colors.red.shade50,
-                  borderRadius: BorderRadius.circular(UIConstants.radiusSmall),
-                  border: Border.all(color: Colors.red.shade300),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.error_outline, color: Colors.red.shade700, size: 20),
-                    const SizedBox(width: UIConstants.spacingSmall),
-                    Expanded(
-                      child: Text(
-                        _errorMessage!,
-                        style: TextStyle(color: Colors.red.shade900, fontSize: UIConstants.fontSizeSmall),
-                      ),
-                    ),
-                  ],
-                ),
+              _buildOrderSummary(
+                categoryController,
+                discountController,
+                subtotal,
+                totalDiscount,
+                tax,
+                totalAmount,
               ),
+              const Divider(height: UIConstants.spacingLarge),
+              const SizedBox(height: UIConstants.spacingSmall),
+              PaymentMethodSelector(
+                initialMethod: _selectedPaymentMethod,
+                totalAmount: totalAmount,
+                onPaymentSelected: (method, {cashReceived, cardLast4Digits}) {
+                  setState(() {
+                    _selectedPaymentMethod = method;
+                    _cashReceived = cashReceived;
+                    _cardLast4Digits = cardLast4Digits;
+                    _errorMessage = null;
+                  });
+                },
+                onValueChange: (cashReceived) {
+                  setState(() {
+                    _cashReceived = cashReceived;
+                  });
+                },
+              ),
+              if (_errorMessage != null) ...[
+                const SizedBox(height: UIConstants.spacingMedium),
+                Container(
+                  padding: const EdgeInsets.all(UIConstants.paddingSmall),
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? AppTheme.errorColor.withValues(alpha: 0.15)
+                        : AppTheme.errorColor.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(
+                      UIConstants.radiusSmall,
+                    ),
+                    border: Border.all(
+                      color: AppTheme.errorColor.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.error_outline,
+                        color: AppTheme.errorColor,
+                        size: 20,
+                      ),
+                      const SizedBox(width: UIConstants.spacingSmall),
+                      Expanded(
+                        child: Text(
+                          _errorMessage!,
+                          style: const TextStyle(
+                            color: AppTheme.errorColor,
+                            fontSize: UIConstants.fontSizeSmall,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ],
-          ],
+          ),
         ),
-      ),
       ),
       actions: [
         TextButton(
-          onPressed: _isProcessing ? null : () => Navigator.of(context).pop(false),
-          child: const Text('Batal'),
+          onPressed: _isProcessing
+              ? null
+              : () => Navigator.of(context).pop(false),
+          child: Text(AppLocalizations.of(context)!.common_cancel),
         ),
         ElevatedButton(
           onPressed: _isProcessing ? null : _handleConfirm,
@@ -195,7 +232,7 @@ class _CheckoutDialogState extends ConsumerState<CheckoutDialog> {
                     valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                   ),
                 )
-              : const Text('Konfirmasi'),
+              : Text(AppLocalizations.of(context)!.checkout_confirm),
         ),
       ],
     );
@@ -209,18 +246,18 @@ class _CheckoutDialogState extends ConsumerState<CheckoutDialog> {
     double tax,
     double totalAmount,
   ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final secondaryTextColor = isDark ? Colors.white60 : Colors.grey.shade600;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Ringkasan Pesanan',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+          AppLocalizations.of(context)!.checkout_confirm,
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: UIConstants.spacingMedium),
-
-        // Items List
         Container(
           constraints: const BoxConstraints(maxHeight: 150),
           child: ListView.builder(
@@ -241,7 +278,10 @@ class _CheckoutDialogState extends ConsumerState<CheckoutDialog> {
 
               double? promotionDiscount;
               if (discountController.activePromotions.isNotEmpty) {
-                promotionDiscount = discountController.activePromotions.first.discountPercentage;
+                promotionDiscount = discountController
+                    .activePromotions
+                    .first
+                    .discountPercentage;
               }
 
               final hasCompoundDiscount = item.product.hasAnyDiscount(
@@ -257,14 +297,18 @@ class _CheckoutDialogState extends ConsumerState<CheckoutDialog> {
                   : item.product.price;
 
               final itemTotalDiscount = hasCompoundDiscount
-                  ? item.getCompoundDiscountBreakdown(
-                      categoryDiscount: categoryDiscount,
-                      promotionDiscount: promotionDiscount,
-                    ).totalDiscount
+                  ? item
+                        .getCompoundDiscountBreakdown(
+                          categoryDiscount: categoryDiscount,
+                          promotionDiscount: promotionDiscount,
+                        )
+                        .totalDiscount
                   : 0.0;
 
               return Padding(
-                padding: const EdgeInsets.only(bottom: UIConstants.spacingSmall),
+                padding: const EdgeInsets.only(
+                  bottom: UIConstants.spacingSmall,
+                ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -280,7 +324,7 @@ class _CheckoutDialogState extends ConsumerState<CheckoutDialog> {
                             Text(
                               '${item.quantity} x ${CurrencyFormatter.format(item.product.price)}',
                               style: TextStyle(
-                                color: Colors.grey.shade600,
+                                color: secondaryTextColor,
                                 fontSize: UIConstants.fontSizeSmall,
                                 decoration: TextDecoration.lineThrough,
                               ),
@@ -288,7 +332,7 @@ class _CheckoutDialogState extends ConsumerState<CheckoutDialog> {
                             Text(
                               '${item.quantity} x ${CurrencyFormatter.format(compoundPrice)}',
                               style: TextStyle(
-                                color: Colors.green.shade700,
+                                color: AppTheme.successColor,
                                 fontSize: UIConstants.fontSizeSmall,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -297,7 +341,7 @@ class _CheckoutDialogState extends ConsumerState<CheckoutDialog> {
                             Text(
                               '${item.quantity} x ${CurrencyFormatter.format(item.product.price)}',
                               style: TextStyle(
-                                color: Colors.grey.shade600,
+                                color: secondaryTextColor,
                                 fontSize: UIConstants.fontSizeSmall,
                               ),
                             ),
@@ -310,25 +354,29 @@ class _CheckoutDialogState extends ConsumerState<CheckoutDialog> {
                       children: [
                         if (hasCompoundDiscount) ...[
                           Text(
-                            CurrencyFormatter.format(item.subtotalBeforeDiscount),
+                            CurrencyFormatter.format(
+                              item.subtotalBeforeDiscount,
+                            ),
                             style: TextStyle(
-                              color: Colors.grey.shade600,
+                              color: secondaryTextColor,
                               fontSize: UIConstants.fontSizeSmall,
                               decoration: TextDecoration.lineThrough,
                             ),
                           ),
                           Text(
-                            CurrencyFormatter.format(compoundPrice * item.quantity),
+                            CurrencyFormatter.format(
+                              compoundPrice * item.quantity,
+                            ),
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
-                              color: Colors.green,
+                              color: AppTheme.successColor,
                             ),
                           ),
                           if (itemTotalDiscount > 0)
                             Text(
                               '-${CurrencyFormatter.format(itemTotalDiscount)}',
                               style: TextStyle(
-                                color: Colors.green.shade700,
+                                color: AppTheme.successColor,
                                 fontSize: UIConstants.fontSizeSmall,
                               ),
                             ),
@@ -346,24 +394,22 @@ class _CheckoutDialogState extends ConsumerState<CheckoutDialog> {
             },
           ),
         ),
-
         const Divider(height: UIConstants.spacingLarge),
-
-        // Totals
-        _buildTotalRow('Subtotal', subtotal),
+        _buildTotalRow(AppLocalizations.of(context)!.cart_subtotal, subtotal),
         if (totalDiscount > 0) ...[
           const SizedBox(height: UIConstants.spacingSmall),
           _buildTotalRow(
-            'Diskon',
+            AppLocalizations.of(context)!.cart_total_discount,
             -totalDiscount,
-            color: Colors.green,
+            color: AppTheme.successColor,
           ),
         ],
         const SizedBox(height: UIConstants.spacingSmall),
-        if (tax > 0) _buildTotalRow('Pajak (11%)', tax),
+        if (tax > 0)
+          _buildTotalRow(AppLocalizations.of(context)!.tax_label, tax),
         const SizedBox(height: UIConstants.spacingSmall),
         _buildTotalRow(
-          'Total',
+          AppLocalizations.of(context)!.cart_total,
           totalAmount,
           isBold: true,
           fontSize: UIConstants.fontSizeLarge,
@@ -372,12 +418,18 @@ class _CheckoutDialogState extends ConsumerState<CheckoutDialog> {
     );
   }
 
-  Widget _buildTotalRow(String label, double amount, {bool isBold = false, double? fontSize, Color? color}) {
+  Widget _buildTotalRow(
+    String label,
+    double amount, {
+    bool isBold = false,
+    double? fontSize,
+    Color? color,
+  }) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
-          label,
+          label, // This is a dynamic label passed from _buildOrderSummary
           style: TextStyle(
             fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
             fontSize: fontSize,
@@ -400,10 +452,23 @@ class _CheckoutDialogState extends ConsumerState<CheckoutDialog> {
     final categoryController = ref.read(categoryControllerProvider);
     final discountController = ref.read(discountControllerProvider);
     final settingsController = ref.read(settingsControllerProvider);
+    final authController = ref.read(authControllerProvider);
 
-    final subtotal = _subtotal(widget.cart, categoryController, discountController);
+    final subtotal = _subtotal(
+      widget.cart,
+      categoryController,
+      discountController,
+    );
+    final totalDiscount = _totalDiscount(
+      widget.cart,
+      categoryController,
+      discountController,
+    );
     final tax = _tax(subtotal, settingsController);
     final totalAmount = _totalAmount(subtotal, tax);
+
+    final cashierId = authController.currentUser?.id;
+    final cashierName = authController.currentUser?.fullName;
 
     // Validate payment
     final validationResult = _validatePaymentUseCase.execute(
@@ -430,6 +495,10 @@ class _CheckoutDialogState extends ConsumerState<CheckoutDialog> {
         paymentMethod: _selectedPaymentMethod,
         cashReceived: _cashReceived,
         cardLast4Digits: _cardLast4Digits,
+        tax: tax,
+        discount: totalDiscount,
+        cashierId: cashierId,
+        cashierName: cashierName,
       );
 
       if (mounted) {
@@ -437,7 +506,7 @@ class _CheckoutDialogState extends ConsumerState<CheckoutDialog> {
       }
     } catch (e) {
       setState(() {
-        _errorMessage = 'Gagal memproses checkout: $e';
+        _errorMessage = AppLocalizations.of(context)!.checkout_error_discount;
         _isProcessing = false;
       });
     }
@@ -452,14 +521,16 @@ Future<bool> showCheckoutDialog({
     required PaymentMethod paymentMethod,
     double? cashReceived,
     String? cardLast4Digits,
-  }) onConfirm,
+    double tax,
+    double discount,
+    int? cashierId,
+    String? cashierName,
+  })
+  onConfirm,
 }) async {
   final result = await showDialog<bool>(
     context: context,
-    builder: (context) => CheckoutDialog(
-      cart: cart,
-      onConfirm: onConfirm,
-    ),
+    builder: (context) => CheckoutDialog(cart: cart, onConfirm: onConfirm),
   );
 
   return result ?? false;

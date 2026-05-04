@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/widgets/modern_card.dart';
+import 'package:simple_pos/l10n/app_localizations.dart';
 import '../../domain/usecases/get_held_carts_usecase.dart';
 import '../../../shared/presentation/providers.dart';
 
@@ -28,31 +29,31 @@ class _HeldOrdersScreenState extends ConsumerState<HeldOrdersScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Lanjutkan Pesanan'),
-        content: const Text(
-          'Keranjang belanja saat ini akan diganti dengan pesanan tertahan ini. Lanjutkan?',
-        ),
+        title: Text(AppLocalizations.of(context)!.held_order_continue),
+        content: Text(AppLocalizations.of(context)!.held_order_current_cart),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Batal'),
+            child: Text(AppLocalizations.of(context)!.common_cancel),
           ),
           ElevatedButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Lanjutkan'),
+            child: Text(AppLocalizations.of(context)!.held_order_continue),
           ),
         ],
       ),
     );
 
     if (confirmed == true && mounted) {
-      final success = await ref.read(posControllerProvider).resumeCart(heldCartId);
+      final success = await ref
+          .read(posControllerProvider)
+          .resumeCart(heldCartId);
       if (mounted) {
         if (success) {
           Navigator.of(context).pop(true);
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Pesanan berhasil dilanjutkan'),
+            SnackBar(
+              content: Text(AppLocalizations.of(context)!.held_order_continue),
               backgroundColor: AppTheme.successColor,
               behavior: SnackBarBehavior.floating,
             ),
@@ -77,31 +78,37 @@ class _HeldOrdersScreenState extends ConsumerState<HeldOrdersScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Hapus Pesanan Tertahan'),
-        content: Text('Yakin ingin menghapus pesanan untuk $customerName?'),
+        title: Text(AppLocalizations.of(context)!.held_order_delete),
+        content: Text(
+          AppLocalizations.of(
+            context,
+          )!.held_order_delete_confirm.replaceAll('{name}', customerName),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Batal'),
+            child: Text(AppLocalizations.of(context)!.common_cancel),
           ),
           ElevatedButton(
             onPressed: () => Navigator.of(context).pop(true),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.errorColor,
             ),
-            child: const Text('Hapus'),
+            child: Text(AppLocalizations.of(context)!.held_order_delete),
           ),
         ],
       ),
     );
 
     if (confirmed == true && mounted) {
-      final success = await ref.read(posControllerProvider).deleteHeldCart(heldCartId);
+      final success = await ref
+          .read(posControllerProvider)
+          .deleteHeldCart(heldCartId);
       if (mounted) {
         if (success) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Pesanan tertahan berhasil dihapus'),
+            SnackBar(
+              content: Text(AppLocalizations.of(context)!.held_order_delete),
               backgroundColor: AppTheme.successColor,
               behavior: SnackBarBehavior.floating,
             ),
@@ -128,15 +135,13 @@ class _HeldOrdersScreenState extends ConsumerState<HeldOrdersScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Pesanan Tertahan'),
+        title: Text(AppLocalizations.of(context)!.held_orders_title),
         backgroundColor: AppTheme.primaryColor,
         foregroundColor: Colors.white,
       ),
       body: () {
         if (controller.isLoadingHeldCarts) {
-          return const Center(
-            child: CircularProgressIndicator(),
-          );
+          return const Center(child: CircularProgressIndicator());
         }
 
         if (controller.hasError) {
@@ -144,11 +149,7 @@ class _HeldOrdersScreenState extends ConsumerState<HeldOrdersScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  Icons.error_outline,
-                  size: 64,
-                  color: AppTheme.errorColor,
-                ),
+                Icon(Icons.error_outline, size: 64, color: AppTheme.errorColor),
                 const SizedBox(height: 16),
                 Text(
                   controller.error!.userMessage,
@@ -159,7 +160,7 @@ class _HeldOrdersScreenState extends ConsumerState<HeldOrdersScreen> {
                 ElevatedButton.icon(
                   onPressed: () => controller.loadHeldCarts(),
                   icon: const Icon(Icons.refresh),
-                  label: const Text('Coba Lagi'),
+                  label: Text(AppLocalizations.of(context)!.common_retry),
                 ),
               ],
             ),
@@ -178,17 +179,17 @@ class _HeldOrdersScreenState extends ConsumerState<HeldOrdersScreen> {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Belum ada pesanan tertahan',
+                  AppLocalizations.of(context)!.held_order_no_orders,
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        color: AppTheme.textSecondary,
-                      ),
+                    color: AppTheme.textSecondary,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Tahan pesanan dari keranjang untuk melihatnya di sini',
+                  AppLocalizations.of(context)!.held_order_hold,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppTheme.textTertiary,
-                      ),
+                    color: AppTheme.textTertiary,
+                  ),
                 ),
               ],
             ),
@@ -228,10 +229,7 @@ class _HeldOrdersScreenState extends ConsumerState<HeldOrdersScreen> {
                       color: AppTheme.infoColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Icon(
-                      Icons.pause_circle,
-                      color: AppTheme.infoColor,
-                    ),
+                    child: Icon(Icons.pause_circle, color: AppTheme.infoColor),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -240,16 +238,14 @@ class _HeldOrdersScreenState extends ConsumerState<HeldOrdersScreen> {
                       children: [
                         Text(
                           heldCart.displayName,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w600),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           heldCart.formattedTime,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: AppTheme.textSecondary,
-                              ),
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: AppTheme.textSecondary),
                         ),
                       ],
                     ),
@@ -267,11 +263,7 @@ class _HeldOrdersScreenState extends ConsumerState<HeldOrdersScreen> {
                       AppTheme.primaryColor,
                     ),
                   ),
-                  Container(
-                    width: 1,
-                    height: 40,
-                    color: AppTheme.dividerColor,
-                  ),
+                  Container(width: 1, height: 40, color: AppTheme.dividerColor),
                   Expanded(
                     child: _buildStatItem(
                       context,
@@ -292,10 +284,14 @@ class _HeldOrdersScreenState extends ConsumerState<HeldOrdersScreen> {
                         heldCart.customerName,
                       ),
                       icon: const Icon(Icons.delete_outline, size: 18),
-                      label: const Text('Hapus'),
+                      label: Text(
+                        AppLocalizations.of(context)!.held_order_delete,
+                      ),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppTheme.errorColor,
-                        side: BorderSide(color: AppTheme.errorColor.withValues(alpha: 0.5)),
+                        side: BorderSide(
+                          color: AppTheme.errorColor.withValues(alpha: 0.5),
+                        ),
                       ),
                     ),
                   ),
@@ -305,7 +301,9 @@ class _HeldOrdersScreenState extends ConsumerState<HeldOrdersScreen> {
                     child: ElevatedButton.icon(
                       onPressed: () => _handleResumeOrder(heldCart.id),
                       icon: const Icon(Icons.play_arrow, size: 18),
-                      label: const Text('Lanjutkan'),
+                      label: Text(
+                        AppLocalizations.of(context)!.held_order_continue,
+                      ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppTheme.primaryColor,
                         foregroundColor: Colors.white,
@@ -335,8 +333,8 @@ class _HeldOrdersScreenState extends ConsumerState<HeldOrdersScreen> {
         Text(
           value,
           style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                color: color,
-                fontWeight: FontWeight.w600,
+            color: color,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ],

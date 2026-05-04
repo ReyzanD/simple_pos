@@ -7,16 +7,19 @@ class DailySales {
   final int transactionCount;
   final double revenue;
   final double profit;
+  final double tax;
 
   const DailySales({
     required this.date,
     required this.transactionCount,
     required this.revenue,
     required this.profit,
+    this.tax = 0,
   });
 
   @override
-  String toString() => 'DailySales(date: $date, transactions: $transactionCount, revenue: $revenue)';
+  String toString() =>
+      'DailySales(date: $date, transactions: $transactionCount, revenue: $revenue)';
 }
 
 /// Product sales statistics
@@ -35,8 +38,15 @@ class ProductSales {
     required this.profit,
   });
 
+  /// Calculate profit margin percentage
+  double get profitMargin {
+    if (revenue == 0) return 0;
+    return (profit / revenue * 100);
+  }
+
   @override
-  String toString() => 'ProductSales(product: $productName, quantity: $quantitySold, revenue: $revenue)';
+  String toString() =>
+      'ProductSales(product: $productName, quantity: $quantitySold, revenue: $revenue)';
 }
 
 /// Payment method breakdown
@@ -54,7 +64,8 @@ class PaymentMethodBreakdown {
   });
 
   @override
-  String toString() => 'PaymentMethodBreakdown(method: $paymentMethod, count: $transactionCount, amount: $totalAmount)';
+  String toString() =>
+      'PaymentMethodBreakdown(method: $paymentMethod, count: $transactionCount, amount: $totalAmount)';
 }
 
 /// Category sales breakdown
@@ -76,7 +87,52 @@ class CategorySales {
   });
 
   @override
-  String toString() => 'CategorySales(category: $categoryName, quantity: $quantitySold, revenue: $revenue)';
+  String toString() =>
+      'CategorySales(category: $categoryName, quantity: $quantitySold, revenue: $revenue)';
+}
+
+/// Cashier sales breakdown
+class CashierSales {
+  final int? cashierId;
+  final String cashierName;
+  final int transactionCount;
+  final double revenue;
+  final double profit;
+  final double profitMargin;
+
+  const CashierSales({
+    this.cashierId,
+    required this.cashierName,
+    required this.transactionCount,
+    required this.revenue,
+    required this.profit,
+    required this.profitMargin,
+  });
+
+  @override
+  String toString() =>
+      'CashierSales(cashier: $cashierName, transactions: $transactionCount, revenue: $revenue)';
+}
+
+/// Discount summary for the reporting period
+class DiscountSummary {
+  final double totalDiscount;
+  final int discountedTransactionCount;
+  final int totalTransactionCount;
+  final double averageDiscountPerTransaction;
+  final double discountRate;
+
+  const DiscountSummary({
+    required this.totalDiscount,
+    required this.discountedTransactionCount,
+    required this.totalTransactionCount,
+    required this.averageDiscountPerTransaction,
+    required this.discountRate,
+  });
+
+  @override
+  String toString() =>
+      'DiscountSummary(total: $totalDiscount, rate: ${discountRate.toStringAsFixed(1)}%)';
 }
 
 /// Period comparison data for comparing current period with previous period
@@ -138,7 +194,8 @@ class PeakHourData {
   }
 
   @override
-  String toString() => 'PeakHourData(hour: $formattedHour, transactions: $transactionCount, revenue: $revenue)';
+  String toString() =>
+      'PeakHourData(hour: $formattedHour, transactions: $transactionCount, revenue: $revenue)';
 }
 
 /// Sales report containing aggregated sales data
@@ -148,12 +205,15 @@ class SalesReport {
   final int totalTransactions;
   final double totalRevenue;
   final double totalProfit;
+  final double totalTax;
   final double averageTransactionValue;
   final int totalItemsSold;
   final List<DailySales> dailyBreakdown;
   final List<ProductSales> topProducts;
   final List<PaymentMethodBreakdown> paymentBreakdown;
   final List<CategorySales> categoryBreakdown;
+  final List<CashierSales> cashierBreakdown;
+  final DiscountSummary? discountSummary;
   final PeriodComparison? monthOverMonth;
   final PeriodComparison? yearOverYear;
   final List<PeakHourData> peakHours;
@@ -165,12 +225,15 @@ class SalesReport {
     required this.totalTransactions,
     required this.totalRevenue,
     required this.totalProfit,
+    this.totalTax = 0,
     required this.averageTransactionValue,
     required this.totalItemsSold,
     required this.dailyBreakdown,
     required this.topProducts,
     required this.paymentBreakdown,
     this.categoryBreakdown = const [],
+    this.cashierBreakdown = const [],
+    this.discountSummary,
     this.monthOverMonth,
     this.yearOverYear,
     this.peakHours = const [],

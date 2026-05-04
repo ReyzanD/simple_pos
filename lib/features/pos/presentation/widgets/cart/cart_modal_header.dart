@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:simple_pos/core/theme/neo_brutal_theme.dart';
-import 'package:simple_pos/features/pos/domain/entities/cart_item.dart' as domain;
+import 'package:simple_pos/features/pos/domain/entities/cart_item.dart'
+    as domain;
+import 'package:simple_pos/l10n/app_localizations.dart';
 
 /// Cart Modal Header - Dramatic header with cart icon and title
 class CartModalHeader extends StatelessWidget {
   final List<domain.CartItem> cartItems;
 
-  const CartModalHeader({
-    super.key,
-    required this.cartItems,
-  });
+  const CartModalHeader({super.key, required this.cartItems});
 
   @override
   Widget build(BuildContext context) {
+    final borderColor = NeoBrutalTheme.getBorderColor(context);
     return Container(
       padding: EdgeInsets.all(NeoBrutalTheme.spaceLG),
       decoration: BoxDecoration(
@@ -25,29 +25,20 @@ class CartModalHeader extends StatelessWidget {
           ],
         ),
         borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(19), // Account for 5px border
+          topLeft: Radius.circular(19),
           topRight: Radius.circular(19),
         ),
-        border: Border(
-          bottom: BorderSide(
-            color: Colors.black,
-            width: 5, // ✅ Bold bottom border
-          ),
-        ),
+        border: Border(bottom: BorderSide(color: borderColor, width: 5)),
       ),
       child: Row(
         children: [
-          // Dramatic cart icon
           Container(
             width: 56,
             height: 56,
             decoration: BoxDecoration(
               color: NeoBrutalTheme.primary,
               borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium),
-              border: Border.all(
-                color: Colors.black,
-                width: 4,
-              ),
+              border: Border.all(color: borderColor, width: 4),
               boxShadow: NeoBrutalTheme.chunkyShadow,
             ),
             child: Icon(
@@ -57,14 +48,12 @@ class CartModalHeader extends StatelessWidget {
             ),
           ),
           SizedBox(width: NeoBrutalTheme.spaceMD),
-
-          // Bold title
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'KERANJANG',
+                  AppLocalizations.of(context)!.cart_keranjang,
                   style: NeoBrutalTheme.headlineLarge.copyWith(
                     fontWeight: FontWeight.w900,
                     color: Colors.white,
@@ -74,7 +63,10 @@ class CartModalHeader extends StatelessWidget {
                 ),
                 if (cartItems.isNotEmpty)
                   Text(
-                    '${cartItems.length} PRODUK',
+                    AppLocalizations.of(context)!.cart_total_items.replaceAll(
+                      '{count}',
+                      '${cartItems.length}',
+                    ),
                     style: NeoBrutalTheme.labelSmall.copyWith(
                       fontWeight: FontWeight.w700,
                       color: Colors.white.withValues(alpha: 0.8),
@@ -84,24 +76,19 @@ class CartModalHeader extends StatelessWidget {
               ],
             ),
           ),
-
-          // Close button with brutal styling
           GestureDetector(
             onTap: () => Navigator.of(context).pop(),
             child: Container(
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: NeoBrutalTheme.getCardColor(context),
                 borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
-                border: Border.all(
-                  color: Colors.black,
-                  width: 3,
-                ),
+                border: Border.all(color: borderColor, width: 3),
               ),
               child: Icon(
                 Icons.close_rounded,
-                color: Colors.black,
+                color: NeoBrutalTheme.getTextColor(context),
                 size: 24,
               ),
             ),

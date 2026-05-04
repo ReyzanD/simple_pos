@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:simple_pos/core/theme/neo_brutal_theme.dart';
 import 'package:simple_pos/core/widgets/brutal_widgets.dart';
 import '../../controllers/pos_controller.dart';
+import 'package:simple_pos/l10n/app_localizations.dart';
 import 'sort_dropdown.dart';
 import 'view_mode_toggle.dart';
 
@@ -27,42 +28,42 @@ class POSFilterControls extends StatelessWidget {
       ),
       child: SizedBox(
         height: 44,
-        child: Row(
-          children: [
-            // Stock filter chip
-            SizedBox(
-              height: 44,
-              child: BrutalActionChip(
-                label: 'Stok Tersedia',
-                icon: controller.inStockOnly
-                    ? Icons.check_circle
-                    : Icons.inventory_2_outlined,
-                onTap: () => controller.toggleInStockOnly(),
-                isSelected: controller.inStockOnly,
-                backgroundColor: controller.inStockOnly
-                    ? NeoBrutalTheme.success
-                    : NeoBrutalTheme.surface,
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              SizedBox(
+                height: 44,
+                child: BrutalActionChip(
+                  label: AppLocalizations.of(context)!.product_stock,
+                  icon: controller.inStockOnly
+                      ? Icons.check_circle
+                      : Icons.inventory_2_outlined,
+                  onTap: () => controller.toggleInStockOnly(),
+                  isSelected: controller.inStockOnly,
+                  backgroundColor: controller.inStockOnly
+                      ? NeoBrutalTheme.success
+                      : NeoBrutalTheme.getCardColor(context),
+                ),
               ),
-            ),
-            SizedBox(width: NeoBrutalTheme.spaceSM),
-            // Sort dropdown
-            SizedBox(
-              height: 44,
-              child: SortDropdown(
-                selectedOption: controller.sortOption,
-                onOptionChanged: (option) => controller.setSortOption(option),
+              SizedBox(width: NeoBrutalTheme.spaceSM),
+              SizedBox(
+                height: 44,
+                child: SortDropdown(
+                  selectedOption: controller.sortOption,
+                  onOptionChanged: (option) => controller.setSortOption(option),
+                ),
               ),
-            ),
-            const Spacer(),
-            // Grid/List view toggle
-            SizedBox(
-              height: 44,
-              child: ViewModeToggle(
-                viewMode: controller.viewMode,
-                onToggle: () => controller.toggleViewMode(),
+              SizedBox(width: NeoBrutalTheme.spaceSM),
+              SizedBox(
+                height: 44,
+                child: ViewModeToggle(
+                  viewMode: controller.viewMode,
+                  onToggle: () => controller.toggleViewMode(),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

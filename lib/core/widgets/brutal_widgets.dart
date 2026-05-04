@@ -31,8 +31,8 @@ class BrutalCard extends StatelessWidget {
   });
   @override
   Widget build(BuildContext context) {
-    final bgColor = backgroundColor ?? NeoBrutalTheme.surface;
-    final bColor = borderColor ?? Colors.black;
+    final bgColor = backgroundColor ?? NeoBrutalTheme.getCardColor(context);
+    final bColor = borderColor ?? NeoBrutalTheme.getBorderColor(context);
     return Container(
       width: width,
       height: height,
@@ -85,8 +85,9 @@ class BrutalButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final bgColor = backgroundColor ?? NeoBrutalTheme.primary;
     final txtColor = textColor ?? Colors.white;
-    final bColor = borderColor ?? Colors.black;
+    final bColor = borderColor ?? NeoBrutalTheme.getBorderColor(context);
     final isDisabled = onPressed == null || isLoading;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return SizedBox(
           width: isFullWidth ? double.infinity : null,
           height: ResponsiveHelper.getValue(
@@ -100,7 +101,9 @@ class BrutalButton extends StatelessWidget {
             style: ElevatedButton.styleFrom(
               backgroundColor: bgColor,
               foregroundColor: txtColor,
-              disabledBackgroundColor: Colors.grey.shade400,
+              disabledBackgroundColor: isDark
+                  ? Colors.grey.shade700
+                  : Colors.grey.shade400,
               elevation: 0,
               shadowColor: Colors.transparent,
               padding: EdgeInsets.symmetric(
@@ -194,7 +197,10 @@ class BrutalStatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final defaultIconColor = iconColor ?? NeoBrutalTheme.primary;
-    final bgColor = backgroundColor ?? NeoBrutalTheme.surface;
+    final bgColor = backgroundColor ?? NeoBrutalTheme.getCardColor(context);
+    final textColor = NeoBrutalTheme.getTextColor(context);
+    final secondaryTextColor = NeoBrutalTheme.getSecondaryTextColor(context);
+    final borderColor = NeoBrutalTheme.getBorderColor(context);
     return BrutalCard(
       onTap: onTap,
       backgroundColor: bgColor,
@@ -213,7 +219,7 @@ class BrutalStatCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(
                     NeoBrutalTheme.radiusSmall,
                   ),
-                  border: Border.all(color: Colors.black, width: 3),
+                  border: Border.all(color: borderColor, width: 3),
                 ),
                 child: Icon(icon, color: Colors.white, size: 28),
               ),
@@ -227,13 +233,9 @@ class BrutalStatCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(
                       NeoBrutalTheme.radiusSmall,
                     ),
-                    border: Border.all(color: Colors.black, width: 3),
+                    border: Border.all(color: borderColor, width: 3),
                   ),
-                  child: const Icon(
-                    Icons.arrow_forward,
-                    color: Colors.black,
-                    size: 20,
-                  ),
+                  child: Icon(Icons.arrow_forward, color: textColor, size: 20),
                 ),
             ],
           ),
@@ -242,14 +244,14 @@ class BrutalStatCard extends StatelessWidget {
             value,
             style: NeoBrutalTheme.displayLarge.copyWith(
               fontSize: 42,
-              color: Colors.black,
+              color: textColor,
             ),
           ),
           const SizedBox(height: NeoBrutalTheme.spaceXS),
           Text(
             title.toUpperCase(),
             style: NeoBrutalTheme.labelMedium.copyWith(
-              color: Colors.black87,
+              color: secondaryTextColor,
               letterSpacing: 2,
             ),
           ),
@@ -287,6 +289,12 @@ class BrutalSectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bgColor = backgroundColor ?? NeoBrutalTheme.blockBlue;
+    final borderColor = NeoBrutalTheme.getBorderColor(context);
+    final textColor = NeoBrutalTheme.getTextColor(context);
+    final secondaryTextColor = NeoBrutalTheme.getSecondaryTextColor(context);
+    final iconContainerColor = Theme.of(context).brightness == Brightness.dark
+        ? NeoBrutalTheme.darkSurface
+        : NeoBrutalTheme.surface;
     return Container(
       margin: const EdgeInsets.symmetric(
         horizontal: NeoBrutalTheme.spaceMD,
@@ -296,7 +304,7 @@ class BrutalSectionHeader extends StatelessWidget {
       decoration: BoxDecoration(
         color: bgColor,
         borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium),
-        border: Border.all(color: Colors.black, width: 4),
+        border: Border.all(color: borderColor, width: 4),
         boxShadow: NeoBrutalTheme.chunkyShadow,
       ),
       child: Row(
@@ -306,11 +314,11 @@ class BrutalSectionHeader extends StatelessWidget {
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: iconContainerColor,
                 borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
-                border: Border.all(color: Colors.black, width: 3),
+                border: Border.all(color: borderColor, width: 3),
               ),
-              child: Icon(icon, color: Colors.black, size: 24),
+              child: Icon(icon, color: textColor, size: 24),
             ),
             const SizedBox(width: NeoBrutalTheme.spaceSM),
           ],
@@ -324,13 +332,14 @@ class BrutalSectionHeader extends StatelessWidget {
                     fontSize: 32,
                     letterSpacing: 2,
                     height: 1.1,
+                    color: textColor,
                   ),
                 ),
                 if (subtitle != null)
                   Text(
                     subtitle!,
                     style: NeoBrutalTheme.bodyMedium.copyWith(
-                      color: Colors.black87,
+                      color: secondaryTextColor,
                     ),
                   ),
               ],
@@ -368,11 +377,18 @@ class _BrutalActionChipState extends State<BrutalActionChip> {
   bool _isPressed = false;
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final bgColor =
         widget.backgroundColor ??
-        (widget.isSelected ? const Color(0xFF5D3FD3) : Colors.white);
+        (widget.isSelected
+            ? const Color(0xFF5D3FD3)
+            : NeoBrutalTheme.getCardColor(context));
     final txtColor =
-        widget.textColor ?? (widget.isSelected ? Colors.white : Colors.black);
+        widget.textColor ??
+        (widget.isSelected
+            ? Colors.white
+            : NeoBrutalTheme.getTextColor(context));
+    final borderColor = NeoBrutalTheme.getBorderColor(context);
     return GestureDetector(
           onTapDown: (_) => setState(() => _isPressed = true),
           onTapUp: (_) => setState(() => _isPressed = false),
@@ -381,27 +397,26 @@ class _BrutalActionChipState extends State<BrutalActionChip> {
           behavior: HitTestBehavior.opaque,
           child: AnimatedContainer(
             duration: 100.ms,
-            // Using padding to define the size instead of fixed heights
             padding: const EdgeInsets.symmetric(
               horizontal: 16.0,
-              vertical:
-                  12.0, // Increased slightly to give the font "breathing room"
+              vertical: 12.0,
             ),
             decoration: BoxDecoration(
               color: bgColor,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.black, width: 2.5),
+              border: Border.all(color: borderColor, width: 2.5),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black,
-                  // When pressed, the shadow gets smaller to look like a "click"
+                  color: isDark
+                      ? Colors.black.withValues(alpha: 0.5)
+                      : Colors.black,
                   offset: _isPressed ? const Offset(2, 2) : const Offset(4, 4),
                   blurRadius: 0,
                 ),
               ],
             ),
             child: Row(
-              mainAxisSize: MainAxisSize.min, // Shrink-wrap the content
+              mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
@@ -409,7 +424,6 @@ class _BrutalActionChipState extends State<BrutalActionChip> {
                   Icon(widget.icon, size: 18, color: txtColor),
                   const SizedBox(width: 8),
                 ],
-                // Removed Flexible unless you specifically want the text to wrap/shrink
                 Text(
                   widget.label.toUpperCase(),
                   style: TextStyle(
@@ -417,8 +431,7 @@ class _BrutalActionChipState extends State<BrutalActionChip> {
                     fontWeight: FontWeight.w900,
                     fontSize: 14,
                     letterSpacing: 0.5,
-                    // CRITICAL FIXES BELOW:
-                    height: 1.2, // Increased from 1.0 to prevent clipping
+                    height: 1.2,
                     leadingDistribution: TextLeadingDistribution.even,
                   ),
                 ),
@@ -462,11 +475,17 @@ class _ResponsiveCategoryChipState extends State<ResponsiveCategoryChip> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final screenWidth = MediaQuery.of(context).size.width;
     final isSmallScreen = screenWidth < 360;
 
-    final bgColor = widget.isSelected ? widget.color : NeoBrutalTheme.surface;
-    final txtColor = widget.isSelected ? Colors.white : Colors.black;
+    final bgColor = widget.isSelected
+        ? widget.color
+        : NeoBrutalTheme.getCardColor(context);
+    final txtColor = widget.isSelected
+        ? Colors.white
+        : NeoBrutalTheme.getTextColor(context);
+    final borderColor = NeoBrutalTheme.getBorderColor(context);
 
     return GestureDetector(
           onTapDown: (_) => setState(() => _isPressed = true),
@@ -485,10 +504,12 @@ class _ResponsiveCategoryChipState extends State<ResponsiveCategoryChip> {
             decoration: BoxDecoration(
               color: bgColor,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.black, width: 2.5),
+              border: Border.all(color: borderColor, width: 2.5),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black,
+                  color: isDark
+                      ? Colors.black.withValues(alpha: 0.5)
+                      : Colors.black,
                   offset: _isPressed ? const Offset(2, 2) : const Offset(4, 4),
                   blurRadius: 0,
                 ),
@@ -550,11 +571,12 @@ class BrutalFab extends StatelessWidget {
   Widget build(BuildContext context) {
     final bgColor = backgroundColor ?? NeoBrutalTheme.primary;
     final txtColor = textColor ?? Colors.white;
+    final borderColor = NeoBrutalTheme.getBorderColor(context);
     return Container(
       decoration: BoxDecoration(
         color: bgColor,
         borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusLarge),
-        border: Border.all(color: Colors.black, width: 4),
+        border: Border.all(color: borderColor, width: 4),
         boxShadow: NeoBrutalTheme.chunkyShadow,
       ),
       child: FloatingActionButton.extended(

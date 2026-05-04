@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simple_pos/l10n/app_localizations.dart';
 import '../controllers/settings_controller.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/neo_brutal_theme.dart';
@@ -16,6 +17,7 @@ class SettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final borderColor = NeoBrutalTheme.getBorderColor(context);
     final controller = ref.watch(settingsControllerProvider);
     final themeController = ref.watch(themeControllerProvider);
 
@@ -29,7 +31,7 @@ class SettingsScreen extends ConsumerWidget {
             mainNavState?.openDrawer();
           },
         ),
-        title: const Text('Pengaturan'),
+        title: Text(AppLocalizations.of(context)!.display),
         actions: [
           Padding(
             padding: EdgeInsets.only(right: NeoBrutalTheme.spaceSM),
@@ -37,11 +39,11 @@ class SettingsScreen extends ConsumerWidget {
               decoration: BoxDecoration(
                 color: NeoBrutalTheme.warning.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
-                border: Border.all(color: Colors.black, width: 2),
+                border: Border.all(color: borderColor, width: 2),
               ),
               child: IconButton(
                 icon: Icon(Icons.restore, color: NeoBrutalTheme.warning),
-                tooltip: 'Reset ke Default',
+                tooltip: AppLocalizations.of(context)!.reset_settings,
                 onPressed: () => _showResetDialog(context, controller),
               ),
             ),
@@ -75,13 +77,15 @@ class SettingsScreen extends ConsumerWidget {
                 // Appearance section with dark mode toggle
                 _buildExpandableSection(
                   context,
-                  title: 'Tampilan',
+                  title: AppLocalizations.of(context)!.display,
                   icon: Icons.palette_outlined,
                   children: [
                     SwitchListTile(
-                      title: const Text('Mode Gelap'),
+                      title: Text(AppLocalizations.of(context)!.dark_mode),
                       subtitle: Text(
-                        themeController.isDarkMode ? 'Aktif' : 'Nonaktif',
+                        themeController.isDarkMode
+                            ? AppLocalizations.of(context)!.active
+                            : AppLocalizations.of(context)!.inactive,
                       ),
                       value: themeController.isDarkMode,
                       onChanged: (value) => themeController.setThemeMode(value),
@@ -98,12 +102,15 @@ class SettingsScreen extends ConsumerWidget {
                 // 6 Expandable sections
                 _buildExpandableSection(
                   context,
-                  title: 'Informasi Bisnis',
+                  title: AppLocalizations.of(context)!.business_info,
                   icon: Icons.business_outlined,
                   children: [
                     _buildSettingsTile(
-                      title: 'Nama Bisnis',
-                      subtitle: controller.businessInfo.name,
+                      context: context,
+                      title: AppLocalizations.of(context)!.business_name,
+                      subtitle: controller.businessInfo.name.isEmpty
+                          ? AppLocalizations.of(context)!.not_filled
+                          : controller.businessInfo.name,
                       icon: Icons.store,
                       onTap: () => _editBusinessName(
                         context,
@@ -113,9 +120,10 @@ class SettingsScreen extends ConsumerWidget {
                     ),
                     const Divider(height: 1),
                     _buildSettingsTile(
-                      title: 'Alamat',
+                      context: context,
+                      title: AppLocalizations.of(context)!.address,
                       subtitle: controller.businessInfo.address.isEmpty
-                          ? 'Belum diisi'
+                          ? AppLocalizations.of(context)!.not_filled
                           : controller.businessInfo.address,
                       icon: Icons.location_on_outlined,
                       onTap: () => _editBusinessAddress(
@@ -126,9 +134,10 @@ class SettingsScreen extends ConsumerWidget {
                     ),
                     const Divider(height: 1),
                     _buildSettingsTile(
-                      title: 'Telepon',
+                      context: context,
+                      title: AppLocalizations.of(context)!.phone,
                       subtitle: controller.businessInfo.phone.isEmpty
-                          ? 'Belum diisi'
+                          ? AppLocalizations.of(context)!.not_filled
                           : controller.businessInfo.phone,
                       icon: Icons.phone_outlined,
                       onTap: () => _editBusinessPhone(
@@ -139,9 +148,10 @@ class SettingsScreen extends ConsumerWidget {
                     ),
                     const Divider(height: 1),
                     _buildSettingsTile(
-                      title: 'Email',
+                      context: context,
+                      title: AppLocalizations.of(context)!.email,
                       subtitle: controller.businessInfo.email.isEmpty
-                          ? 'Belum diisi'
+                          ? AppLocalizations.of(context)!.not_filled
                           : controller.businessInfo.email,
                       icon: Icons.email_outlined,
                       onTap: () => _editBusinessEmail(
@@ -156,11 +166,11 @@ class SettingsScreen extends ConsumerWidget {
 
                 _buildExpandableSection(
                   context,
-                  title: 'Pajak',
+                  title: AppLocalizations.of(context)!.tax,
                   icon: Icons.percent_outlined,
                   children: [
                     SwitchListTile(
-                      title: const Text('Aktifkan Pajak'),
+                      title: Text(AppLocalizations.of(context)!.enable_tax),
                       subtitle: Text(
                         'Pajak: ${(controller.taxRate * 100).toStringAsFixed(1)}%',
                       ),
@@ -174,11 +184,12 @@ class SettingsScreen extends ConsumerWidget {
 
                 _buildExpandableSection(
                   context,
-                  title: 'Mata Uang',
+                  title: AppLocalizations.of(context)!.currency,
                   icon: Icons.attach_money,
                   children: [
                     _buildSettingsTile(
-                      title: 'Simbol Mata Uang',
+                      context: context,
+                      title: AppLocalizations.of(context)!.currency_symbol,
                       subtitle: controller.currencySymbol,
                       icon: Icons.tag,
                       onTap: () => _editCurrencySymbol(
@@ -189,7 +200,8 @@ class SettingsScreen extends ConsumerWidget {
                     ),
                     const Divider(height: 1),
                     _buildSettingsTile(
-                      title: 'Kode Mata Uang',
+                      context: context,
+                      title: AppLocalizations.of(context)!.currency_code,
                       subtitle: controller.currencyCode,
                       icon: Icons.code,
                       onTap: () => _editCurrencyCode(
@@ -204,12 +216,15 @@ class SettingsScreen extends ConsumerWidget {
 
                 _buildExpandableSection(
                   context,
-                  title: 'Struk',
+                  title: AppLocalizations.of(context)!.receipt,
                   icon: Icons.receipt_long,
                   children: [
                     _buildSettingsTile(
-                      title: 'Pengaturan Printer',
-                      subtitle: 'Bluetooth thermal printer',
+                      context: context,
+                      title: AppLocalizations.of(context)!.printer_settings,
+                      subtitle: AppLocalizations.of(
+                        context,
+                      )!.bluetooth_thermal_printer,
                       icon: Icons.print_outlined,
                       onTap: () {
                         Navigator.push(
@@ -222,7 +237,8 @@ class SettingsScreen extends ConsumerWidget {
                     ),
                     const Divider(height: 1),
                     _buildSettingsTile(
-                      title: 'Footer Struk',
+                      context: context,
+                      title: AppLocalizations.of(context)!.receipt_footer,
                       subtitle: controller.receiptFooter,
                       icon: Icons.message_outlined,
                       maxLines: 2,
@@ -238,11 +254,12 @@ class SettingsScreen extends ConsumerWidget {
 
                 _buildExpandableSection(
                   context,
-                  title: 'Inventaris',
+                  title: AppLocalizations.of(context)!.inventory,
                   icon: Icons.inventory_2_outlined,
                   children: [
                     _buildSettingsTile(
-                      title: 'Batas Stok Rendah',
+                      context: context,
+                      title: AppLocalizations.of(context)!.low_stock_threshold,
                       subtitle: '${controller.lowStockThreshold} item',
                       icon: Icons.warning_outlined,
                       onTap: () => _editLowStockThreshold(
@@ -257,12 +274,15 @@ class SettingsScreen extends ConsumerWidget {
 
                 _buildExpandableSection(
                   context,
-                  title: 'Manajemen Data',
+                  title: AppLocalizations.of(context)!.data_management,
                   icon: Icons.storage,
                   children: [
                     _buildSettingsTile(
-                      title: 'Kelola Data',
-                      subtitle: 'Ekspor data dan backup',
+                      context: context,
+                      title: AppLocalizations.of(context)!.manage_data,
+                      subtitle: AppLocalizations.of(
+                        context,
+                      )!.export_data_backup,
                       icon: Icons.manage_search_outlined,
                       iconColor: AppTheme.infoColor,
                       onTap: () {
@@ -276,16 +296,20 @@ class SettingsScreen extends ConsumerWidget {
                     ),
                     const Divider(height: 1),
                     _buildSettingsTile(
-                      title: 'Ekspor Pengaturan',
-                      subtitle: 'Simpan pengaturan ke file',
+                      context: context,
+                      title: AppLocalizations.of(context)!.export_settings,
+                      subtitle: AppLocalizations.of(context)!.save_settings,
                       icon: Icons.file_download_outlined,
                       iconColor: AppTheme.successColor,
                       onTap: () => _exportSettings(context, controller),
                     ),
                     const Divider(height: 1),
                     _buildSettingsTile(
-                      title: 'Hapus Semua Data',
-                      subtitle: 'Hapus semua data transaksi dan produk',
+                      context: context,
+                      title: AppLocalizations.of(context)!.delete_all_data,
+                      subtitle: AppLocalizations.of(
+                        context,
+                      )!.delete_all_data_desc,
                       icon: Icons.delete_sweep,
                       iconColor: AppTheme.errorColor,
                       onTap: () => _showClearDataDialog(context, controller),
@@ -304,6 +328,9 @@ class SettingsScreen extends ConsumerWidget {
     required IconData icon,
     required List<Widget> children,
   }) {
+    final borderColor = NeoBrutalTheme.getBorderColor(context);
+    final textColor = NeoBrutalTheme.getTextColor(context);
+    final secondaryTextColor = NeoBrutalTheme.getSecondaryTextColor(context);
     return BrutalCard(
       padding: EdgeInsets.all(0),
       child: Theme(
@@ -321,7 +348,7 @@ class SettingsScreen extends ConsumerWidget {
             decoration: BoxDecoration(
               color: NeoBrutalTheme.primary,
               borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
-              border: Border.all(color: Colors.black, width: 3),
+              border: Border.all(color: borderColor, width: 3),
             ),
             child: Icon(icon, color: Colors.white, size: 24),
           ),
@@ -330,10 +357,10 @@ class SettingsScreen extends ConsumerWidget {
             style: NeoBrutalTheme.headlineSmall.copyWith(
               fontSize: 18,
               fontWeight: FontWeight.w700,
-              color: AppTheme.textPrimary,
+              color: textColor,
             ),
           ),
-          trailing: Icon(Icons.expand_more, color: AppTheme.textSecondary),
+          trailing: Icon(Icons.expand_more, color: secondaryTextColor),
           children: children,
         ),
       ),
@@ -342,6 +369,7 @@ class SettingsScreen extends ConsumerWidget {
 
   /// Build a settings list tile with chevron
   static Widget _buildSettingsTile({
+    required BuildContext context,
     required String title,
     required String subtitle,
     required IconData icon,
@@ -349,6 +377,9 @@ class SettingsScreen extends ConsumerWidget {
     Color? iconColor,
     int maxLines = 1,
   }) {
+    final borderColor = NeoBrutalTheme.getBorderColor(context);
+    final textColor = NeoBrutalTheme.getTextColor(context);
+    final secondaryTextColor = NeoBrutalTheme.getSecondaryTextColor(context);
     final defaultIconColor = iconColor ?? NeoBrutalTheme.primary;
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: NeoBrutalTheme.spaceSM),
@@ -363,7 +394,7 @@ class SettingsScreen extends ConsumerWidget {
               decoration: BoxDecoration(
                 color: defaultIconColor,
                 borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
-                border: Border.all(color: Colors.black, width: 3),
+                border: Border.all(color: borderColor, width: 3),
               ),
               child: Icon(icon, color: Colors.white, size: 24),
             ),
@@ -377,13 +408,14 @@ class SettingsScreen extends ConsumerWidget {
                     style: NeoBrutalTheme.headlineSmall.copyWith(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
+                      color: textColor,
                     ),
                   ),
                   SizedBox(height: NeoBrutalTheme.spaceXS),
                   Text(
                     subtitle,
                     style: NeoBrutalTheme.bodySmall.copyWith(
-                      color: AppTheme.textSecondary,
+                      color: secondaryTextColor,
                     ),
                     maxLines: maxLines,
                     overflow: TextOverflow.ellipsis,
@@ -391,7 +423,7 @@ class SettingsScreen extends ConsumerWidget {
                 ],
               ),
             ),
-            Icon(Icons.chevron_right, color: AppTheme.textSecondary, size: 24),
+            Icon(Icons.chevron_right, color: secondaryTextColor, size: 24),
           ],
         ),
       ),
@@ -407,15 +439,18 @@ class SettingsScreen extends ConsumerWidget {
   ) async {
     final result = await _showEditDialog(
       context,
-      title: 'Nama Bisnis',
+      title: AppLocalizations.of(context)!.business_name,
       currentValue: currentValue,
-      hintText: 'Masukkan nama bisnis',
+      hintText: AppLocalizations.of(context)!.enter_business_name,
     );
     if (result != null) {
       final updated = controller.businessInfo.copyWith(name: result);
       await controller.updateBusinessInfo(updated);
       if (context.mounted) {
-        _showSuccessSnackBar(context, 'Nama bisnis diperbarui');
+        _showSuccessSnackBar(
+          context,
+          AppLocalizations.of(context)!.business_name_updated,
+        );
       }
     }
   }
@@ -427,15 +462,18 @@ class SettingsScreen extends ConsumerWidget {
   ) async {
     final result = await _showEditDialog(
       context,
-      title: 'Alamat Bisnis',
+      title: AppLocalizations.of(context)!.address,
       currentValue: currentValue,
-      hintText: 'Masukkan alamat',
+      hintText: AppLocalizations.of(context)!.enter_address,
     );
     if (result != null) {
       final updated = controller.businessInfo.copyWith(address: result);
       await controller.updateBusinessInfo(updated);
       if (context.mounted) {
-        _showSuccessSnackBar(context, 'Alamat diperbarui');
+        _showSuccessSnackBar(
+          context,
+          AppLocalizations.of(context)!.address_updated,
+        );
       }
     }
   }
@@ -447,16 +485,19 @@ class SettingsScreen extends ConsumerWidget {
   ) async {
     final result = await _showEditDialog(
       context,
-      title: 'Telepon Bisnis',
+      title: AppLocalizations.of(context)!.phone,
       currentValue: currentValue,
-      hintText: 'Masukkan nomor telepon',
+      hintText: AppLocalizations.of(context)!.enter_phone,
       keyboardType: TextInputType.phone,
     );
     if (result != null) {
       final updated = controller.businessInfo.copyWith(phone: result);
       await controller.updateBusinessInfo(updated);
       if (context.mounted) {
-        _showSuccessSnackBar(context, 'Telepon diperbarui');
+        _showSuccessSnackBar(
+          context,
+          AppLocalizations.of(context)!.phone_updated,
+        );
       }
     }
   }
@@ -468,16 +509,19 @@ class SettingsScreen extends ConsumerWidget {
   ) async {
     final result = await _showEditDialog(
       context,
-      title: 'Email Bisnis',
+      title: AppLocalizations.of(context)!.email,
       currentValue: currentValue,
-      hintText: 'Masukkan email',
+      hintText: AppLocalizations.of(context)!.enter_email,
       keyboardType: TextInputType.emailAddress,
     );
     if (result != null) {
       final updated = controller.businessInfo.copyWith(email: result);
       await controller.updateBusinessInfo(updated);
       if (context.mounted) {
-        _showSuccessSnackBar(context, 'Email diperbarui');
+        _showSuccessSnackBar(
+          context,
+          AppLocalizations.of(context)!.email_updated,
+        );
       }
     }
   }
@@ -489,9 +533,9 @@ class SettingsScreen extends ConsumerWidget {
   ) async {
     final result = await _showEditDialog(
       context,
-      title: 'Simbol Mata Uang',
+      title: AppLocalizations.of(context)!.currency_symbol,
       currentValue: currentValue,
-      hintText: 'Contoh: Rp',
+      hintText: AppLocalizations.of(context)!.currency_symbol_hint,
     );
     if (result != null) {
       await controller.updateCurrency(
@@ -499,7 +543,10 @@ class SettingsScreen extends ConsumerWidget {
         code: controller.currencyCode,
       );
       if (context.mounted) {
-        _showSuccessSnackBar(context, 'Simbol mata uang diperbarui');
+        _showSuccessSnackBar(
+          context,
+          AppLocalizations.of(context)!.currency_symbol_updated,
+        );
       }
     }
   }
@@ -511,9 +558,9 @@ class SettingsScreen extends ConsumerWidget {
   ) async {
     final result = await _showEditDialog(
       context,
-      title: 'Kode Mata Uang',
+      title: AppLocalizations.of(context)!.currency_code,
       currentValue: currentValue,
-      hintText: 'Contoh: IDR',
+      hintText: AppLocalizations.of(context)!.currency_code_hint,
     );
     if (result != null) {
       await controller.updateCurrency(
@@ -521,7 +568,10 @@ class SettingsScreen extends ConsumerWidget {
         code: result,
       );
       if (context.mounted) {
-        _showSuccessSnackBar(context, 'Kode mata uang diperbarui');
+        _showSuccessSnackBar(
+          context,
+          AppLocalizations.of(context)!.currency_code_updated,
+        );
       }
     }
   }
@@ -533,15 +583,18 @@ class SettingsScreen extends ConsumerWidget {
   ) async {
     final result = await _showEditDialog(
       context,
-      title: 'Footer Struk',
+      title: AppLocalizations.of(context)!.receipt_footer,
       currentValue: currentValue,
-      hintText: 'Masukkan pesan footer',
+      hintText: AppLocalizations.of(context)!.enter_footer_message,
       maxLines: 3,
     );
     if (result != null) {
       await controller.updateReceiptFooter(result);
       if (context.mounted) {
-        _showSuccessSnackBar(context, 'Footer struk diperbarui');
+        _showSuccessSnackBar(
+          context,
+          AppLocalizations.of(context)!.receipt_footer_updated,
+        );
       }
     }
   }
@@ -553,14 +606,17 @@ class SettingsScreen extends ConsumerWidget {
   ) async {
     final result = await _showNumberDialog(
       context,
-      title: 'Batas Stok Rendah',
+      title: AppLocalizations.of(context)!.low_stock_threshold,
       currentValue: currentValue.toDouble(),
-      hintText: 'Masukkan jumlah',
+      hintText: AppLocalizations.of(context)!.low_stock_hint,
     );
     if (result != null) {
       await controller.updateLowStockThreshold(result.toInt());
       if (context.mounted) {
-        _showSuccessSnackBar(context, 'Batas stok diperbarui');
+        _showSuccessSnackBar(
+          context,
+          AppLocalizations.of(context)!.stock_threshold_updated,
+        );
       }
     }
   }
@@ -574,6 +630,7 @@ class SettingsScreen extends ConsumerWidget {
     int maxLines = 1,
   }) async {
     final controller = TextEditingController(text: currentValue);
+    final l10n = AppLocalizations.of(context)!;
 
     return showDialog<String>(
       context: context,
@@ -594,13 +651,13 @@ class SettingsScreen extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Batal'),
+            child: Text(l10n.cancel),
           ),
           ElevatedButton(
             onPressed: () {
               Navigator.pop(dialogContext, controller.text.trim());
             },
-            child: const Text('Simpan'),
+            child: Text(l10n.save),
           ),
         ],
       ),
@@ -614,6 +671,7 @@ class SettingsScreen extends ConsumerWidget {
     required String hintText,
   }) async {
     final controller = TextEditingController(text: currentValue.toString());
+    final l10n = AppLocalizations.of(context)!;
 
     return showDialog<double>(
       context: context,
@@ -633,14 +691,14 @@ class SettingsScreen extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Batal'),
+            child: Text(l10n.cancel),
           ),
           ElevatedButton(
             onPressed: () {
               final value = double.tryParse(controller.text);
               Navigator.pop(dialogContext, value);
             },
-            child: const Text('Simpan'),
+            child: Text(l10n.save),
           ),
         ],
       ),
@@ -651,25 +709,24 @@ class SettingsScreen extends ConsumerWidget {
     BuildContext context,
     SettingsController controller,
   ) async {
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Reset Pengaturan'),
-        content: const Text(
-          'Apakah Anda yakin ingin mereset semua pengaturan ke nilai default?',
-        ),
+        title: Text(l10n.reset_settings_title),
+        content: Text(l10n.reset_confirm_message),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Batal'),
+            child: Text(l10n.cancel),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(dialogContext, true),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.errorColor,
             ),
-            child: const Text('Reset'),
+            child: Text(l10n.reset),
           ),
         ],
       ),
@@ -678,7 +735,7 @@ class SettingsScreen extends ConsumerWidget {
     if (confirmed == true && context.mounted) {
       final success = await controller.resetSettings();
       if (success && context.mounted) {
-        _showSuccessSnackBar(context, 'Pengaturan direset ke default');
+        _showSuccessSnackBar(context, l10n.settings_reset_default);
       }
     }
   }
@@ -687,6 +744,7 @@ class SettingsScreen extends ConsumerWidget {
     BuildContext context,
     SettingsController controller,
   ) async {
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -710,29 +768,29 @@ class SettingsScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(width: 12),
-            const Text('Hapus Semua Data'),
+            Text(l10n.delete_all_data),
           ],
         ),
-        content: const Column(
+        content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'PERINGATAN: Tindakan ini akan menghapus semua data:',
-              style: TextStyle(
+              l10n.delete_all_data_warning,
+              style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
                 color: AppTheme.errorColor,
               ),
             ),
-            SizedBox(height: 12),
-            Text('• Semua produk dan inventaris'),
-            Text('• Semua riwayat transaksi'),
-            Text('• Semua kategori dan supplier'),
-            SizedBox(height: 8),
+            const SizedBox(height: 12),
+            Text(l10n.delete_all_data_items),
+            Text(l10n.delete_all_data_transactions),
+            Text(l10n.delete_all_data_categories),
+            const SizedBox(height: 8),
             Text(
-              'Tindakan ini tidak dapat dibatalkan.',
-              style: TextStyle(
+              l10n.delete_all_data_cannot_undo,
+              style: const TextStyle(
                 fontSize: 13,
                 color: AppTheme.textSecondary,
                 fontStyle: FontStyle.italic,
@@ -748,7 +806,7 @@ class SettingsScreen extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            child: const Text('Batal'),
+            child: Text(l10n.cancel),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(dialogContext, true),
@@ -759,9 +817,9 @@ class SettingsScreen extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            child: const Text(
-              'Hapus',
-              style: TextStyle(fontWeight: FontWeight.w600),
+            child: Text(
+              l10n.delete,
+              style: const TextStyle(fontWeight: FontWeight.w600),
             ),
           ),
         ],
@@ -771,7 +829,7 @@ class SettingsScreen extends ConsumerWidget {
     if (confirmed == true && context.mounted) {
       final success = await controller.clearAllData();
       if (success && context.mounted) {
-        _showSuccessSnackBar(context, 'Semua data berhasil dihapus');
+        _showSuccessSnackBar(context, l10n.all_data_deleted);
       }
     }
   }

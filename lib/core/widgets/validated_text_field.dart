@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:simple_pos/l10n/app_localizations.dart';
 
 /// Text field with real-time validation and visual feedback
 /// Shows error state, success checkmark, and helper text
@@ -95,14 +96,14 @@ class _ValidatedTextFieldState extends State<ValidatedTextField> {
         decoration: InputDecoration(
           labelText: widget.label,
           hintText: widget.helperText,
-          prefixIcon: widget.prefixIcon != null ? Icon(widget.prefixIcon) : null,
+          prefixIcon: widget.prefixIcon != null
+              ? Icon(widget.prefixIcon)
+              : null,
           suffixIcon: _isValid
               ? const Icon(Icons.check_circle, color: Colors.green, size: 20)
               : null,
           errorText: _errorText,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
@@ -134,48 +135,63 @@ class FieldValidators {
   FieldValidators._();
 
   /// Validates that the field is not empty
-  static String? required(String? value) =>
-      value?.isEmpty ?? true ? 'Field ini wajib diisi' : null;
+  static String? required(String? value, BuildContext context) =>
+      value?.isEmpty ?? true
+      ? AppLocalizations.of(context)!.validator_required
+      : null;
 
   /// Validates email format
-  static String? email(String? value) =>
-      value?.contains('@') ?? false ? null : 'Email tidak valid';
+  static String? email(String? value, BuildContext context) =>
+      value?.contains('@') ?? false
+      ? null
+      : AppLocalizations.of(context)!.validator_email;
 
   /// Validates that the value is a positive number
-  static String? positiveNumber(String? value) {
+  static String? positiveNumber(String? value, BuildContext context) {
     final num = double.tryParse(value ?? '');
-    return (num == null || num <= 0) ? 'Nilai harus lebih dari 0' : null;
+    return (num == null || num <= 0)
+        ? AppLocalizations.of(context)!.validator_positive_number
+        : null;
   }
 
   /// Validates non-negative number (zero allowed)
-  static String? nonNegativeNumber(String? value) {
+  static String? nonNegativeNumber(String? value, BuildContext context) {
     final num = double.tryParse(value ?? '');
-    return (num == null || num < 0) ? 'Nilai tidak boleh negatif' : null;
+    return (num == null || num < 0)
+        ? AppLocalizations.of(context)!.validator_non_negative
+        : null;
   }
 
   /// Validates phone number (at least 10 digits)
-  static String? phone(String? value) {
+  static String? phone(String? value, BuildContext context) {
     final digitsOnly = value?.replaceAll(RegExp(r'[^\d]'), '') ?? '';
-    return digitsOnly.length >= 10 ? null : 'Nomor telepon tidak valid';
+    return digitsOnly.length >= 10
+        ? null
+        : AppLocalizations.of(context)!.validator_phone;
   }
 
   /// Validates minimum length
-  static String? Function(String?) minLen(int min) {
+  static String? Function(String?) minLen(int min, BuildContext context) {
     return (String? value) {
-      return (value?.length ?? 0) < min ? 'Minimal $min karakter' : null;
+      return (value?.length ?? 0) < min
+          ? AppLocalizations.of(context)!.validator_min_length(min)
+          : null;
     };
   }
 
   /// Validates maximum length
-  static String? Function(String?) maxLen(int max) {
+  static String? Function(String?) maxLen(int max, BuildContext context) {
     return (String? value) {
-      return (value?.length ?? 0) > max ? 'Maksimal $max karakter' : null;
+      return (value?.length ?? 0) > max
+          ? AppLocalizations.of(context)!.validator_max_length(max)
+          : null;
     };
   }
 
   /// Combines multiple validators
   static String? Function(String?) combine(
-      List<String? Function(String?)> validators) {
+    List<String? Function(String?)> validators,
+  ) {
     return (String? value) {
       for (final validator in validators) {
         final error = validator(value);

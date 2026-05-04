@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../domain/entities/stock_adjustment.dart';
+import '../../../../l10n/app_localizations.dart';
+import '../../../../core/theme/app_theme.dart';
 
 class StockAdjustmentSection extends StatefulWidget {
   final StockAdjustmentType selectedType;
@@ -56,22 +58,23 @@ class _StockAdjustmentSectionState extends State<StockAdjustmentSection> {
     super.dispose();
   }
 
-  String _getTypeLabel(StockAdjustmentType type) {
+  String _getTypeLabel(StockAdjustmentType type, BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     switch (type) {
       case StockAdjustmentType.set:
-        return 'Atur Stok';
+        return l10n.stock_setStock;
       case StockAdjustmentType.purchase:
-        return 'Pembelian';
+        return l10n.stock_purchase;
       case StockAdjustmentType.sale:
-        return 'Penjualan';
+        return l10n.stock_sale;
       case StockAdjustmentType.damage:
-        return 'Kerusakan';
+        return l10n.stock_damage;
       case StockAdjustmentType.itemReturn:
-        return 'Pengembalian';
+        return l10n.stock_itemReturn;
       case StockAdjustmentType.manual:
-        return 'Manual';
+        return l10n.stock_manual;
       case StockAdjustmentType.other:
-        return 'Lainnya';
+        return l10n.stock_other;
     }
   }
 
@@ -100,12 +103,13 @@ class _StockAdjustmentSectionState extends State<StockAdjustmentSection> {
     return quantity != null && quantity > 0;
   }
 
-  String? _validateQuantity() {
+  String? _validateQuantity(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     if (_quantityController.text.isEmpty) return null;
     final quantity = int.tryParse(_quantityController.text);
-    if (quantity == null) return 'Angka tidak valid';
-    if (quantity <= 0) return 'Harus lebih besar dari 0';
-    if (quantity > 999999) return 'Kuantitas terlalu besar';
+    if (quantity == null) return l10n.stock_invalidNumber;
+    if (quantity <= 0) return l10n.stock_quantityMin;
+    if (quantity > 999999) return l10n.stock_quantityMax;
     return null;
   }
 
@@ -136,19 +140,23 @@ class _StockAdjustmentSectionState extends State<StockAdjustmentSection> {
     return await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
-            title: const Text('Konfirmasi Tindakan'),
-            content: Text('Hapus ${_quantityController.text} item dari stok?'),
+            title: Text(AppLocalizations.of(context)!.stock_confirmAction),
+            content: Text(
+              AppLocalizations.of(
+                context,
+              )!.stock_removeQuantity(_quantityController.text),
+            ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
-                child: const Text('Batal'),
+                child: Text(AppLocalizations.of(context)!.stock_cancel),
               ),
               ElevatedButton(
                 onPressed: () => Navigator.pop(context, true),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFEF4444),
+                  backgroundColor: AppTheme.errorColor,
                 ),
-                child: const Text('Konfirmasi'),
+                child: Text(AppLocalizations.of(context)!.stock_confirm),
               ),
             ],
           ),
@@ -182,8 +190,8 @@ class _StockAdjustmentSectionState extends State<StockAdjustmentSection> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text(
-              'Penyesuaian Stok',
+            Text(
+              AppLocalizations.of(context)!.stock_adjustmentTitle,
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
@@ -195,7 +203,7 @@ class _StockAdjustmentSectionState extends State<StockAdjustmentSection> {
               initialValue: widget.selectedType,
               onChanged: widget.onTypeChanged,
               decoration: InputDecoration(
-                labelText: 'Tipe Penyesuaian',
+                labelText: AppLocalizations.of(context)!.stock_adjustmentType,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                   borderSide: const BorderSide(
@@ -232,7 +240,7 @@ class _StockAdjustmentSectionState extends State<StockAdjustmentSection> {
                       ),
                       const SizedBox(width: 12),
                       Text(
-                        _getTypeLabel(type),
+                        _getTypeLabel(type, context),
                         style: const TextStyle(
                           fontSize: 14,
                           color: Color(0xFF111827),
@@ -248,8 +256,8 @@ class _StockAdjustmentSectionState extends State<StockAdjustmentSection> {
             TextField(
               controller: _quantityController,
               decoration: InputDecoration(
-                labelText: 'Kuantitas',
-                hintText: 'Masukkan kuantitas',
+                labelText: AppLocalizations.of(context)!.stock_quantity,
+                hintText: AppLocalizations.of(context)!.stock_quantityHint,
                 hintStyle: const TextStyle(color: Color(0xFF9CA3AF)),
                 prefixIcon: const Icon(Icons.inventory_2, size: 20),
                 errorText: _errorText,
@@ -286,7 +294,7 @@ class _StockAdjustmentSectionState extends State<StockAdjustmentSection> {
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               onChanged: (value) {
                 setState(() {
-                  _errorText = _validateQuantity();
+                  _errorText = _validateQuantity(context);
                   final int? quantity = int.tryParse(value);
                   widget.onQuantityChanged?.call(quantity);
                 });
@@ -320,12 +328,12 @@ class _StockAdjustmentSectionState extends State<StockAdjustmentSection> {
                       ),
                 label: Text(
                   _isLoading
-                      ? 'Memproses...'
+                      ? AppLocalizations.of(context)!.stock_processing
                       : isSetType
-                      ? 'Atur Stok'
+                      ? AppLocalizations.of(context)!.stock_setStockAction
                       : isRemovalType
-                      ? 'Hapus Stok'
-                      : 'Tambah Stok',
+                      ? AppLocalizations.of(context)!.stock_removeStock
+                      : AppLocalizations.of(context)!.stock_addStock,
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,

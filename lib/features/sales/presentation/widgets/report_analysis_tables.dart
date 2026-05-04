@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/neo_brutal_theme.dart';
 import '../../../../core/utils/currency_formatter.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../domain/entities/sales_report.dart';
 
 class ReportAnalysisTables extends StatelessWidget {
@@ -25,13 +25,15 @@ class ReportAnalysisTables extends StatelessWidget {
   }
 
   Widget _buildProductTable(BuildContext context) {
+    final textColor = NeoBrutalTheme.getTextColor(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Produk Terlaris',
+          AppLocalizations.of(context)!.sales_top_products,
           style: NeoBrutalTheme.headlineMedium.copyWith(
             fontWeight: FontWeight.w900,
+            color: textColor,
           ),
         ),
         const SizedBox(height: 16),
@@ -40,31 +42,44 @@ class ReportAnalysisTables extends StatelessWidget {
           child: Column(
             children: [
               const _Header(
-                titles: ['Produk', 'Qty', 'Total'],
-                flex: [4, 2, 3],
+                titles: ['Produk', 'Qty', 'Margin', 'Total'],
+                flex: [3, 1, 2, 3],
                 color: NeoBrutalTheme.blockCoral,
               ),
               ...report.topProducts.asMap().entries.map(
                 (e) => _Row(
                   index: e.key,
-                  flex: const [4, 2, 3],
+                  flex: const [3, 1, 2, 3],
                   cells: [
                     Text(
                       e.value.productName,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
+                        color: textColor,
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
                     Text(
                       '${e.value.quantitySold}',
                       textAlign: TextAlign.center,
+                      style: TextStyle(color: textColor),
+                    ),
+                    Text(
+                      '${e.value.profitMargin.toStringAsFixed(1)}%',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w900,
+                        color: _marginColor(e.value.profitMargin),
+                      ),
                     ),
                     Text(
                       CurrencyFormatter.format(e.value.revenue),
                       textAlign: TextAlign.right,
-                      style: const TextStyle(fontWeight: FontWeight.w900),
+                      style: TextStyle(
+                        fontWeight: FontWeight.w900,
+                        color: textColor,
+                      ),
                     ),
                   ],
                 ),
@@ -76,14 +91,23 @@ class ReportAnalysisTables extends StatelessWidget {
     );
   }
 
+  Color _marginColor(double margin) {
+    if (margin >= 40) return NeoBrutalTheme.success;
+    if (margin >= 25) return NeoBrutalTheme.secondary;
+    if (margin >= 15) return NeoBrutalTheme.warning;
+    return NeoBrutalTheme.error;
+  }
+
   Widget _buildCategoryTable(BuildContext context) {
+    final textColor = NeoBrutalTheme.getTextColor(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Kategori',
+          AppLocalizations.of(context)!.category_title,
           style: NeoBrutalTheme.headlineMedium.copyWith(
             fontWeight: FontWeight.w900,
+            color: textColor,
           ),
         ),
         const SizedBox(height: 16),
@@ -103,19 +127,24 @@ class ReportAnalysisTables extends StatelessWidget {
                   cells: [
                     Text(
                       e.value.categoryName,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
+                        color: textColor,
                       ),
                     ),
                     Text(
                       '${e.value.quantitySold}',
                       textAlign: TextAlign.center,
+                      style: TextStyle(color: textColor),
                     ),
                     Text(
                       '${e.value.profitMargin.toStringAsFixed(1)}%',
                       textAlign: TextAlign.right,
-                      style: const TextStyle(fontWeight: FontWeight.w900),
+                      style: TextStyle(
+                        fontWeight: FontWeight.w900,
+                        color: textColor,
+                      ),
                     ),
                   ],
                 ),
@@ -128,6 +157,7 @@ class ReportAnalysisTables extends StatelessWidget {
   }
 
   Widget _buildPeakHours(BuildContext context) {
+    final textColor = NeoBrutalTheme.getTextColor(context);
     final peak = report.peakHours;
     if (peak.isEmpty) return const SizedBox.shrink();
     final max = peak.first.transactionCount;
@@ -136,9 +166,10 @@ class ReportAnalysisTables extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Jam Sibuk',
+          AppLocalizations.of(context)!.sales_peak_hours,
           style: NeoBrutalTheme.headlineMedium.copyWith(
             fontWeight: FontWeight.w900,
+            color: textColor,
           ),
         ),
         const SizedBox(height: 16),
@@ -156,8 +187,14 @@ class ReportAnalysisTables extends StatelessWidget {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(h.formattedHour),
-                            Text('${h.transactionCount} Trx'),
+                            Text(
+                              h.formattedHour,
+                              style: TextStyle(color: textColor),
+                            ),
+                            Text(
+                              '${h.transactionCount} Trx',
+                              style: TextStyle(color: textColor),
+                            ),
                           ],
                         ),
                         const SizedBox(height: 4),
@@ -178,9 +215,9 @@ class ReportAnalysisTables extends StatelessWidget {
   }
 
   BoxDecoration _brutalDecoration(BuildContext context) => BoxDecoration(
-    color: AppTheme.getCardColor(context),
+    color: NeoBrutalTheme.getCardColor(context),
     borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium),
-    border: Border.all(color: Colors.black, width: 4),
+    border: Border.all(color: NeoBrutalTheme.getBorderColor(context), width: 4),
     boxShadow: NeoBrutalTheme.chunkyShadow,
   );
 }
@@ -197,11 +234,12 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final borderColor = NeoBrutalTheme.getBorderColor(context);
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: color,
-        border: const Border(bottom: BorderSide(color: Colors.black, width: 4)),
+        border: Border(bottom: BorderSide(color: borderColor, width: 4)),
       ),
       child: Row(
         children: List.generate(
@@ -230,11 +268,12 @@ class _Row extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final borderColor = NeoBrutalTheme.getBorderColor(context);
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: index.isOdd
-            ? Colors.black.withValues(alpha: 0.05)
+            ? borderColor.withValues(alpha: 0.05)
             : Colors.transparent,
       ),
       child: Row(

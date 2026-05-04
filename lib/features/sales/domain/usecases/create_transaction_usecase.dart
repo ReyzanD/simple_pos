@@ -29,6 +29,8 @@ class CreateTransactionUseCase {
     String? notes,
     double tax = 0,
     double discount = 0,
+    int? cashierId,
+    String? cashierName,
   }) async {
     try {
       AppLogger.useCase('CreateTransaction', details: '${cart.length} items');
@@ -59,14 +61,18 @@ class CreateTransactionUseCase {
       final totalAmount = subtotal + tax - discount;
 
       // Create transaction items
-      final items = cart.map((cartItem) => TransactionItem(
-        transactionId: 0, // Will be set after transaction creation
-        productId: cartItem.product.id!,
-        productName: cartItem.product.name,
-        quantity: cartItem.quantity,
-        unitPrice: cartItem.product.price,
-        subtotal: cartItem.totalPrice,
-      )).toList();
+      final items = cart
+          .map(
+            (cartItem) => TransactionItem(
+              transactionId: 0, // Will be set after transaction creation
+              productId: cartItem.product.id!,
+              productName: cartItem.product.name,
+              quantity: cartItem.quantity,
+              unitPrice: cartItem.product.price,
+              subtotal: cartItem.totalPrice,
+            ),
+          )
+          .toList();
 
       // Create payment
       final payment = Payment(
@@ -90,12 +96,16 @@ class CreateTransactionUseCase {
         notes: notes,
         items: items,
         payment: payment,
+        cashierId: cashierId,
+        cashierName: cashierName,
         createdAt: now,
         updatedAt: now,
       );
 
       // Create transaction in database
-      final createdTransaction = await transactionRepository.createTransaction(transaction);
+      final createdTransaction = await transactionRepository.createTransaction(
+        transaction,
+      );
 
       // Update stock for each product
       for (final cartItem in cart) {
@@ -110,7 +120,9 @@ class CreateTransactionUseCase {
         );
       }
 
-      AppLogger.info('Transaction created successfully: ${createdTransaction.id}');
+      AppLogger.info(
+        'Transaction created successfully: ${createdTransaction.id}',
+      );
 
       return createdTransaction;
     } on EmptyCartException {

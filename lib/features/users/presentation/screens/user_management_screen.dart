@@ -12,7 +12,8 @@ class UserManagementScreen extends ConsumerStatefulWidget {
   const UserManagementScreen({super.key});
 
   @override
-  ConsumerState<UserManagementScreen> createState() => _UserManagementScreenState();
+  ConsumerState<UserManagementScreen> createState() =>
+      _UserManagementScreenState();
 }
 
 class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
@@ -43,8 +44,10 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final borderColor = NeoBrutalTheme.getBorderColor(context);
+
     return Scaffold(
-      backgroundColor: NeoBrutalTheme.background, // ✅ Brutal white background
+      backgroundColor: NeoBrutalTheme.background,
       appBar: AppBar(
         title: const Text('Manajemen Pengguna'),
         actions: [
@@ -54,10 +57,7 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
               decoration: BoxDecoration(
                 color: NeoBrutalTheme.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
-                border: Border.all(
-                  color: Colors.black,
-                  width: 4, // ✅ Bold 4px border
-                ),
+                border: Border.all(color: borderColor, width: 4),
               ),
               child: IconButton(
                 icon: const Icon(Icons.add),
@@ -68,70 +68,66 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
           ),
         ],
       ),
-      body: () {
-        final authController = ref.watch(authControllerProvider);
-        // For demo, show the current admin user
-        final currentUser = authController.currentUser;
+      body: _buildBody(context, borderColor),
+    );
+  }
 
-        if (currentUser == null) {
-          return const Center(
-            child: Text('Tidak ada data pengguna'),
-          );
-        }
+  Widget _buildBody(BuildContext context, Color borderColor) {
+    final authController = ref.watch(authControllerProvider);
+    final currentUser = authController.currentUser;
 
-        return ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            // Admin user card
-            _buildUserCard(
-              context,
-              user: currentUser,
-              isCurrentUser: true,
-              onEdit: () => _showEditUserDialog(currentUser),
-              onDelete: () {},
-            ),
+    if (currentUser == null) {
+      return const Center(child: Text('Tidak ada data pengguna'));
+    }
 
-            const SizedBox(height: 24),
-
-            // Info about demo
-            BrutalCard(
-              padding: EdgeInsets.all(NeoBrutalTheme.spaceMD),
-              child: Row(
-                children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: NeoBrutalTheme.primary, // ✅ Solid bold color
-                      borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
-                      border: Border.all(
-                        color: Colors.black,
-                        width: 3, // ✅ Bold 3px border
-                      ),
-                      boxShadow: NeoBrutalTheme.chunkyShadow,
-                    ),
-                    child: Icon(
-                      Icons.info_outline,
-                      color: Colors.white, // ✅ White icon
-                      size: 20,
-                    ),
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        // Admin user card
+        _buildUserCard(
+          context,
+          user: currentUser,
+          isCurrentUser: true,
+          onEdit: () => _showEditUserDialog(currentUser),
+          onDelete: () {},
+        ),
+        const SizedBox(height: 24),
+        // Info about demo
+        BrutalCard(
+          padding: EdgeInsets.all(NeoBrutalTheme.spaceMD),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: NeoBrutalTheme.primary,
+                  borderRadius: BorderRadius.circular(
+                    NeoBrutalTheme.radiusSmall,
                   ),
-                  SizedBox(width: NeoBrutalTheme.spaceSM),
-                  Expanded(
-                    child: Text(
-                      'Gunakan login: admin / admin123',
-                      style: NeoBrutalTheme.bodySmall.copyWith(
-                        color: AppTheme.getTextSecondaryColor(context),
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
+                  border: Border.all(color: borderColor, width: 3),
+                  boxShadow: NeoBrutalTheme.chunkyShadow,
+                ),
+                child: const Icon(
+                  Icons.info_outline,
+                  color: Colors.white,
+                  size: 20,
+                ),
               ),
-            ),
-          ],
-        );
-      }(),
+              SizedBox(width: NeoBrutalTheme.spaceSM),
+              Expanded(
+                child: Text(
+                  'Gunakan login: admin / admin123',
+                  style: NeoBrutalTheme.bodySmall.copyWith(
+                    color: AppTheme.getTextSecondaryColor(context),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -159,10 +155,7 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
                 height: 50,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [
-                      roleColor.withValues(alpha: 0.8),
-                      roleColor,
-                    ],
+                    colors: [roleColor.withValues(alpha: 0.8), roleColor],
                   ),
                   borderRadius: BorderRadius.circular(14),
                 ),
@@ -202,10 +195,14 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
                               vertical: 2,
                             ),
                             decoration: BoxDecoration(
-                              color: AppTheme.successColor.withValues(alpha: 0.15),
+                              color: AppTheme.successColor.withValues(
+                                alpha: 0.15,
+                              ),
                               borderRadius: BorderRadius.circular(10),
                               border: Border.all(
-                                color: AppTheme.successColor.withValues(alpha: 0.3),
+                                color: AppTheme.successColor.withValues(
+                                  alpha: 0.3,
+                                ),
                               ),
                             ),
                             child: Text(
@@ -232,13 +229,14 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: roleColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: roleColor.withValues(alpha: 0.3),
-                  ),
+                  border: Border.all(color: roleColor.withValues(alpha: 0.3)),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -264,7 +262,6 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
               ),
             ],
           ),
-
           if (user.isActive) ...[
             const SizedBox(height: 16),
             const Divider(height: 1),
@@ -289,10 +286,7 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
                   user.lastLogin != null
                       ? 'Terakhir login: ${_formatDateTime(user.lastLogin!)}'
                       : 'Belum pernah login',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppTheme.textTertiary,
-                  ),
+                  style: TextStyle(fontSize: 12, color: AppTheme.textTertiary),
                 ),
               ],
             ),
@@ -302,25 +296,16 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
             const SizedBox(height: 12),
             Row(
               children: [
-                Icon(
-                  Icons.block,
-                  size: 16,
-                  color: AppTheme.errorColor,
-                ),
+                Icon(Icons.block, size: 16, color: AppTheme.errorColor),
                 const SizedBox(width: 8),
                 Text(
                   'Nonaktif',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: AppTheme.errorColor,
-                  ),
+                  style: TextStyle(fontSize: 13, color: AppTheme.errorColor),
                 ),
               ],
             ),
           ],
-
           const SizedBox(height: 12),
-
           // Action buttons
           Row(
             children: [
@@ -341,7 +326,10 @@ class _UserManagementScreenState extends ConsumerState<UserManagementScreen> {
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppTheme.errorColor,
                       side: BorderSide(color: AppTheme.errorColor, width: 2),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -417,9 +405,7 @@ class _AddUserDialogState extends State<_AddUserDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       title: const Text('Tambah Pengguna Baru'),
       content: Form(
         key: _formKey,
@@ -510,10 +496,7 @@ class _AddUserDialogState extends State<_AddUserDialog> {
                     value: UserRole.cashier,
                     child: Text('Kasir'),
                   ),
-                  DropdownMenuItem(
-                    value: UserRole.admin,
-                    child: Text('Admin'),
-                  ),
+                  DropdownMenuItem(value: UserRole.admin, child: Text('Admin')),
                 ],
                 onChanged: (value) {
                   if (value != null) {
@@ -530,10 +513,7 @@ class _AddUserDialogState extends State<_AddUserDialog> {
           onPressed: () => Navigator.pop(context),
           child: const Text('Batal'),
         ),
-        ElevatedButton(
-          onPressed: _handleSave,
-          child: const Text('Simpan'),
-        ),
+        ElevatedButton(onPressed: _handleSave, child: const Text('Simpan')),
       ],
     );
   }
@@ -592,9 +572,7 @@ class _EditUserDialogState extends State<_EditUserDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       title: Text('Edit ${widget.user.username}'),
       content: Form(
         key: _formKey,
@@ -645,10 +623,7 @@ class _EditUserDialogState extends State<_EditUserDialog> {
                     value: UserRole.cashier,
                     child: Text('Kasir'),
                   ),
-                  DropdownMenuItem(
-                    value: UserRole.admin,
-                    child: Text('Admin'),
-                  ),
+                  DropdownMenuItem(value: UserRole.admin, child: Text('Admin')),
                 ],
                 onChanged: (value) {
                   if (value != null) {
@@ -659,7 +634,9 @@ class _EditUserDialogState extends State<_EditUserDialog> {
               const SizedBox(height: 12),
               SwitchListTile(
                 title: const Text('Aktif'),
-                subtitle: Text(_isActive ? 'Pengguna dapat login' : 'Pengguna dinonaktifkan'),
+                subtitle: Text(
+                  _isActive ? 'Pengguna dapat login' : 'Pengguna dinonaktifkan',
+                ),
                 value: _isActive,
                 onChanged: (value) {
                   setState(() => _isActive = value);
@@ -674,10 +651,7 @@ class _EditUserDialogState extends State<_EditUserDialog> {
           onPressed: () => Navigator.pop(context),
           child: const Text('Batal'),
         ),
-        ElevatedButton(
-          onPressed: _handleSave,
-          child: const Text('Simpan'),
-        ),
+        ElevatedButton(onPressed: _handleSave, child: const Text('Simpan')),
       ],
     );
   }

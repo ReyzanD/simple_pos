@@ -5,6 +5,7 @@ import '../theme/app_theme.dart';
 import '../utils/haptic_helper.dart';
 import 'shimmer_loading.dart';
 import 'modern_button.dart';
+import 'package:simple_pos/l10n/app_localizations.dart';
 
 /// Product image picker widget with support for camera and gallery
 ///
@@ -41,7 +42,9 @@ class _ProductImagePickerState extends State<ProductImagePicker> {
       mainAxisSize: MainAxisSize.min,
       children: [
         GestureDetector(
-          onTap: widget.enabled ? (!_isLoading ? _showImageSourceDialog : null) : null,
+          onTap: widget.enabled
+              ? (!_isLoading ? _showImageSourceDialog : null)
+              : null,
           child: Container(
             width: widget.size,
             height: widget.size,
@@ -68,7 +71,7 @@ class _ProductImagePickerState extends State<ProductImagePicker> {
         if (widget.enabled && widget.currentImagePath != null) ...[
           const SizedBox(height: 8),
           ModernSecondaryButton(
-            text: 'Hapus Foto',
+            text: AppLocalizations.of(context)!.image_picker_delete,
             icon: Icons.delete_outline,
             onPressed: _removeImage,
           ),
@@ -80,9 +83,7 @@ class _ProductImagePickerState extends State<ProductImagePicker> {
   Widget _buildContent() {
     if (_isLoading) {
       return const Center(
-        child: ShimmerLoading(
-          child: ShimmerCircle(size: 40),
-        ),
+        child: ShimmerLoading(child: ShimmerCircle(size: 40)),
       );
     }
 
@@ -193,7 +194,9 @@ class _ProductImagePickerState extends State<ProductImagePicker> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Gagal mengambil foto: $e'),
+            content: Text(
+              AppLocalizations.of(context)!.image_picker_failed_camera(e),
+            ),
             backgroundColor: AppTheme.errorColor,
           ),
         );
@@ -222,7 +225,9 @@ class _ProductImagePickerState extends State<ProductImagePicker> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Gagal memilih foto: $e'),
+            content: Text(
+              AppLocalizations.of(context)!.image_picker_failed_gallery(e),
+            ),
             backgroundColor: AppTheme.errorColor,
           ),
         );
@@ -260,10 +265,7 @@ class _ImageSourceBottomSheet extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppTheme.getCardColor(context),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: AppTheme.getBorderColor(context),
-          width: 1,
-        ),
+        border: Border.all(color: AppTheme.getBorderColor(context), width: 1),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.1),
@@ -287,7 +289,7 @@ class _ImageSourceBottomSheet extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'Pilih Sumber Foto',
+              AppLocalizations.of(context)!.image_picker_title,
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -300,7 +302,7 @@ class _ImageSourceBottomSheet extends StatelessWidget {
               children: [
                 _ImageSourceOption(
                   icon: Icons.camera_alt_outlined,
-                  label: 'Kamera',
+                  label: AppLocalizations.of(context)!.image_picker_camera,
                   onTap: () {
                     HapticHelper.lightImpact();
                     onCameraSelected();
@@ -308,7 +310,7 @@ class _ImageSourceBottomSheet extends StatelessWidget {
                 ),
                 _ImageSourceOption(
                   icon: Icons.photo_library_outlined,
-                  label: 'Galeri',
+                  label: AppLocalizations.of(context)!.image_picker_gallery,
                   onTap: () {
                     HapticHelper.lightImpact();
                     onGallerySelected();
@@ -352,11 +354,7 @@ class _ImageSourceOption extends StatelessWidget {
         ),
         child: Column(
           children: [
-            Icon(
-              icon,
-              size: 32,
-              color: AppTheme.primaryColor,
-            ),
+            Icon(icon, size: 32, color: AppTheme.primaryColor),
             const SizedBox(height: 8),
             Text(
               label,
@@ -423,10 +421,7 @@ class ProductImageDisplay extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppTheme.getCardColor(context),
           borderRadius: effectiveBorderRadius,
-          border: Border.all(
-            color: AppTheme.getBorderColor(context),
-            width: 1,
-          ),
+          border: Border.all(color: AppTheme.getBorderColor(context), width: 1),
         ),
         child: ClipRRect(
           borderRadius: effectiveBorderRadius,
@@ -463,12 +458,7 @@ class ProductImageDisplay extends StatelessWidget {
 
     final file = File(imagePath!);
     if (file.existsSync()) {
-      return Image.file(
-        file,
-        width: size,
-        height: size,
-        fit: BoxFit.cover,
-      );
+      return Image.file(file, width: size, height: size, fit: BoxFit.cover);
     }
 
     return Icon(

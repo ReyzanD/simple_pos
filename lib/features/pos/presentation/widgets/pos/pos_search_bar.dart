@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:simple_pos/core/theme/neo_brutal_theme.dart';
 import 'package:simple_pos/core/widgets/brutal_inputs.dart';
 import '../../controllers/pos_controller.dart';
+import 'package:simple_pos/l10n/app_localizations.dart';
 
 /// Improved POS Search Bar with fixed height alignment
 ///
@@ -29,14 +30,13 @@ class POSSearchBar extends StatelessWidget {
       ),
       child: SizedBox(
         height: 44,
-
         child: BrutalSearchField(
-          hint: 'Cari produk...',
+          hint: AppLocalizations.of(context)!.product_search,
           controller: searchController,
           onChanged: (value) {
             controller.setSearchQuery(value);
           },
-          backgroundColor: NeoBrutalTheme.surface,
+          backgroundColor: NeoBrutalTheme.getCardColor(context),
         ),
       ),
     );

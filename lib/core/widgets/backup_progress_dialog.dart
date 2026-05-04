@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import 'modern_button.dart';
+import 'package:simple_pos/l10n/app_localizations.dart';
 
 /// Stage of backup/restore operation
 enum BackupStage {
@@ -17,26 +18,26 @@ enum BackupStage {
 
 /// Extension to get display text for stages
 extension BackupStageExtension on BackupStage {
-  String get label {
+  String label(AppLocalizations l10n) {
     switch (this) {
       case BackupStage.preparing:
-        return 'Preparing';
+        return l10n.backup_preparing;
       case BackupStage.collecting:
-        return 'Collecting Data';
+        return l10n.backup_collecting;
       case BackupStage.compressing:
-        return 'Compressing';
+        return l10n.backup_compressing;
       case BackupStage.uploading:
-        return 'Uploading';
+        return l10n.backup_uploading;
       case BackupStage.downloading:
-        return 'Downloading';
+        return l10n.backup_downloading;
       case BackupStage.extracting:
-        return 'Extracting';
+        return l10n.backup_extracting;
       case BackupStage.restoring:
-        return 'Restoring';
+        return l10n.backup_restoring;
       case BackupStage.finalizing:
-        return 'Finalizing';
+        return l10n.backup_finalizing;
       case BackupStage.complete:
-        return 'Complete';
+        return l10n.backup_complete;
     }
   }
 
@@ -131,13 +132,10 @@ class BackupProgressDialogState extends State<BackupProgressDialog>
       vsync: this,
       duration: const Duration(milliseconds: 300),
     );
-    _progressAnimation = Tween<double>(
-      begin: 0.0,
-      end: widget.progress,
-    ).animate(CurvedAnimation(
-      parent: _progressController,
-      curve: Curves.easeOut,
-    ));
+    _progressAnimation = Tween<double>(begin: 0.0, end: widget.progress)
+        .animate(
+          CurvedAnimation(parent: _progressController, curve: Curves.easeOut),
+        );
     _progressController.forward();
   }
 
@@ -145,13 +143,13 @@ class BackupProgressDialogState extends State<BackupProgressDialog>
   void didUpdateWidget(BackupProgressDialog oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.progress != oldWidget.progress) {
-      _progressAnimation = Tween<double>(
-        begin: _progressAnimation.value,
-        end: widget.progress,
-      ).animate(CurvedAnimation(
-        parent: _progressController,
-        curve: Curves.easeOut,
-      ));
+      _progressAnimation =
+          Tween<double>(
+            begin: _progressAnimation.value,
+            end: widget.progress,
+          ).animate(
+            CurvedAnimation(parent: _progressController, curve: Curves.easeOut),
+          );
       _progressController.forward(from: 0);
     }
   }
@@ -164,6 +162,7 @@ class BackupProgressDialogState extends State<BackupProgressDialog>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final allStages = [
       BackupStage.preparing,
       BackupStage.collecting,
@@ -173,9 +172,7 @@ class BackupProgressDialogState extends State<BackupProgressDialog>
     ];
 
     return Dialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Container(
         constraints: const BoxConstraints(maxWidth: 450),
         padding: const EdgeInsets.all(24),
@@ -214,7 +211,7 @@ class BackupProgressDialogState extends State<BackupProgressDialog>
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        widget.currentStage.label,
+                        widget.currentStage.label(l10n),
                         style: TextStyle(
                           fontSize: 14,
                           color: AppTheme.getTextSecondaryColor(context),
@@ -356,9 +353,7 @@ class BackupProgressDialogState extends State<BackupProgressDialog>
       decoration: BoxDecoration(
         color: AppTheme.getCardColor(context),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: AppTheme.getBorderColor(context),
-        ),
+        border: Border.all(color: AppTheme.getBorderColor(context)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -391,35 +386,37 @@ class BackupProgressDialogState extends State<BackupProgressDialog>
                             color: AppTheme.successColor,
                           )
                         : isCurrent
-                            ? SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    AppTheme.primaryColor,
-                                  ),
-                                ),
-                              )
-                            : Icon(
-                                Icons.radio_button_unchecked,
-                                size: 20,
-                                color: AppTheme.textTertiary,
+                        ? SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                AppTheme.primaryColor,
                               ),
+                            ),
+                          )
+                        : Icon(
+                            Icons.radio_button_unchecked,
+                            size: 20,
+                            color: AppTheme.textTertiary,
+                          ),
                   ),
                   const SizedBox(width: 12),
                   // Stage label
                   Expanded(
                     child: Text(
-                      stage.label,
+                      stage.label(AppLocalizations.of(context)!),
                       style: TextStyle(
                         fontSize: 13,
-                        fontWeight: isCurrent ? FontWeight.w600 : FontWeight.normal,
+                        fontWeight: isCurrent
+                            ? FontWeight.w600
+                            : FontWeight.normal,
                         color: isCompleted
                             ? AppTheme.successColor
                             : isCurrent
-                                ? AppTheme.getTextPrimaryColor(context)
-                                : AppTheme.textTertiary,
+                            ? AppTheme.getTextPrimaryColor(context)
+                            : AppTheme.textTertiary,
                       ),
                     ),
                   ),

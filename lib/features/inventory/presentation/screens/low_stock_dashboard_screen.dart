@@ -7,16 +7,19 @@ import '../../../sales/presentation/widgets/summary_stat_card.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/neo_brutal_theme.dart';
 import '../widgets/low_stock_dashboard_card.dart';
+import '../../../../l10n/app_localizations.dart';
 
 /// Screen displaying low stock and out of stock products
 class LowStockDashboardScreen extends ConsumerStatefulWidget {
   const LowStockDashboardScreen({super.key});
 
   @override
-  ConsumerState<LowStockDashboardScreen> createState() => _LowStockDashboardScreenState();
+  ConsumerState<LowStockDashboardScreen> createState() =>
+      _LowStockDashboardScreenState();
 }
 
-class _LowStockDashboardScreenState extends ConsumerState<LowStockDashboardScreen> {
+class _LowStockDashboardScreenState
+    extends ConsumerState<LowStockDashboardScreen> {
   bool _isLoading = false;
   LowStockResult? _lowStockResult;
   String? _errorMessage;
@@ -54,8 +57,9 @@ class _LowStockDashboardScreenState extends ConsumerState<LowStockDashboardScree
       final outOfStock = products.where((p) => p.isOutOfStock).toList()
         ..sort((a, b) => a.stock.compareTo(b.stock));
 
-      final lowStock = products.where((p) => p.isLowStock && !p.isOutOfStock).toList()
-        ..sort((a, b) => a.stock.compareTo(b.stock));
+      final lowStock =
+          products.where((p) => p.isLowStock && !p.isOutOfStock).toList()
+            ..sort((a, b) => a.stock.compareTo(b.stock));
 
       if (mounted) {
         setState(() {
@@ -78,6 +82,7 @@ class _LowStockDashboardScreenState extends ConsumerState<LowStockDashboardScree
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: NeoBrutalTheme.background, // ✅ Brutal white background
       appBar: AppBar(
@@ -85,19 +90,20 @@ class _LowStockDashboardScreenState extends ConsumerState<LowStockDashboardScree
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text('Dashboard Stok Rendah'),
+        title: Text(l10n.stock_dashboard),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _errorMessage != null
-              ? _buildErrorState()
-              : _lowStockResult == null
-                  ? _buildEmptyState()
-                  : _buildContent(),
+          ? _buildErrorState(context)
+          : _lowStockResult == null
+          ? _buildEmptyState(context)
+          : _buildContent(l10n),
     );
   }
 
-  Widget _buildErrorState() {
+  Widget _buildErrorState(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -109,20 +115,16 @@ class _LowStockDashboardScreenState extends ConsumerState<LowStockDashboardScree
               color: AppTheme.errorColor,
               borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium),
               border: Border.all(
-                color: Colors.black,
+                color: NeoBrutalTheme.getBorderColor(context),
                 width: 4, // ✅ Bold border
               ),
               boxShadow: NeoBrutalTheme.chunkyShadow,
             ),
-            child: Icon(
-              Icons.error_outline,
-              size: 50,
-              color: Colors.white,
-            ),
+            child: Icon(Icons.error_outline, size: 50, color: Colors.white),
           ),
           SizedBox(height: NeoBrutalTheme.spaceMD),
           Text(
-            'Terjadi Kesalahan',
+            l10n.common_error,
             style: NeoBrutalTheme.headlineLarge.copyWith(
               fontWeight: FontWeight.w900,
             ),
@@ -139,7 +141,7 @@ class _LowStockDashboardScreenState extends ConsumerState<LowStockDashboardScree
           ElevatedButton.icon(
             onPressed: _loadLowStockData,
             icon: const Icon(Icons.refresh),
-            label: const Text('Coba Lagi'),
+            label: Text(l10n.common_retry),
             style: ElevatedButton.styleFrom(
               backgroundColor: NeoBrutalTheme.primary,
               foregroundColor: Colors.white,
@@ -148,9 +150,11 @@ class _LowStockDashboardScreenState extends ConsumerState<LowStockDashboardScree
                 vertical: NeoBrutalTheme.spaceMD,
               ),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium),
+                borderRadius: BorderRadius.circular(
+                  NeoBrutalTheme.radiusMedium,
+                ),
                 side: BorderSide(
-                  color: Colors.black,
+                  color: NeoBrutalTheme.getBorderColor(context),
                   width: 4, // ✅ Bold border
                 ),
               ),
@@ -162,7 +166,8 @@ class _LowStockDashboardScreenState extends ConsumerState<LowStockDashboardScree
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -174,7 +179,7 @@ class _LowStockDashboardScreenState extends ConsumerState<LowStockDashboardScree
               color: NeoBrutalTheme.success, // ✅ Solid bold green
               shape: BoxShape.circle,
               border: Border.all(
-                color: Colors.black,
+                color: NeoBrutalTheme.getBorderColor(context),
                 width: 4, // ✅ Bold border
               ),
               boxShadow: NeoBrutalTheme.chunkyShadow,
@@ -187,14 +192,14 @@ class _LowStockDashboardScreenState extends ConsumerState<LowStockDashboardScree
           ),
           SizedBox(height: NeoBrutalTheme.spaceLG),
           Text(
-            'Semua Stok Aman',
+            l10n.stock_adequate,
             style: NeoBrutalTheme.headlineLarge.copyWith(
               fontWeight: FontWeight.w900,
             ),
           ),
           SizedBox(height: NeoBrutalTheme.spaceSM),
           Text(
-            'Tidak ada produk dengan stok rendah',
+            l10n.stock_noLow,
             style: NeoBrutalTheme.bodyMedium.copyWith(
               color: AppTheme.textSecondary,
               fontWeight: FontWeight.w600,
@@ -205,7 +210,7 @@ class _LowStockDashboardScreenState extends ConsumerState<LowStockDashboardScree
     );
   }
 
-  Widget _buildContent() {
+  Widget _buildContent(AppLocalizations l10n) {
     final result = _lowStockResult!;
 
     return RefreshIndicator(
@@ -219,24 +224,26 @@ class _LowStockDashboardScreenState extends ConsumerState<LowStockDashboardScree
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Summary Cards
-            _buildSummaryCards(result),
+            _buildSummaryCards(result, l10n),
             SizedBox(height: NeoBrutalTheme.spaceLG),
 
             // Out of Stock Section
             if (result.outOfStockProducts.isNotEmpty) ...[
               _buildSectionHeader(
-                'KRITIS - Stok Habis',
+                context,
+                l10n,
+                l10n.stock_out,
                 Icons.block,
                 AppTheme.errorColor,
                 result.outOfStockProducts.length,
               ),
               SizedBox(height: NeoBrutalTheme.spaceMD),
-              ...result.outOfStockProducts.map((product) =>
-                  LowStockDashboardCard(
-                    product: product,
-                    stockStatus: StockStatus.outOfStock,
-                    onEditPressed: () => _editProduct(product),
-                  ),
+              ...result.outOfStockProducts.map(
+                (product) => LowStockDashboardCard(
+                  product: product,
+                  stockStatus: StockStatus.outOfStock,
+                  onEditPressed: () => _editProduct(product),
+                ),
               ),
               SizedBox(height: NeoBrutalTheme.spaceLG),
             ],
@@ -244,18 +251,20 @@ class _LowStockDashboardScreenState extends ConsumerState<LowStockDashboardScree
             // Low Stock Section
             if (result.lowStockProducts.isNotEmpty) ...[
               _buildSectionHeader(
-                'PERINGATAN - Stok Rendah',
+                context,
+                l10n,
+                l10n.stock_low,
                 Icons.warning_amber,
                 AppTheme.warningColor,
                 result.lowStockProducts.length,
               ),
               const SizedBox(height: 12),
-              ...result.lowStockProducts.map((product) =>
-                  LowStockDashboardCard(
-                    product: product,
-                    stockStatus: StockStatus.lowStock,
-                    onEditPressed: () => _editProduct(product),
-                  ),
+              ...result.lowStockProducts.map(
+                (product) => LowStockDashboardCard(
+                  product: product,
+                  stockStatus: StockStatus.lowStock,
+                  onEditPressed: () => _editProduct(product),
+                ),
               ),
             ],
           ],
@@ -264,12 +273,12 @@ class _LowStockDashboardScreenState extends ConsumerState<LowStockDashboardScree
     );
   }
 
-  Widget _buildSummaryCards(LowStockResult result) {
+  Widget _buildSummaryCards(LowStockResult result, AppLocalizations l10n) {
     return Row(
       children: [
         Expanded(
           child: SummaryStatCard(
-            title: 'Stok Habis',
+            title: l10n.stock_out,
             value: result.totalOutOfStock.toString(),
             icon: Icons.block,
             color: AppTheme.errorColor,
@@ -278,7 +287,7 @@ class _LowStockDashboardScreenState extends ConsumerState<LowStockDashboardScree
         const SizedBox(width: 16),
         Expanded(
           child: SummaryStatCard(
-            title: 'Stok Rendah',
+            title: l10n.stock_low,
             value: result.totalLowStock.toString(),
             icon: Icons.warning_amber,
             color: AppTheme.warningColor,
@@ -289,6 +298,8 @@ class _LowStockDashboardScreenState extends ConsumerState<LowStockDashboardScree
   }
 
   Widget _buildSectionHeader(
+    BuildContext context,
+    AppLocalizations l10n,
     String title,
     IconData icon,
     Color color,
@@ -300,9 +311,13 @@ class _LowStockDashboardScreenState extends ConsumerState<LowStockDashboardScree
           padding: EdgeInsets.all(NeoBrutalTheme.spaceSM),
           decoration: BoxDecoration(
             color: color, // ✅ Solid bold color
-            borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium), // ✅ Brutal 8px
+            borderRadius: BorderRadius.circular(
+              NeoBrutalTheme.radiusMedium,
+            ), // ✅ Brutal 8px
             border: Border.all(
-              color: Colors.black, // ✅ Bold black border
+              color: NeoBrutalTheme.getBorderColor(
+                context,
+              ), // ✅ Bold black border
               width: 3, // ✅ Bold 3px border
             ),
             boxShadow: NeoBrutalTheme.chunkyShadow,
@@ -330,15 +345,19 @@ class _LowStockDashboardScreenState extends ConsumerState<LowStockDashboardScree
           ),
           decoration: BoxDecoration(
             color: color, // ✅ Solid bold color
-            borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium), // ✅ Brutal 8px
+            borderRadius: BorderRadius.circular(
+              NeoBrutalTheme.radiusMedium,
+            ), // ✅ Brutal 8px
             border: Border.all(
-              color: Colors.black, // ✅ Bold black border
+              color: NeoBrutalTheme.getBorderColor(
+                context,
+              ), // ✅ Bold black border
               width: 3, // ✅ Bold 3px border
             ),
             boxShadow: NeoBrutalTheme.chunkyShadow,
           ),
           child: Text(
-            '$count produk',
+            l10n.product_stock_count(count),
             style: NeoBrutalTheme.labelMedium.copyWith(
               color: Colors.white, // ✅ White text
               fontWeight: FontWeight.w800,
@@ -354,9 +373,11 @@ class _LowStockDashboardScreenState extends ConsumerState<LowStockDashboardScree
     // This will be implemented with the existing edit dialog
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Edit produk: ${product.name}'),
+        content: Text(
+          AppLocalizations.of(context)!.common_editProductMessage(product.name),
+        ),
         action: SnackBarAction(
-          label: 'OK',
+          label: AppLocalizations.of(context)!.common_ok,
           onPressed: () {},
         ),
       ),

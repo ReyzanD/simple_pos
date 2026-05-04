@@ -5,6 +5,7 @@ import '../../../../core/theme/neo_brutal_theme.dart';
 import '../../../../core/services/printer_service.dart';
 import '../../../../core/widgets/modern_button.dart';
 import '../../../../core/widgets/modern_card.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../shared/presentation/providers.dart';
 
 /// Screen for managing Bluetooth printer settings
@@ -12,7 +13,8 @@ class PrinterSettingsScreen extends ConsumerStatefulWidget {
   const PrinterSettingsScreen({super.key});
 
   @override
-  ConsumerState<PrinterSettingsScreen> createState() => _PrinterSettingsScreenState();
+  ConsumerState<PrinterSettingsScreen> createState() =>
+      _PrinterSettingsScreenState();
 }
 
 class _PrinterSettingsScreenState extends ConsumerState<PrinterSettingsScreen> {
@@ -58,10 +60,11 @@ class _PrinterSettingsScreenState extends ConsumerState<PrinterSettingsScreen> {
     final success = await printerService.connect(printer.address);
 
     if (mounted) {
+      final l10n = AppLocalizations.of(context)!;
       if (success) {
-        _showSuccessSnackBar('Terhubung ke ${printer.name}');
+        _showSuccessSnackBar(l10n.printer_connected);
       } else {
-        _showErrorSnackBar('Gagal terhubung ke printer');
+        _showErrorSnackBar(l10n.printer_connect_failed);
       }
     }
   }
@@ -71,7 +74,8 @@ class _PrinterSettingsScreenState extends ConsumerState<PrinterSettingsScreen> {
     await printerService.disconnect();
 
     if (mounted) {
-      _showSuccessSnackBar('Printer terputus');
+      final l10n = AppLocalizations.of(context)!;
+      _showSuccessSnackBar(l10n.printer_disconnected);
       await _initializeAndDiscoverPrinters();
     }
   }
@@ -81,7 +85,10 @@ class _PrinterSettingsScreenState extends ConsumerState<PrinterSettingsScreen> {
     final settingsController = ref.read(settingsControllerProvider);
 
     if (!printerService.isConnected) {
-      _showErrorSnackBar('Tidak ada printer terhubung');
+      if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
+        _showErrorSnackBar(l10n.printer_not_connected);
+      }
       return;
     }
 
@@ -91,10 +98,13 @@ class _PrinterSettingsScreenState extends ConsumerState<PrinterSettingsScreen> {
     );
 
     if (mounted) {
+      final l10n = AppLocalizations.of(context)!;
       if (result.success) {
-        _showSuccessSnackBar('Test print berhasil');
+        _showSuccessSnackBar(l10n.printer_test_success);
       } else {
-        _showErrorSnackBar(result.errorMessage ?? 'Test print gagal');
+        _showErrorSnackBar(
+          result.errorMessage?.toString() ?? l10n.printer_test_failed,
+        );
       }
     }
   }
@@ -106,9 +116,7 @@ class _PrinterSettingsScreenState extends ConsumerState<PrinterSettingsScreen> {
         backgroundColor: AppTheme.successColor,
         duration: const Duration(seconds: 2),
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }
@@ -120,9 +128,7 @@ class _PrinterSettingsScreenState extends ConsumerState<PrinterSettingsScreen> {
         backgroundColor: AppTheme.errorColor,
         duration: const Duration(seconds: 3),
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }
@@ -140,270 +146,274 @@ class _PrinterSettingsScreenState extends ConsumerState<PrinterSettingsScreen> {
         elevation: 0,
       ),
       body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          // Connection status card
+          ModernCard(
             padding: const EdgeInsets.all(16),
-            children: [
-              // Connection status card
-              ModernCard(
-                padding: const EdgeInsets.all(16),
-                backgroundColor: printerService.isConnected
-                    ? AppTheme.successColor.withValues(alpha: 0.1)
-                    : AppTheme.warningColor.withValues(alpha: 0.1),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+            backgroundColor: printerService.isConnected
+                ? AppTheme.successColor.withValues(alpha: 0.1)
+                : AppTheme.warningColor.withValues(alpha: 0.1),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
                   children: [
-                    Row(
-                      children: [
-                        Container(
-                          width: 48,
-                          height: 48,
-                          decoration: BoxDecoration(
-                            color: printerService.isConnected
-                                ? AppTheme.successColor
-                                : AppTheme.warningColor,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Icon(
-                            printerService.isConnected
-                                ? Icons.bluetooth_connected
-                                : Icons.bluetooth_disabled,
-                            color: Colors.white,
-                            size: 24,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                printerService.isConnected
-                                    ? 'Printer Terhubung'
-                                    : 'Tidak Ada Printer Terhubung',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: printerService.isConnected
-                                      ? AppTheme.successColor
-                                      : AppTheme.warningColor,
-                                ),
-                              ),
-                              if (printerService.connectedPrinter != null)
-                                Text(
-                                  printerService.connectedPrinter!.name,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: AppTheme.textSecondary,
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                        if (printerService.isConnected)
-                          IconButton(
-                            icon: const Icon(Icons.close),
-                            color: AppTheme.errorColor,
-                            onPressed: _disconnectPrinter,
-                            tooltip: 'Putuskan',
-                          ),
-                      ],
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: printerService.isConnected
+                            ? AppTheme.successColor
+                            : AppTheme.warningColor,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        printerService.isConnected
+                            ? Icons.bluetooth_connected
+                            : Icons.bluetooth_disabled,
+                        color: Colors.white,
+                        size: 24,
+                      ),
                     ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              // Paper width setting
-              ModernCard(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: const Icon(
-                            Icons.description_outlined,
-                            color: AppTheme.primaryColor,
-                            size: 20,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        const Text(
-                          'Ukuran Kertas',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _PaperWidthOption(
-                            value: 58,
-                            label: '58mm',
-                            isSelected: _selectedPaperWidth == 58,
-                            onTap: () {
-                              setState(() {
-                                _selectedPaperWidth = 58;
-                              });
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _PaperWidthOption(
-                            value: 80,
-                            label: '80mm',
-                            isSelected: _selectedPaperWidth == 80,
-                            onTap: () {
-                              setState(() {
-                                _selectedPaperWidth = 80;
-                              });
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              // Available printers section
-              Row(
-                children: [
-                  const Text(
-                    'Printer Tersedia',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: AppTheme.textPrimary,
-                    ),
-                  ),
-                  const Spacer(),
-                  if (_isScanning)
-                    const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                ],
-              ),
-
-              const SizedBox(height: 12),
-
-              // Printer list
-              printerService.discoveredPrinters.isEmpty
-                  ? ModernCard(
-                      padding: const EdgeInsets.all(24),
+                    const SizedBox(width: 16),
+                    Expanded(
                       child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(
-                            Icons.bluetooth_searching,
-                            size: 48,
-                            color: AppTheme.textTertiary,
-                          ),
-                          const SizedBox(height: 12),
                           Text(
-                            'Tidak Ada Printer Ditemukan',
+                            printerService.isConnected
+                                ? 'Printer Terhubung'
+                                : 'Tidak Ada Printer Terhubung',
                             style: TextStyle(
                               fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                              color: AppTheme.textSecondary,
+                              fontWeight: FontWeight.w600,
+                              color: printerService.isConnected
+                                  ? AppTheme.successColor
+                                  : AppTheme.warningColor,
                             ),
                           ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Pastikan Bluetooth aktif dan printer sudah dipasangkan',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: AppTheme.textTertiary,
+                          if (printerService.connectedPrinter != null)
+                            Text(
+                              printerService.connectedPrinter!.name,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: AppTheme.textSecondary,
+                              ),
                             ),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 16),
-                          ModernButton(
-                            text: 'Scan Ulang',
-                            icon: Icons.refresh,
-                            onPressed: _initializeAndDiscoverPrinters,
-                            backgroundColor: NeoBrutalTheme.primary, // ✅ Brutal primary color
-                          ),
                         ],
                       ),
-                    )
-                  : Column(
-                      children: printerService.discoveredPrinters.map((printer) {
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: _PrinterListItem(
-                            printer: printer,
-                            isConnected: printerService.isConnected &&
-                                printerService.connectedPrinter?.address ==
-                                    printer.address,
-                            onConnect: () => _connectPrinter(printer),
-                            onDisconnect: _disconnectPrinter,
-                          ),
-                        );
-                      }).toList(),
                     ),
-
-              const SizedBox(height: 16),
-
-              // Test print button
-              ModernButton(
-                text: 'Test Print',
-                icon: Icons.print,
-                onPressed: printerService.isConnected ? _testPrint : null,
-                backgroundColor: AppTheme.primaryColor,
-              ),
-
-              const SizedBox(height: 16),
-
-              // Help card
-              ModernCard(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.info_outline,
-                          color: AppTheme.infoColor,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 8),
-                        const Text(
-                          'Cara Menggunakan',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    _buildHelpItem('1. Pastikan Bluetooth aktif di perangkat'),
-                    _buildHelpItem('2. Pair printer thermal di pengaturan Bluetooth'),
-                    _buildHelpItem('3. Pilih printer dari daftar di atas'),
-                    _buildHelpItem('4. Tap "Test Print" untuk mencoba'),
+                    if (printerService.isConnected)
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        color: AppTheme.errorColor,
+                        onPressed: _disconnectPrinter,
+                        tooltip: 'Putuskan',
+                      ),
                   ],
                 ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Paper width setting
+          ModernCard(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(
+                        Icons.description_outlined,
+                        color: AppTheme.primaryColor,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    const Text(
+                      'Ukuran Kertas',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _PaperWidthOption(
+                        value: 58,
+                        label: '58mm',
+                        isSelected: _selectedPaperWidth == 58,
+                        onTap: () {
+                          setState(() {
+                            _selectedPaperWidth = 58;
+                          });
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _PaperWidthOption(
+                        value: 80,
+                        label: '80mm',
+                        isSelected: _selectedPaperWidth == 80,
+                        onTap: () {
+                          setState(() {
+                            _selectedPaperWidth = 80;
+                          });
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Available printers section
+          Row(
+            children: [
+              const Text(
+                'Printer Tersedia',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.textPrimary,
+                ),
               ),
+              const Spacer(),
+              if (_isScanning)
+                const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
             ],
           ),
-        );
+
+          const SizedBox(height: 12),
+
+          // Printer list
+          printerService.discoveredPrinters.isEmpty
+              ? ModernCard(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.bluetooth_searching,
+                        size: 48,
+                        color: AppTheme.textTertiary,
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Tidak Ada Printer Ditemukan',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: AppTheme.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Pastikan Bluetooth aktif dan printer sudah dipasangkan',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: AppTheme.textTertiary,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 16),
+                      ModernButton(
+                        text: 'Scan Ulang',
+                        icon: Icons.refresh,
+                        onPressed: _initializeAndDiscoverPrinters,
+                        backgroundColor:
+                            NeoBrutalTheme.primary, // ✅ Brutal primary color
+                      ),
+                    ],
+                  ),
+                )
+              : Column(
+                  children: printerService.discoveredPrinters.map((printer) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: _PrinterListItem(
+                        printer: printer,
+                        isConnected:
+                            printerService.isConnected &&
+                            printerService.connectedPrinter?.address ==
+                                printer.address,
+                        onConnect: () => _connectPrinter(printer),
+                        onDisconnect: _disconnectPrinter,
+                      ),
+                    );
+                  }).toList(),
+                ),
+
+          const SizedBox(height: 16),
+
+          // Test print button
+          ModernButton(
+            text: 'Test Print',
+            icon: Icons.print,
+            onPressed: printerService.isConnected ? _testPrint : null,
+            backgroundColor: AppTheme.primaryColor,
+          ),
+
+          const SizedBox(height: 16),
+
+          // Help card
+          ModernCard(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      color: AppTheme.infoColor,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'Cara Menggunakan',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                _buildHelpItem('1. Pastikan Bluetooth aktif di perangkat'),
+                _buildHelpItem(
+                  '2. Pair printer thermal di pengaturan Bluetooth',
+                ),
+                _buildHelpItem('3. Pilih printer dari daftar di atas'),
+                _buildHelpItem('4. Tap "Test Print" untuk mencoba'),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildHelpItem(String text) {
@@ -425,10 +435,7 @@ class _PrinterSettingsScreenState extends ConsumerState<PrinterSettingsScreen> {
           Expanded(
             child: Text(
               text,
-              style: TextStyle(
-                fontSize: 13,
-                color: AppTheme.textSecondary,
-              ),
+              style: TextStyle(fontSize: 13, color: AppTheme.textSecondary),
             ),
           ),
         ],
@@ -511,7 +518,9 @@ class _PrinterListItem extends StatelessWidget {
             ),
             child: Icon(
               Icons.print,
-              color: isConnected ? AppTheme.successColor : AppTheme.primaryColor,
+              color: isConnected
+                  ? AppTheme.successColor
+                  : AppTheme.primaryColor,
               size: 24,
             ),
           ),
@@ -531,10 +540,7 @@ class _PrinterListItem extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   printer.address,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppTheme.textSecondary,
-                  ),
+                  style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
                 ),
               ],
             ),

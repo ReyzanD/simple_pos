@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/neo_brutal_theme.dart';
 import '../../../../core/widgets/modern_button.dart';
 import '../../../../core/widgets/bill_counter_button.dart';
 import '../../../../core/widgets/modern_card.dart';
@@ -44,7 +45,7 @@ class _CashCountScreenState extends ConsumerState<CashCountScreen> {
       appBar: AppBar(
         title: const Text('Hitung Uang di Laci'),
         backgroundColor: AppTheme.primaryColor,
-        foregroundColor: Colors.white,
+        foregroundColor: Colors.white, // Icon on primary color background
         elevation: 0,
       ),
       body: Column(
@@ -60,7 +61,7 @@ class _CashCountScreenState extends ConsumerState<CashCountScreen> {
                   'Diharapkan:',
                   style: TextStyle(
                     fontSize: 14,
-                    color: AppTheme.getTextSecondaryColor(context),
+                    color: NeoBrutalTheme.getSecondaryTextColor(context),
                   ),
                 ),
                 Text(
@@ -68,7 +69,7 @@ class _CashCountScreenState extends ConsumerState<CashCountScreen> {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: AppTheme.getTextPrimaryColor(context),
+                    color: NeoBrutalTheme.getTextColor(context),
                   ),
                 ),
               ],
@@ -142,7 +143,9 @@ class _CashCountScreenState extends ConsumerState<CashCountScreen> {
                   child: ModernButton(
                     text: 'Batal',
                     onPressed: () => Navigator.pop(context, false),
-                    backgroundColor: AppTheme.textTertiary,
+                    backgroundColor: NeoBrutalTheme.getTertiaryTextColor(
+                      context,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -174,7 +177,7 @@ class _CashCountScreenState extends ConsumerState<CashCountScreen> {
           label,
           style: TextStyle(
             fontSize: 14,
-            color: AppTheme.getTextSecondaryColor(context),
+            color: NeoBrutalTheme.getSecondaryTextColor(context),
           ),
         ),
         Text(
@@ -182,7 +185,7 @@ class _CashCountScreenState extends ConsumerState<CashCountScreen> {
           style: TextStyle(
             fontSize: 14,
             fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
-            color: color ?? AppTheme.getTextPrimaryColor(context),
+            color: color ?? NeoBrutalTheme.getTextColor(context),
           ),
         ),
       ],

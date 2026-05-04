@@ -8,6 +8,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../core/exceptions/app_exceptions.dart';
 import '../../../shared/presentation/providers.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../widgets/unit_of_measurement_dropdown.dart';
 
 /// Dialog for editing an existing product
@@ -22,7 +23,8 @@ class EditProductDialog extends ConsumerStatefulWidget {
     int? supplierId,
     String? barcode,
     String? unitOfMeasurement,
-  }) onEdit;
+  })
+  onEdit;
 
   final List<entities.Category> categories;
   final List<Supplier> suppliers;
@@ -65,10 +67,18 @@ class _EditProductDialogState extends ConsumerState<EditProductDialog> {
     _categories = widget.categories;
     _suppliers = widget.suppliers;
     _nameController = TextEditingController(text: widget.product.name);
-    _priceController = TextEditingController(text: widget.product.price.toString());
-    _costPriceController = TextEditingController(text: widget.product.costPrice.toString());
-    _stockController = TextEditingController(text: widget.product.stock.toString());
-    _barcodeController = TextEditingController(text: widget.product.barcode ?? '');
+    _priceController = TextEditingController(
+      text: widget.product.price.toString(),
+    );
+    _costPriceController = TextEditingController(
+      text: widget.product.costPrice.toString(),
+    );
+    _stockController = TextEditingController(
+      text: widget.product.stock.toString(),
+    );
+    _barcodeController = TextEditingController(
+      text: widget.product.barcode ?? '',
+    );
     _selectedCategoryId = widget.product.categoryId;
     _selectedSupplierId = widget.product.supplierId;
     _selectedUnit = _parseUnit(widget.product.unitOfMeasurement);
@@ -109,7 +119,7 @@ class _EditProductDialogState extends ConsumerState<EditProductDialog> {
               ),
             ),
             const SizedBox(width: 12),
-            const Text('Kategori Baru'),
+            Text(AppLocalizations.of(context)!.common_newCategory),
           ],
         ),
         content: Form(
@@ -120,7 +130,7 @@ class _EditProductDialogState extends ConsumerState<EditProductDialog> {
               TextFormField(
                 controller: nameController,
                 decoration: InputDecoration(
-                  labelText: 'Nama Kategori',
+                  labelText: AppLocalizations.of(context)!.category_name,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -130,7 +140,9 @@ class _EditProductDialogState extends ConsumerState<EditProductDialog> {
                 textCapitalization: TextCapitalization.words,
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
-                    return 'Nama kategori wajib diisi';
+                    return AppLocalizations.of(
+                      context,
+                    )!.common_categoryNameRequired;
                   }
                   return null;
                 },
@@ -139,7 +151,7 @@ class _EditProductDialogState extends ConsumerState<EditProductDialog> {
               TextFormField(
                 controller: descController,
                 decoration: InputDecoration(
-                  labelText: 'Deskripsi (Opsional)',
+                  labelText: AppLocalizations.of(context)!.category_description,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -155,7 +167,7 @@ class _EditProductDialogState extends ConsumerState<EditProductDialog> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Batal'),
+            child: Text(AppLocalizations.of(context)!.common_cancel),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -174,7 +186,9 @@ class _EditProductDialogState extends ConsumerState<EditProductDialog> {
                   createdAt: DateTime.now(),
                 );
 
-                final success = await categoryController.addCategory(newCategory);
+                final success = await categoryController.addCategory(
+                  newCategory,
+                );
 
                 if (success && dialogContext.mounted) {
                   Navigator.pop(dialogContext, true);
@@ -188,7 +202,7 @@ class _EditProductDialogState extends ConsumerState<EditProductDialog> {
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            child: const Text('Tambah'),
+            child: Text(AppLocalizations.of(context)!.common_add),
           ),
         ],
       ),
@@ -233,7 +247,7 @@ class _EditProductDialogState extends ConsumerState<EditProductDialog> {
               ),
             ),
             const SizedBox(width: 12),
-            const Text('Pemasok Baru'),
+            Text(AppLocalizations.of(context)!.common_newSupplier),
           ],
         ),
         content: Form(
@@ -244,7 +258,7 @@ class _EditProductDialogState extends ConsumerState<EditProductDialog> {
               TextFormField(
                 controller: nameController,
                 decoration: InputDecoration(
-                  labelText: 'Nama Pemasok',
+                  labelText: AppLocalizations.of(context)!.supplier_name,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -254,10 +268,12 @@ class _EditProductDialogState extends ConsumerState<EditProductDialog> {
                 textCapitalization: TextCapitalization.words,
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
-                    return 'Nama pemasok wajib diisi';
+                    return AppLocalizations.of(
+                      context,
+                    )!.common_supplierNameRequired;
                   }
                   if (value.trim().length < 2) {
-                    return 'Nama pemasok minimal 2 karakter';
+                    return AppLocalizations.of(context)!.common_supplierNameMin;
                   }
                   return null;
                 },
@@ -266,7 +282,9 @@ class _EditProductDialogState extends ConsumerState<EditProductDialog> {
               TextFormField(
                 controller: contactController,
                 decoration: InputDecoration(
-                  labelText: 'Kontak (Opsional)',
+                  labelText: AppLocalizations.of(
+                    context,
+                  )!.common_contactPersonOptional,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -279,7 +297,7 @@ class _EditProductDialogState extends ConsumerState<EditProductDialog> {
               TextFormField(
                 controller: phoneController,
                 decoration: InputDecoration(
-                  labelText: 'Telepon (Opsional)',
+                  labelText: AppLocalizations.of(context)!.common_phoneOptional,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -294,7 +312,7 @@ class _EditProductDialogState extends ConsumerState<EditProductDialog> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Batal'),
+            child: Text(AppLocalizations.of(context)!.common_cancel),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -317,7 +335,9 @@ class _EditProductDialogState extends ConsumerState<EditProductDialog> {
                   createdAt: DateTime.now(),
                 );
 
-                final success = await supplierController.addSupplier(newSupplier);
+                final success = await supplierController.addSupplier(
+                  newSupplier,
+                );
 
                 if (success && dialogContext.mounted) {
                   Navigator.pop(dialogContext, true);
@@ -331,7 +351,7 @@ class _EditProductDialogState extends ConsumerState<EditProductDialog> {
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            child: const Text('Tambah'),
+            child: Text(AppLocalizations.of(context)!.common_add),
           ),
         ],
       ),
@@ -402,7 +422,7 @@ class _EditProductDialogState extends ConsumerState<EditProductDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Edit Product'),
+      title: Text(AppLocalizations.of(context)!.stock_editProduct),
       content: Form(
         key: _formKey,
         child: SingleChildScrollView(
@@ -416,16 +436,25 @@ class _EditProductDialogState extends ConsumerState<EditProductDialog> {
                   decoration: BoxDecoration(
                     color: AppTheme.errorColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppTheme.errorColor.withValues(alpha: 0.3)),
+                    border: Border.all(
+                      color: AppTheme.errorColor.withValues(alpha: 0.3),
+                    ),
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.error_outline, color: AppTheme.errorColor, size: 20),
+                      Icon(
+                        Icons.error_outline,
+                        color: AppTheme.errorColor,
+                        size: 20,
+                      ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
                           _errorMessage!,
-                          style: TextStyle(color: AppTheme.errorColor, fontSize: 13),
+                          style: TextStyle(
+                            color: AppTheme.errorColor,
+                            fontSize: 13,
+                          ),
                         ),
                       ),
                     ],
@@ -434,9 +463,9 @@ class _EditProductDialogState extends ConsumerState<EditProductDialog> {
               ],
               TextFormField(
                 controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Product Name',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: AppLocalizations.of(context)!.common_productName,
+                  border: const OutlineInputBorder(),
                 ),
                 textInputAction: TextInputAction.next,
                 validator: (value) {
@@ -451,12 +480,14 @@ class _EditProductDialogState extends ConsumerState<EditProductDialog> {
               const SizedBox(height: 16),
               TextFormField(
                 controller: _priceController,
-                decoration: const InputDecoration(
-                  labelText: 'Price (Rp)',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: AppLocalizations.of(context)!.common_priceRp,
+                  border: const OutlineInputBorder(),
                   prefixText: 'Rp ',
                 ),
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
                 textInputAction: TextInputAction.next,
                 validator: (value) {
                   try {
@@ -470,9 +501,9 @@ class _EditProductDialogState extends ConsumerState<EditProductDialog> {
               const SizedBox(height: 16),
               TextFormField(
                 controller: _stockController,
-                decoration: const InputDecoration(
-                  labelText: 'Stock Quantity',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: AppLocalizations.of(context)!.common_stockQuantity,
+                  border: const OutlineInputBorder(),
                 ),
                 keyboardType: TextInputType.number,
                 textInputAction: TextInputAction.next,
@@ -488,20 +519,26 @@ class _EditProductDialogState extends ConsumerState<EditProductDialog> {
               const SizedBox(height: 16),
               TextFormField(
                 controller: _costPriceController,
-                decoration: const InputDecoration(
-                  labelText: 'Harga Modal (Rp)',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: AppLocalizations.of(context)!.common_costPriceRp,
+                  border: const OutlineInputBorder(),
                   prefixText: 'Rp ',
                 ),
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
                 textInputAction: TextInputAction.next,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Harga modal wajib diisi';
+                    return AppLocalizations.of(
+                      context,
+                    )!.common_categoryNameRequired;
                   }
                   final costPrice = double.tryParse(value);
                   if (costPrice == null || costPrice < 0) {
-                    return 'Harga modal tidak valid';
+                    return AppLocalizations.of(
+                      context,
+                    )!.product_costPriceInvalid;
                   }
                   return null;
                 },
@@ -511,7 +548,7 @@ class _EditProductDialogState extends ConsumerState<EditProductDialog> {
                 // ignore: deprecated_member_use
                 value: _selectedCategoryId,
                 decoration: InputDecoration(
-                  labelText: 'Kategori',
+                  labelText: AppLocalizations.of(context)!.category_name,
                   border: const OutlineInputBorder(),
                   suffixIcon: IconButton(
                     icon: Icon(
@@ -519,14 +556,16 @@ class _EditProductDialogState extends ConsumerState<EditProductDialog> {
                       color: AppTheme.primaryColor,
                     ),
                     onPressed: _showAddCategoryDialog,
-                    tooltip: 'Tambah Kategori Baru',
+                    tooltip: AppLocalizations.of(
+                      context,
+                    )!.product_add_new_category,
                   ),
                 ),
                 items: [
                   DropdownMenuItem<int>(
                     value: null,
                     child: Text(
-                      'Tanpa Kategori',
+                      AppLocalizations.of(context)!.product_no_category,
                       style: TextStyle(color: AppTheme.textTertiary),
                     ),
                   ),
@@ -548,7 +587,9 @@ class _EditProductDialogState extends ConsumerState<EditProductDialog> {
                 // ignore: deprecated_member_use
                 value: _selectedSupplierId,
                 decoration: InputDecoration(
-                  labelText: 'Pemasok',
+                  labelText: AppLocalizations.of(
+                    context,
+                  )!.product_supplier_label,
                   border: const OutlineInputBorder(),
                   suffixIcon: IconButton(
                     icon: Icon(
@@ -556,14 +597,16 @@ class _EditProductDialogState extends ConsumerState<EditProductDialog> {
                       color: AppTheme.secondaryColor,
                     ),
                     onPressed: _showAddSupplierDialog,
-                    tooltip: 'Tambah Pemasok Baru',
+                    tooltip: AppLocalizations.of(
+                      context,
+                    )!.product_add_new_supplier,
                   ),
                 ),
                 items: [
                   DropdownMenuItem<int>(
                     value: null,
                     child: Text(
-                      'Tanpa Pemasok',
+                      AppLocalizations.of(context)!.common_noSupplier,
                       style: TextStyle(color: AppTheme.textTertiary),
                     ),
                   ),
@@ -583,9 +626,11 @@ class _EditProductDialogState extends ConsumerState<EditProductDialog> {
               const SizedBox(height: 16),
               TextFormField(
                 controller: _barcodeController,
-                decoration: const InputDecoration(
-                  labelText: 'Barcode (Opsional)',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: AppLocalizations.of(
+                    context,
+                  )!.product_barcode_optional,
+                  border: const OutlineInputBorder(),
                 ),
                 keyboardType: TextInputType.text,
                 textInputAction: TextInputAction.done,
@@ -598,7 +643,7 @@ class _EditProductDialogState extends ConsumerState<EditProductDialog> {
       actions: [
         TextButton(
           onPressed: _isSubmitting ? null : () => Navigator.pop(context, false),
-          child: const Text('Cancel'),
+          child: Text(AppLocalizations.of(context)!.common_cancel),
         ),
         ElevatedButton(
           onPressed: _isSubmitting ? null : _handleSubmit,
@@ -608,7 +653,7 @@ class _EditProductDialogState extends ConsumerState<EditProductDialog> {
                   height: 16,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : const Text('Update'),
+              : Text(AppLocalizations.of(context)!.common_update),
         ),
       ],
     );

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../l10n/app_localizations.dart';
 
 class StockHistoryDialog extends StatelessWidget {
   final int productId;
@@ -29,7 +30,7 @@ class StockHistoryDialog extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          const Text('Stock History'),
+          Text(AppLocalizations.of(context)!.stock_history),
         ],
       ),
       content: SizedBox(
@@ -46,11 +47,11 @@ class StockHistoryDialog extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            const Expanded(
+            Expanded(
               child: Center(
                 child: Text(
-                  'No stock adjustments recorded',
-                  style: TextStyle(
+                  AppLocalizations.of(context)!.stock_noAdjustments,
+                  style: const TextStyle(
                     color: Color(0xFF9CA3AF),
                     fontSize: 14,
                   ),
@@ -63,7 +64,7 @@ class StockHistoryDialog extends StatelessWidget {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Close'),
+          child: Text(AppLocalizations.of(context)!.common_close),
         ),
       ],
     );

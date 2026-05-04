@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../utils/haptic_helper.dart';
+import 'package:simple_pos/l10n/app_localizations.dart';
 
 /// Swipeable list item with configurable left and right actions
 ///
@@ -106,18 +107,22 @@ class _SwipeableWidgetState extends State<SwipeableWidget>
       child: Stack(
         children: [
           // Background actions
-          Positioned.fill(
-            child: _buildActionsBackground(),
-          ),
+          Positioned.fill(child: _buildActionsBackground()),
           // Foreground content
           SlideTransition(
-            position: Tween<Offset>(
-              begin: Offset.zero,
-              end: Offset(_dragOffset / MediaQuery.sizeOf(context).width, 0),
-            ).animate(CurvedAnimation(
-              parent: _animationController,
-              curve: Curves.easeOut,
-            )),
+            position:
+                Tween<Offset>(
+                  begin: Offset.zero,
+                  end: Offset(
+                    _dragOffset / MediaQuery.sizeOf(context).width,
+                    0,
+                  ),
+                ).animate(
+                  CurvedAnimation(
+                    parent: _animationController,
+                    curve: Curves.easeOut,
+                  ),
+                ),
             child: widget.child,
           ),
         ],
@@ -130,10 +135,7 @@ class _SwipeableWidgetState extends State<SwipeableWidget>
       // Swiping right, show left actions
       return Row(
         children: widget.leftActions!.map((action) {
-          return _ActionBackground(
-            action: action,
-            width: _actionWidth,
-          );
+          return _ActionBackground(action: action, width: _actionWidth);
         }).toList(),
       );
     } else if (_dragOffset < 0 && widget.rightActions != null) {
@@ -141,10 +143,7 @@ class _SwipeableWidgetState extends State<SwipeableWidget>
       return Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: widget.rightActions!.map((action) {
-          return _ActionBackground(
-            action: action,
-            width: _actionWidth,
-          );
+          return _ActionBackground(action: action, width: _actionWidth);
         }).toList(),
       );
     }
@@ -156,7 +155,8 @@ class _SwipeableWidgetState extends State<SwipeableWidget>
       _dragOffset += details.delta.dx;
 
       // Limit the swipe distance
-      final maxOffset = _actionWidth *
+      final maxOffset =
+          _actionWidth *
           (widget.rightActions?.length ?? widget.leftActions?.length ?? 1);
 
       if (_dragOffset > maxOffset) {
@@ -168,7 +168,8 @@ class _SwipeableWidgetState extends State<SwipeableWidget>
   }
 
   void _handleDragEnd(DragEndDetails details) {
-    final maxOffset = _actionWidth *
+    final maxOffset =
+        _actionWidth *
         (widget.rightActions?.length ?? widget.leftActions?.length ?? 1);
     final threshold = maxOffset * 0.3;
 
@@ -184,14 +185,20 @@ class _SwipeableWidgetState extends State<SwipeableWidget>
   void _triggerAction() {
     // Determine which action was triggered based on swipe direction and distance
     if (_dragOffset > 0 && widget.leftActions != null) {
-      final actionIndex = (_dragOffset / _actionWidth).floor().clamp(0, widget.leftActions!.length - 1);
+      final actionIndex = (_dragOffset / _actionWidth).floor().clamp(
+        0,
+        widget.leftActions!.length - 1,
+      );
       final action = widget.leftActions![actionIndex];
       _snapBack().then((_) {
         HapticHelper.lightImpact();
         action.onTap();
       });
     } else if (_dragOffset < 0 && widget.rightActions != null) {
-      final actionIndex = (-_dragOffset / _actionWidth).floor().clamp(0, widget.rightActions!.length - 1);
+      final actionIndex = (-_dragOffset / _actionWidth).floor().clamp(
+        0,
+        widget.rightActions!.length - 1,
+      );
       final action = widget.rightActions![actionIndex];
       _snapBack().then((_) {
         HapticHelper.lightImpact();
@@ -211,10 +218,7 @@ class _ActionBackground extends StatelessWidget {
   final SwipeAction action;
   final double width;
 
-  const _ActionBackground({
-    required this.action,
-    required this.width,
-  });
+  const _ActionBackground({required this.action, required this.width});
 
   @override
   Widget build(BuildContext context) {
@@ -224,11 +228,7 @@ class _ActionBackground extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            action.icon,
-            color: Colors.white,
-            size: 24,
-          ),
+          Icon(action.icon, color: Colors.white, size: 24),
           const SizedBox(height: 4),
           Text(
             action.label,
@@ -250,10 +250,14 @@ class SwipeActions {
   SwipeActions._();
 
   /// Edit action
-  static SwipeAction edit({required VoidCallback onTap}) {
+  static SwipeAction edit({
+    required VoidCallback onTap,
+    required BuildContext context,
+  }) {
+    final l10n = AppLocalizations.of(context)!;
     return SwipeAction(
       icon: Icons.edit_outlined,
-      label: 'Edit',
+      label: l10n.common_edit,
       color: AppTheme.infoColor,
       backgroundColor: AppTheme.infoColor,
       onTap: onTap,
@@ -261,10 +265,14 @@ class SwipeActions {
   }
 
   /// Delete action
-  static SwipeAction delete({required VoidCallback onTap}) {
+  static SwipeAction delete({
+    required VoidCallback onTap,
+    required BuildContext context,
+  }) {
+    final l10n = AppLocalizations.of(context)!;
     return SwipeAction(
       icon: Icons.delete_outline,
-      label: 'Delete',
+      label: l10n.common_delete,
       color: AppTheme.errorColor,
       backgroundColor: AppTheme.errorColor,
       onTap: onTap,
@@ -272,10 +280,14 @@ class SwipeActions {
   }
 
   /// Archive action
-  static SwipeAction archive({required VoidCallback onTap}) {
+  static SwipeAction archive({
+    required VoidCallback onTap,
+    required BuildContext context,
+  }) {
+    final l10n = AppLocalizations.of(context)!;
     return SwipeAction(
       icon: Icons.archive_outlined,
-      label: 'Archive',
+      label: l10n.common_archive,
       color: AppTheme.warningColor,
       backgroundColor: AppTheme.warningColor,
       onTap: onTap,
@@ -283,10 +295,14 @@ class SwipeActions {
   }
 
   /// Quick add action
-  static SwipeAction quickAdd({required VoidCallback onTap}) {
+  static SwipeAction quickAdd({
+    required VoidCallback onTap,
+    required BuildContext context,
+  }) {
+    final l10n = AppLocalizations.of(context)!;
     return SwipeAction(
       icon: Icons.add_shopping_cart,
-      label: 'Add',
+      label: l10n.common_add,
       color: AppTheme.primaryColor,
       backgroundColor: AppTheme.primaryColor,
       onTap: onTap,
@@ -294,10 +310,14 @@ class SwipeActions {
   }
 
   /// Favorite action
-  static SwipeAction favorite({required VoidCallback onTap}) {
+  static SwipeAction favorite({
+    required VoidCallback onTap,
+    required BuildContext context,
+  }) {
+    final l10n = AppLocalizations.of(context)!;
     return SwipeAction(
       icon: Icons.favorite_border,
-      label: 'Favorite',
+      label: l10n.common_favorite,
       color: Colors.pink,
       backgroundColor: Colors.pink,
       onTap: onTap,
@@ -305,10 +325,14 @@ class SwipeActions {
   }
 
   /// Share action
-  static SwipeAction share({required VoidCallback onTap}) {
+  static SwipeAction share({
+    required VoidCallback onTap,
+    required BuildContext context,
+  }) {
+    final l10n = AppLocalizations.of(context)!;
     return SwipeAction(
       icon: Icons.share,
-      label: 'Share',
+      label: l10n.common_share,
       color: AppTheme.successColor,
       backgroundColor: AppTheme.successColor,
       onTap: onTap,
@@ -319,10 +343,11 @@ class SwipeActions {
   static List<SwipeAction> editAndDelete({
     required VoidCallback onEdit,
     required VoidCallback onDelete,
+    required BuildContext context,
   }) {
     return [
-      delete(onTap: onDelete),
-      edit(onTap: onEdit),
+      delete(onTap: onDelete, context: context),
+      edit(onTap: onEdit, context: context),
     ];
   }
 
@@ -330,10 +355,11 @@ class SwipeActions {
   static List<SwipeAction> quickAddAndEdit({
     required VoidCallback onQuickAdd,
     required VoidCallback onEdit,
+    required BuildContext context,
   }) {
     return [
-      quickAdd(onTap: onQuickAdd),
-      edit(onTap: onEdit),
+      quickAdd(onTap: onQuickAdd, context: context),
+      edit(onTap: onEdit, context: context),
     ];
   }
 }
@@ -413,11 +439,17 @@ class _SwipeToDeleteContainerState extends State<SwipeToDeleteContainer>
                 ? Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.delete_forever, color: Colors.white, size: 32),
+                      const Icon(
+                        Icons.delete_forever,
+                        color: Colors.white,
+                        size: 32,
+                      ),
                       const SizedBox(height: 4),
                       Text(
                         'Release to Delete',
-                        style: TextStyle(color: Colors.white.withValues(alpha: 0.9)),
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.9),
+                        ),
                       ),
                     ],
                   )

@@ -68,8 +68,103 @@ app.*.map.json
 .claude/settings.local.json
 .claude/settings.*.json
 !.claude/settings.json
+.claude/commands/
+.claude/memory/
+.claude/telemetry/
+
+# Cursor IDE
+.cursor/
+.cursorrules
+.cursorignore
+
+# Windsurf / Codeium
+.windsurf/
+.windsurfrules
+.codeium/
+
+# GitHub Copilot
+.copilot/
+.github/copilot-instructions.md
+
+# Zed Editor
+.zed/
+
+# Continue.dev
+.continue/
+
+# Other AI coding assistants
+.roo/
+.opencode/
 
 # Backup files
 *.backup
 *.bak
 *~
+
+# Exported files (CSV, PDF, receipts)
+*.csv
+*.pdf
+*.xlsx
+/receipts/
+/exports/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+credentials.json
+service-account.json
+
+# Database files
+*.db
+*.db-journal
+
+# Temporary and cache files
+*.tmp
+*.temp
+*.cache
+Thumbs.db
+
+# IDE and editor specific
+*.sublime-*
+*.code-workspace
+.project
+.classpath
+.settings/
+
+# CI/CD and build artifacts
+*.apk
+*.aab
+*.ipa
+*.dSYM
+*.xcarchive
+
+# Test coverage
+lcov.info
+coverage/
+
+# Flutter flavor and config files
+*.flavor
+*.config.json
+
+# Generated assets and font caches
+/build/
+android/app/src/main/res/font/
+ios/Runner/GeneratedPluginRegistrant.h
+ios/Runner/GeneratedPluginRegistrant.m
+
+# Local database and state
+*.sqlite
+*.sqlite-journal
+shared_preferences.json
+
+# Debug and profiling
+*.trace
+*.perf
+*.cpuprofile
+*.heapsnapshot
+
+# OS specific
+*.localized
+.Spotlight-V100
+.Trashes

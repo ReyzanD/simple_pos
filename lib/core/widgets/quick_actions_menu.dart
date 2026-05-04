@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../animations/animation_constants.dart';
+import 'package:simple_pos/l10n/app_localizations.dart';
 
 /// Quick Actions Menu - expands on long press of FAB
 /// Shows 6 quick actions for common POS operations
@@ -35,12 +36,12 @@ class _QuickActionsMenuState extends State<QuickActionsMenu>
   late Animation<double> _expandAnimation;
 
   static const List<_QuickAction> _actions = [
-    _QuickAction(Icons.star, 'Favorites', 'favorites'),
-    _QuickAction(Icons.receipt_long, 'Held Orders', 'held_orders'),
-    _QuickAction(Icons.add_circle, 'Quick Add', 'quick_add'),
-    _QuickAction(Icons.pin, 'Quick Quantity', 'quick_quantity'),
-    _QuickAction(Icons.bar_chart, 'Today\'s Summary', 'today_summary'),
-    _QuickAction(Icons.refresh, 'Refresh', 'refresh'),
+    _QuickAction(Icons.star, 'quick_favorites', 'favorites'),
+    _QuickAction(Icons.receipt_long, 'quick_held_orders', 'held_orders'),
+    _QuickAction(Icons.add_circle, 'quick_quick_add', 'quick_add'),
+    _QuickAction(Icons.pin, 'quick_quick_quantity', 'quick_quantity'),
+    _QuickAction(Icons.bar_chart, 'quick_today_summary', 'today_summary'),
+    _QuickAction(Icons.refresh, 'quick_refresh', 'refresh'),
   ];
 
   @override
@@ -92,8 +93,28 @@ class _QuickActionsMenuState extends State<QuickActionsMenu>
     }
   }
 
+  String _getLabel(AppLocalizations l10n, String key) {
+    switch (key) {
+      case 'quick_favorites':
+        return l10n.quick_favorites;
+      case 'quick_held_orders':
+        return l10n.quick_held_orders;
+      case 'quick_quick_add':
+        return l10n.quick_quick_add;
+      case 'quick_quick_quantity':
+        return l10n.quick_quick_quantity;
+      case 'quick_today_summary':
+        return l10n.quick_today_summary;
+      case 'quick_refresh':
+        return l10n.quick_refresh;
+      default:
+        return key;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return SizedBox(
       width: 200,
       height: 200,
@@ -106,7 +127,7 @@ class _QuickActionsMenuState extends State<QuickActionsMenu>
             ...List.generate(_actions.length, (index) {
               final action = _actions[index];
               final angle = 90.0 + (index * 45.0); // Arc from bottom
-              return _buildActionButton(action, angle);
+              return _buildActionButton(action, angle, l10n);
             }),
 
           // Main FAB
@@ -131,7 +152,11 @@ class _QuickActionsMenuState extends State<QuickActionsMenu>
     );
   }
 
-  Widget _buildActionButton(_QuickAction action, double angle) {
+  Widget _buildActionButton(
+    _QuickAction action,
+    double angle,
+    AppLocalizations l10n,
+  ) {
     final radians = angle * pi / 180;
     final distance = 70.0;
     final x = distance * cos(radians);
@@ -142,10 +167,7 @@ class _QuickActionsMenuState extends State<QuickActionsMenu>
       builder: (context, child) {
         return Transform.translate(
           offset: Offset(x, y) * _expandAnimation.value,
-          child: Opacity(
-            opacity: _expandAnimation.value,
-            child: child,
-          ),
+          child: Opacity(opacity: _expandAnimation.value, child: child),
         );
       },
       child: Container(
@@ -173,10 +195,10 @@ class _QuickActionsMenuState extends State<QuickActionsMenu>
             customBorder: const CircleBorder(),
             borderRadius: BorderRadius.circular(24),
             child: Tooltip(
-              message: action.label,
+              message: _getLabel(l10n, action.label),
               child: Center(
                 child: Semantics(
-                  label: action.label,
+                  label: _getLabel(l10n, action.label),
                   button: true,
                   child: Icon(
                     action.icon,

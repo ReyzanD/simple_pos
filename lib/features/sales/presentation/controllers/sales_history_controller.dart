@@ -4,15 +4,25 @@ import '../../domain/entities/payment_method.dart';
 import '../../domain/entities/payment_status.dart';
 import '../../domain/usecases/get_transactions_usecase.dart';
 import '../../../../core/utils/logger.dart';
+import '../../../inventory/domain/entities/category.dart' as inventory_category;
+import '../../../inventory/domain/usecases/category_usecases.dart';
+import '../../../users/domain/entities/user.dart';
+import '../../../users/domain/usecases/get_users_usecase.dart';
 
 /// Controller for Sales History Screen
 /// Manages state and business logic for sales history
 class SalesHistoryController extends ChangeNotifier {
   final GetTransactionsUseCase _getTransactionsUseCase;
+  final GetCategoriesUseCase? _getCategoriesUseCase;
+  final GetUsersUseCase? _getUsersUseCase;
 
   SalesHistoryController({
     required GetTransactionsUseCase getTransactionsUseCase,
-  }) : _getTransactionsUseCase = getTransactionsUseCase {
+    GetCategoriesUseCase? getCategoriesUseCase,
+    GetUsersUseCase? getUsersUseCase,
+  }) : _getTransactionsUseCase = getTransactionsUseCase,
+       _getCategoriesUseCase = getCategoriesUseCase,
+       _getUsersUseCase = getUsersUseCase {
     loadTransactions();
   }
 
@@ -25,8 +35,10 @@ class SalesHistoryController extends ChangeNotifier {
   DateTime? _startDate;
   DateTime? _endDate;
   String _searchQuery = '';
-
-  // Cached KPI values
+  int? _selectedCategoryId;
+  int? _selectedCashierId;
+  List<inventory_category.Category> _categories = [];
+  List<User> _cashiers = [];
   int _cachedTodayItemsSold = 0;
 
   // Getters
@@ -38,12 +50,15 @@ class SalesHistoryController extends ChangeNotifier {
   DateTime? get startDate => _startDate;
   DateTime? get endDate => _endDate;
   String get searchQuery => _searchQuery;
+  int? get selectedCategoryId => _selectedCategoryId;
+  int? get selectedCashierId => _selectedCashierId;
+  List<inventory_category.Category> get categories => _categories;
+  List<User> get cashiers => _cashiers;
 
   /// Only count completed transactions for KPI display in the history summary cards
-  List<Transaction> get _completedTransactions =>
-      _filteredTransactions
-          .where((t) => t.paymentStatus == PaymentStatus.completed)
-          .toList();
+  List<Transaction> get _completedTransactions => _filteredTransactions
+      .where((t) => t.paymentStatus == PaymentStatus.completed)
+      .toList();
 
   int get transactionCount => _completedTransactions.length;
   double get totalRevenue =>
@@ -109,6 +124,16 @@ class SalesHistoryController extends ChangeNotifier {
         (sum, t) => sum + t.totalItems,
       );
 
+      // Load categories for filter
+      if (_getCategoriesUseCase != null) {
+        _categories = await _getCategoriesUseCase!.execute();
+      }
+
+      // Load cashiers for filter
+      if (_getUsersUseCase != null) {
+        _cashiers = await _getUsersUseCase!.execute(activeOnly: true);
+      }
+
       _applyFilters();
 
       // Calculate today's stats for debugging
@@ -136,6 +161,20 @@ class SalesHistoryController extends ChangeNotifier {
       // Payment method filter
       if (_selectedPaymentMethod != null &&
           transaction.paymentMethod != _selectedPaymentMethod) {
+        return false;
+      }
+
+      // Category filter
+      if (_selectedCategoryId != null) {
+        final hasMatchingCategory = transaction.items.any(
+          (item) => item.categoryId == _selectedCategoryId,
+        );
+        if (!hasMatchingCategory) return false;
+      }
+
+      // Cashier filter
+      if (_selectedCashierId != null &&
+          transaction.cashierId != _selectedCashierId) {
         return false;
       }
 
@@ -193,12 +232,26 @@ class SalesHistoryController extends ChangeNotifier {
     _applyFilters();
   }
 
+  /// Set category filter
+  void setCategoryFilter(int? categoryId) {
+    _selectedCategoryId = categoryId;
+    _applyFilters();
+  }
+
+  /// Set cashier filter
+  void setCashierFilter(int? cashierId) {
+    _selectedCashierId = cashierId;
+    _applyFilters();
+  }
+
   /// Clear all filters
   void clearFilters() {
     _selectedPaymentMethod = null;
     _startDate = null;
     _endDate = null;
     _searchQuery = '';
+    _selectedCategoryId = null;
+    _selectedCashierId = null;
     _applyFilters();
   }
 

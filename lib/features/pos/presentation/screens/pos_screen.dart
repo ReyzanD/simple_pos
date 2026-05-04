@@ -20,6 +20,7 @@ import '../../../shared/widgets/error_display.dart';
 import '../../../shared/presentation/main_navigation.dart';
 import '../../../../core/utils/audio_feedback_helper.dart';
 import '../../../../core/utils/responsive_helper.dart';
+import 'package:simple_pos/l10n/app_localizations.dart';
 
 // Import extracted POS widgets
 import '../widgets/pos/pos_search_bar.dart';
@@ -143,10 +144,10 @@ class POSScreenState extends ConsumerState<POSScreen>
 
   @override
   Widget build(BuildContext context) {
-    super.build(context); // Required for AutomaticKeepAliveClientMixin
+    super.build(context);
     final controller = ref.watch(posControllerProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // Show scan mode if active
     if (controller.isInScanMode) {
       return const ScanModeScreen();
     }
@@ -158,7 +159,10 @@ class POSScreenState extends ConsumerState<POSScreen>
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
-            border: Border.all(color: Colors.black, width: 2),
+            border: Border.all(
+              color: isDark ? NeoBrutalTheme.darkBorder : Colors.black,
+              width: 2,
+            ),
           ),
           child: IconButton(
             icon: const Icon(Icons.menu),
@@ -169,19 +173,22 @@ class POSScreenState extends ConsumerState<POSScreen>
             },
           ),
         ),
-        title: const Text('Checkout Cart'),
+        title: Text(AppLocalizations.of(context)!.checkout_title),
         actions: [
           Container(
             margin: EdgeInsets.all(NeoBrutalTheme.spaceXS),
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
-              border: Border.all(color: Colors.black, width: 2),
+              border: Border.all(
+                color: isDark ? NeoBrutalTheme.darkBorder : Colors.black,
+                width: 2,
+              ),
             ),
             child: IconButton(
               icon: const Icon(Icons.pause_circle_outline),
               onPressed: () => _openHeldOrders(context),
-              tooltip: 'Pesanan Tertahan',
+              tooltip: AppLocalizations.of(context)!.held_orders_title,
             ),
           ),
         ],
@@ -195,7 +202,9 @@ class POSScreenState extends ConsumerState<POSScreen>
             final controller = ref.watch(posControllerProvider);
             final itemCount = controller.cartItemCount;
             return BrutalFab(
-              label: itemCount > 0 ? 'Cart ($itemCount)' : 'Cart',
+              label: itemCount > 0
+                  ? '${AppLocalizations.of(context)!.cart_keranjang} ($itemCount)'
+                  : AppLocalizations.of(context)!.cart_keranjang,
               icon: Icons.shopping_cart,
               heroTag: 'pos_cart_fab',
               onPressed: () => _openCartModal(context, controller),
@@ -224,8 +233,8 @@ class POSScreenState extends ConsumerState<POSScreen>
 
           // Show empty state
           if (!posController.hasProducts) {
-            return const EmptyStateDisplay(
-              message: 'Belum ada Produk. Tambah produk di Inventory yuk!',
+            return EmptyStateDisplay(
+              message: AppLocalizations.of(context)!.product_no_products,
               icon: Icons.shopping_cart_outlined,
             );
           }
@@ -317,7 +326,10 @@ class POSScreenState extends ConsumerState<POSScreen>
 
     // Check if product has valid ID
     if (product.id == null) {
-      _showErrorSnackBar(context, 'Produk tidak valid - ID hilang');
+      _showErrorSnackBar(
+        context,
+        AppLocalizations.of(context)!.nav_product_not_found,
+      );
       return;
     }
 
@@ -396,9 +408,13 @@ class POSScreenState extends ConsumerState<POSScreen>
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('${product.name} dihapus dari keranjang'),
+                content: Text(
+                  AppLocalizations.of(
+                    context,
+                  )!.cart_removed_from_cart.replaceAll('{name}', product.name),
+                ),
                 action: SnackBarAction(
-                  label: 'Urungkan',
+                  label: AppLocalizations.of(context)!.common_batal,
                   textColor: AppTheme.primaryColor,
                   onPressed: () => controller.undoRemoveFromCart(),
                 ),
@@ -450,11 +466,23 @@ class POSScreenState extends ConsumerState<POSScreen>
       context: context,
       cart: controller.cart,
       onConfirm:
-          ({required paymentMethod, cashReceived, cardLast4Digits}) async {
+          ({
+            required paymentMethod,
+            cashReceived,
+            cardLast4Digits,
+            tax = 0.0,
+            discount = 0.0,
+            cashierId,
+            cashierName,
+          }) async {
             return await controller.checkoutWithPayment(
               paymentMethod: paymentMethod,
               cashReceived: cashReceived,
               cardLast4Digits: cardLast4Digits,
+              tax: tax,
+              discount: discount,
+              cashierId: cashierId,
+              cashierName: cashierName,
             );
           },
     );
@@ -466,11 +494,12 @@ class POSScreenState extends ConsumerState<POSScreen>
       try {
         SuccessAnimationOverlay.show(
           context,
-          message: 'Checkout Berhasil!',
+          message: AppLocalizations.of(context)!.checkout_success_check,
         ); // ✅
       } catch (_) {}
       if (controller.lastTransaction != null) {
-        if (!context.mounted) return; // ✅ second guard before the next async call
+        if (!context.mounted)
+          return; // ✅ second guard before the next async call
         try {
           await PrintReceiptDialog.show(
             context: context, // ✅ safe
@@ -527,7 +556,11 @@ class POSScreenState extends ConsumerState<POSScreen>
           AudioFeedbackHelper.instance.playError();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Produk dengan barcode "$barcode" tidak ditemukan'),
+              content: Text(
+                AppLocalizations.of(
+                  context,
+                )!.nav_product_not_found.replaceAll('{barcode}', barcode),
+              ),
               backgroundColor: AppTheme.errorColor,
               duration: const Duration(seconds: 3),
               behavior: SnackBarBehavior.floating,
@@ -548,11 +581,15 @@ class POSScreenState extends ConsumerState<POSScreen>
       _handleAddToCart(context, product);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('${product.name} ditambahkan ke keranjang'),
+          content: Text(
+            AppLocalizations.of(
+              context,
+            )!.nav_product_found.replaceAll('{name}', product.name),
+          ),
           backgroundColor: AppTheme.successColor,
           duration: const Duration(seconds: 2),
           action: SnackBarAction(
-            label: 'OK',
+            label: AppLocalizations.of(context)!.common_confirm,
             textColor: Colors.white,
             onPressed: () {},
           ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:simple_pos/core/theme/app_theme.dart';
+import 'package:simple_pos/l10n/app_localizations.dart';
 import 'package:simple_pos/core/theme/neo_brutal_theme.dart';
 
 /// Cart Modal Empty State - Shows when cart is empty
@@ -8,6 +9,9 @@ class CartModalEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final borderColor = NeoBrutalTheme.getBorderColor(context);
+    final textColor = NeoBrutalTheme.getTextColor(context);
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -18,10 +22,7 @@ class CartModalEmptyState extends StatelessWidget {
             decoration: BoxDecoration(
               color: NeoBrutalTheme.blockCoral.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusLarge),
-              border: Border.all(
-                color: Colors.black,
-                width: 4,
-              ),
+              border: Border.all(color: borderColor, width: 4),
               boxShadow: NeoBrutalTheme.chunkyShadow,
             ),
             child: Icon(
@@ -32,16 +33,16 @@ class CartModalEmptyState extends StatelessWidget {
           ),
           SizedBox(height: NeoBrutalTheme.spaceLG),
           Text(
-            'KERANJANG KOSONG',
+            AppLocalizations.of(context)!.cart_empty,
             style: NeoBrutalTheme.headlineSmall.copyWith(
               fontWeight: FontWeight.w900,
-              color: Colors.black,
+              color: textColor,
               letterSpacing: 2,
             ),
           ),
           SizedBox(height: NeoBrutalTheme.spaceSM),
           Text(
-            'Tambahkan produk untuk memulai',
+            AppLocalizations.of(context)!.cart_empty_subtitle,
             style: NeoBrutalTheme.bodyMedium.copyWith(
               color: AppTheme.getTextSecondaryColor(context),
             ),

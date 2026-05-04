@@ -4,6 +4,7 @@ import 'package:simple_pos/core/theme/neo_brutal_theme.dart';
 import 'package:simple_pos/features/inventory/presentation/controllers/inventory_controller.dart';
 
 import '../../../../shared/presentation/providers.dart';
+import '../../../../../../l10n/app_localizations.dart';
 
 /// Simple inventory app bar with view mode toggle
 class InventoryAppBar extends StatelessWidget implements PreferredSizeWidget {
@@ -23,7 +24,7 @@ class InventoryAppBar extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     return AppBar(
       leading: IconButton(icon: const Icon(Icons.menu), onPressed: onMenuTap),
-      title: const Text('Manage Inventory'),
+      title: Text(AppLocalizations.of(context)!.stock_manageInventory),
       actions: [
         Padding(
           padding: EdgeInsets.only(right: NeoBrutalTheme.spaceXS),
@@ -53,7 +54,9 @@ class InventoryAppBar extends StatelessWidget implements PreferredSizeWidget {
                     color: isGrid ? Colors.white : NeoBrutalTheme.primary,
                     size: 22,
                   ),
-                  tooltip: isGrid ? 'Switch to List' : 'Switch to Grid',
+                  tooltip: isGrid
+                      ? AppLocalizations.of(context)!.common_switchToList
+                      : AppLocalizations.of(context)!.common_switchToGrid,
                   onPressed: () =>
                       ref.read(inventoryControllerProvider).toggleViewMode(),
                 ),

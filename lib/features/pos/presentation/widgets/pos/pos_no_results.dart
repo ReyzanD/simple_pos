@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:simple_pos/core/theme/app_theme.dart';
 import 'package:simple_pos/core/widgets/modern_button.dart';
 import '../../controllers/pos_controller.dart';
+import 'package:simple_pos/l10n/app_localizations.dart';
 
 /// POS No Results - Empty state when no products match filters
 class POSNoResults extends StatelessWidget {
@@ -37,8 +38,8 @@ class POSNoResults extends StatelessWidget {
           Text(
             controller.searchQuery.isNotEmpty ||
                     controller.selectedCategory != null
-                ? 'Tidak ditemukan produk yang cocok'
-                : 'Belum ada produk',
+                ? AppLocalizations.of(context)!.product_no_products
+                : AppLocalizations.of(context)!.product_no_products,
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
@@ -50,7 +51,7 @@ class POSNoResults extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(top: 16),
               child: ModernSecondaryButton(
-                text: 'Hapus Filter',
+                text: AppLocalizations.of(context)!.cart_clear,
                 icon: Icons.clear_rounded,
                 onPressed: onClearFilters,
               ),

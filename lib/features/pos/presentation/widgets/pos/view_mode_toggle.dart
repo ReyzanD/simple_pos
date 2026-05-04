@@ -20,17 +20,20 @@ class ViewModeToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final borderColor = NeoBrutalTheme.getBorderColor(context);
+    final cardColor = NeoBrutalTheme.getCardColor(context);
+
     return GestureDetector(
       onTap: onToggle,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: cardColor,
           borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
-          border: Border.all(color: Colors.black, width: 2),
+          border: Border.all(color: borderColor, width: 2),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
+              color: NeoBrutalTheme.getShadowColor(context),
               offset: const Offset(3, 3),
               blurRadius: 0,
             ),
@@ -55,13 +58,13 @@ class ViewModeToggle extends StatelessWidget {
   }
 }
 
-/// Individual view mode icon with improved sizing
 class ViewModeIcon extends StatelessWidget {
   final ViewMode mode;
   final bool isSelected;
   const ViewModeIcon({super.key, required this.mode, required this.isSelected});
   @override
   Widget build(BuildContext context) {
+    final borderColor = NeoBrutalTheme.getBorderColor(context);
     return Container(
       width: 36,
       height: 36,
@@ -71,7 +74,7 @@ class ViewModeIcon extends StatelessWidget {
         border: Border.all(
           color: isSelected
               ? NeoBrutalTheme.primary
-              : Colors.black.withValues(alpha: 0.3),
+              : borderColor.withValues(alpha: 0.3),
           width: 2,
         ),
       ),
@@ -79,7 +82,9 @@ class ViewModeIcon extends StatelessWidget {
         child: Icon(
           mode == ViewMode.grid ? Icons.grid_view : Icons.view_list,
           size: 16,
-          color: isSelected ? Colors.white : Colors.black,
+          color: isSelected
+              ? Colors.white
+              : NeoBrutalTheme.getTextColor(context),
         ),
       ),
     );

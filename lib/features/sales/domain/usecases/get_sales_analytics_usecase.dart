@@ -2,6 +2,7 @@ import '../entities/sales_analytics.dart';
 import '../entities/sales_report.dart';
 import '../entities/transaction.dart';
 import '../repositories/transaction_repository.dart';
+import '../../../inventory/domain/entities/product.dart';
 import '../../../inventory/domain/repositories/product_repository.dart';
 import '../../../../core/exceptions/app_exceptions.dart';
 import '../../../../core/utils/logger.dart';
@@ -128,7 +129,7 @@ class GetSalesAnalyticsUseCase {
   /// Calculate Key Performance Indicators
   AnalyticsKPIs _calculateKPIs(
     List<Transaction> transactions,
-    List<dynamic> products,
+    List<Product> products,
     List<Transaction> previousTransactions,
   ) {
     final currentRevenue = _calculateTotalRevenue(transactions);
@@ -393,7 +394,7 @@ class GetSalesAnalyticsUseCase {
   /// Analyze product performance
   List<ProductPerformance> _analyzeProductPerformance(
     List<Transaction> transactions,
-    List<dynamic> products,
+    List<Product> products,
   ) {
     final productStats = <int, _ProductStats>{};
 
@@ -481,7 +482,7 @@ class GetSalesAnalyticsUseCase {
   /// Analyze category performance
   List<CategoryPerformance> _analyzeCategoryPerformance(
     List<Transaction> transactions,
-    List<dynamic> products,
+    List<Product> products,
   ) {
     final categoryStats = <int, _CategoryStats>{};
 
@@ -489,7 +490,12 @@ class GetSalesAnalyticsUseCase {
       for (final item in t.items) {
         final product = products.firstWhere(
           (p) => p.id == item.productId,
-          orElse: () => products.first,
+          orElse: () => Product(
+            name: item.productName,
+            price: item.unitPrice,
+            stock: 0,
+            categoryId: null,
+          ),
         );
 
         final categoryId = product.categoryId ?? 0;

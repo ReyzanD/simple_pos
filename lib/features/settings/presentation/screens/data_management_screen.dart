@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/neo_brutal_theme.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../../core/services/export_service.dart';
 import '../../../../features/backup/domain/entities/backup_metadata.dart';
 import '../../../../features/backup/domain/entities/backup_config.dart';
@@ -13,7 +15,8 @@ class DataManagementScreen extends ConsumerStatefulWidget {
   const DataManagementScreen({super.key});
 
   @override
-  ConsumerState<DataManagementScreen> createState() => _DataManagementScreenState();
+  ConsumerState<DataManagementScreen> createState() =>
+      _DataManagementScreenState();
 }
 
 class _DataManagementScreenState extends ConsumerState<DataManagementScreen> {
@@ -43,7 +46,9 @@ class _DataManagementScreenState extends ConsumerState<DataManagementScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Ekspor transaksi berhasil'),
+            content: Text(
+              AppLocalizations.of(context)!.export_transactions_success,
+            ),
             backgroundColor: AppTheme.successColor,
           ),
         );
@@ -52,7 +57,9 @@ class _DataManagementScreenState extends ConsumerState<DataManagementScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Gagal mengekspor: $e'),
+            content: Text(
+              AppLocalizations.of(context)!.export_failed(e.toString()),
+            ),
             backgroundColor: AppTheme.errorColor,
           ),
         );
@@ -70,7 +77,9 @@ class _DataManagementScreenState extends ConsumerState<DataManagementScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Ekspor produk berhasil'),
+            content: Text(
+              AppLocalizations.of(context)!.export_products_success,
+            ),
             backgroundColor: AppTheme.successColor,
           ),
         );
@@ -79,7 +88,9 @@ class _DataManagementScreenState extends ConsumerState<DataManagementScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Gagal mengekspor: $e'),
+            content: Text(
+              AppLocalizations.of(context)!.export_failed(e.toString()),
+            ),
             backgroundColor: AppTheme.errorColor,
           ),
         );
@@ -97,7 +108,9 @@ class _DataManagementScreenState extends ConsumerState<DataManagementScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Ekspor pengeluaran berhasil'),
+            content: Text(
+              AppLocalizations.of(context)!.export_expenses_success,
+            ),
             backgroundColor: AppTheme.successColor,
           ),
         );
@@ -106,7 +119,9 @@ class _DataManagementScreenState extends ConsumerState<DataManagementScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Gagal mengekspor: $e'),
+            content: Text(
+              AppLocalizations.of(context)!.export_failed(e.toString()),
+            ),
             backgroundColor: AppTheme.errorColor,
           ),
         );
@@ -128,7 +143,7 @@ class _DataManagementScreenState extends ConsumerState<DataManagementScreen> {
     if (success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Backup berhasil dibuat'),
+          content: Text(AppLocalizations.of(context)!.backup_created_success),
           backgroundColor: AppTheme.successColor,
         ),
       );
@@ -136,23 +151,24 @@ class _DataManagementScreenState extends ConsumerState<DataManagementScreen> {
   }
 
   Future<void> _deleteBackup(BackupMetadata backup) async {
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('Hapus Backup'),
-        content: Text('Apakah Anda yakin ingin menghapus backup ini?'),
+        title: Text(l10n.delete_backup_title),
+        content: Text(l10n.confirm_delete_backup),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text('Batal'),
+            child: Text(l10n.cancel),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.errorColor,
             ),
-            child: Text('Hapus'),
+            child: Text(l10n.delete),
           ),
         ],
       ),
@@ -166,7 +182,7 @@ class _DataManagementScreenState extends ConsumerState<DataManagementScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Backup dihapus'),
+          content: Text(l10n.backup_deleted),
           backgroundColor: AppTheme.successColor,
         ),
       );
@@ -175,13 +191,15 @@ class _DataManagementScreenState extends ConsumerState<DataManagementScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(title: Text('Kelola Data')),
+      backgroundColor: NeoBrutalTheme.background,
+      appBar: AppBar(title: Text(l10n.manage_data)),
       body: ListView(
         padding: EdgeInsets.all(16),
         children: [
           // Export Section
-          _buildSectionHeader('Ekspor Data', Icons.ios_share_rounded),
+          _buildSectionHeader(l10n.export_data, Icons.ios_share_rounded),
           const SizedBox(height: 12),
           _buildExportCard(
             'Transaksi',

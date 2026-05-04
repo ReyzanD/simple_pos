@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/neo_brutal_theme.dart';
+import 'package:simple_pos/l10n/app_localizations.dart';
 
 /// Neo-Brutalist Search Field
 ///
@@ -57,8 +58,13 @@ class _BrutalSearchFieldState extends State<BrutalSearchField> {
 
   @override
   Widget build(BuildContext context) {
-    final bgColor = widget.backgroundColor ?? NeoBrutalTheme.surface;
-    final txtColor = widget.textColor ?? Colors.black;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor =
+        widget.backgroundColor ??
+        NeoBrutalTheme.getSurfaceVariantColor(context);
+    final txtColor = widget.textColor ?? NeoBrutalTheme.getTextColor(context);
+    final borderColor = NeoBrutalTheme.getBorderColor(context);
+    final hintColor = isDark ? Colors.white38 : Colors.black54;
 
     return Focus(
       onFocusChange: (hasFocus) {
@@ -71,7 +77,7 @@ class _BrutalSearchFieldState extends State<BrutalSearchField> {
           color: bgColor,
           borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium),
           border: Border.all(
-            color: _isFocused ? NeoBrutalTheme.primary : Colors.black,
+            color: _isFocused ? NeoBrutalTheme.primary : borderColor,
             width: _isFocused ? 6 : 4,
           ),
           boxShadow: _isFocused
@@ -82,17 +88,14 @@ class _BrutalSearchFieldState extends State<BrutalSearchField> {
           controller: _controller,
           autofocus: widget.autoFocus,
           onSubmitted: widget.onSubmitted,
-          style: NeoBrutalTheme.bodyMedium.copyWith(
-            color: txtColor,
-          ),
+          style: NeoBrutalTheme.bodyMedium.copyWith(color: txtColor),
           decoration: InputDecoration(
-            hintText: widget.hint ?? 'Search...',
-            hintStyle: NeoBrutalTheme.bodyMedium.copyWith(
-              color: Colors.black54,
-            ),
+            hintText:
+                widget.hint ?? AppLocalizations.of(context)!.common_search,
+            hintStyle: NeoBrutalTheme.bodyMedium.copyWith(color: hintColor),
             prefixIcon: Icon(
               Icons.search,
-              color: _isFocused ? NeoBrutalTheme.primary : Colors.black54,
+              color: _isFocused ? NeoBrutalTheme.primary : hintColor,
               size: 24,
             ),
             suffixIcon: _hasText
@@ -109,17 +112,12 @@ class _BrutalSearchFieldState extends State<BrutalSearchField> {
                       height: 32,
                       decoration: BoxDecoration(
                         color: NeoBrutalTheme.error,
-                        borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
-                        border: Border.all(
-                          color: Colors.black,
-                          width: 2,
+                        borderRadius: BorderRadius.circular(
+                          NeoBrutalTheme.radiusSmall,
                         ),
+                        border: Border.all(color: borderColor, width: 2),
                       ),
-                      child: Icon(
-                        Icons.close,
-                        color: Colors.white,
-                        size: 18,
-                      ),
+                      child: Icon(Icons.close, color: Colors.white, size: 18),
                     ),
                   )
                 : null,

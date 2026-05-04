@@ -517,6 +517,10 @@ class POSController extends ChangeNotifier {
     required PaymentMethod paymentMethod,
     double? cashReceived,
     String? cardLast4Digits,
+    double tax = 0,
+    double discount = 0,
+    int? cashierId,
+    String? cashierName,
   }) async {
     if (_cart.isEmpty) {
       _setError(const EmptyCartException('Keranjang kosong'));
@@ -537,6 +541,10 @@ class POSController extends ChangeNotifier {
         paymentMethod: paymentMethod,
         cashReceived: cashReceived,
         cardLast4Digits: cardLast4Digits,
+        tax: tax,
+        discount: discount,
+        cashierId: cashierId,
+        cashierName: cashierName,
       );
 
       if (!result.success) {

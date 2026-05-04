@@ -3,6 +3,7 @@ import '../widgets/promotions_tab_widget.dart';
 import '../widgets/discount_presets_tab_widget.dart';
 import '../widgets/category_discounts_tab_widget.dart';
 import '../../../../core/theme/neo_brutal_theme.dart';
+import '../../../../l10n/app_localizations.dart';
 
 /// Discount Management Screen with three tabs:
 /// 1. Promotions - Time-limited campaign discounts
@@ -34,35 +35,38 @@ class _DiscountManagementScreenState extends State<DiscountManagementScreen>
 
   @override
   Widget build(BuildContext context) {
+    final borderColor = NeoBrutalTheme.getBorderColor(context);
+    final textColor = NeoBrutalTheme.getTextColor(context);
+
     return Scaffold(
-      backgroundColor: NeoBrutalTheme.background, // ✅ Brutal white background
+      backgroundColor: NeoBrutalTheme.background,
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text('Manajemen Diskon'),
+        title: Text(AppLocalizations.of(context)!.discount_title),
         bottom: TabBar(
           controller: _tabController,
-          indicatorColor: Colors.black,
-          labelColor: Colors.black,
-          unselectedLabelColor: Colors.black.withValues(alpha: 0.5),
-          indicatorWeight: 4, // ✅ Bold indicator
+          indicatorColor: borderColor,
+          labelColor: textColor,
+          unselectedLabelColor: textColor.withValues(alpha: 0.5),
+          indicatorWeight: 4,
           labelStyle: NeoBrutalTheme.labelLarge.copyWith(
             fontWeight: FontWeight.w800,
           ),
-          tabs: const [
+          tabs: [
             Tab(
-              icon: Icon(Icons.campaign),
-              text: 'Promosi',
+              icon: const Icon(Icons.campaign),
+              text: AppLocalizations.of(context)!.discount_promotions,
             ),
             Tab(
-              icon: Icon(Icons.bookmark),
-              text: 'Preset',
+              icon: const Icon(Icons.bookmark),
+              text: AppLocalizations.of(context)!.discount_presets,
             ),
             Tab(
-              icon: Icon(Icons.category),
-              text: 'Kategori',
+              icon: const Icon(Icons.category),
+              text: AppLocalizations.of(context)!.discount_categories,
             ),
           ],
         ),

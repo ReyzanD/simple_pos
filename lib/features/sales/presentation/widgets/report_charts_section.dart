@@ -70,7 +70,7 @@ class _DailySalesTrend extends ConsumerWidget {
           child: _buildActualChart(context, controller, dailyData),
         ),
         const SizedBox(height: 16),
-        _buildComparisonCard(context, report),
+        _buildComparisonCards(context, report),
       ],
     );
   }
@@ -437,8 +437,183 @@ FlTitlesData _buildTitles(List<DailySales> dailyData) {
   );
 }
 
-Widget _buildComparisonCard(BuildContext context, SalesReport report) {
-  // Logic from original _buildComparisonCard
+Widget _buildComparisonCards(BuildContext context, SalesReport report) {
+  final hasMoM = report.monthOverMonth != null;
+  final hasYoY = report.yearOverYear != null;
+
+  if (!hasMoM && !hasYoY) {
+    return _buildSimpleComparison(context, report);
+  }
+
+  return Column(
+    children: [
+      if (hasMoM)
+        _buildPeriodComparisonCard(
+          context,
+          title: 'Bulan Sebelumnya',
+          comparison: report.monthOverMonth!,
+          icon: Icons.calendar_month,
+        ),
+      if (hasMoM && hasYoY) const SizedBox(height: 12),
+      if (hasYoY)
+        _buildPeriodComparisonCard(
+          context,
+          title: 'Tahun Sebelumnya',
+          comparison: report.yearOverYear!,
+          icon: Icons.calendar_today,
+        ),
+    ],
+  );
+}
+
+Widget _buildPeriodComparisonCard(
+  BuildContext context, {
+  required String title,
+  required PeriodComparison comparison,
+  required IconData icon,
+}) {
+  final revenueColor = comparison.isRevenueGrowth
+      ? AppTheme.successColor
+      : AppTheme.errorColor;
+  final profitColor = comparison.isProfitGrowth
+      ? AppTheme.successColor
+      : AppTheme.errorColor;
+  final txnColor = comparison.isTransactionGrowth
+      ? AppTheme.successColor
+      : AppTheme.errorColor;
+
+  return Container(
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: AppTheme.getCardColor(context),
+      borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium),
+      border: Border.all(color: Colors.black, width: 4),
+      boxShadow: NeoBrutalTheme.chunkyShadow,
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(icon, size: 20, color: AppTheme.primaryColor),
+            const SizedBox(width: 8),
+            Text(
+              title,
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildComparisonMetric(
+                'Pendapatan',
+                comparison.revenueChange,
+                revenueColor,
+                comparison.previousRevenue != null
+                    ? _compactCurrency(comparison.previousRevenue!)
+                    : null,
+                _compactCurrency(
+                  comparison.previousRevenue != null
+                      ? comparison.previousRevenue! *
+                            (1 + comparison.revenueChange / 100)
+                      : 0,
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildComparisonMetric(
+                'Keuntungan',
+                comparison.profitChange,
+                profitColor,
+                comparison.previousProfit != null
+                    ? _compactCurrency(comparison.previousProfit!)
+                    : null,
+                _compactCurrency(
+                  comparison.previousProfit != null
+                      ? comparison.previousProfit! *
+                            (1 + comparison.profitChange / 100)
+                      : 0,
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildComparisonMetric(
+                'Transaksi',
+                comparison.transactionChange,
+                txnColor,
+                comparison.previousTransactions != null
+                    ? comparison.previousTransactions!.toInt().toString()
+                    : null,
+                (comparison.previousTransactions != null
+                        ? comparison.previousTransactions! *
+                              (1 + comparison.transactionChange / 100)
+                        : 0)
+                    .toInt()
+                    .toString(),
+              ),
+            ),
+          ],
+        ),
+      ],
+    ),
+  );
+}
+
+Widget _buildComparisonMetric(
+  String label,
+  double change,
+  Color color,
+  String? previousValue,
+  String currentValue,
+) {
+  final isPositive = change >= 0;
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        label,
+        style: const TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w500,
+          color: AppTheme.textSecondary,
+        ),
+      ),
+      const SizedBox(height: 4),
+      Text(
+        currentValue,
+        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+      ),
+      Row(
+        children: [
+          Icon(
+            isPositive ? Icons.arrow_drop_up : Icons.arrow_drop_down,
+            size: 16,
+            color: color,
+          ),
+          Text(
+            '${isPositive ? '+' : ''}${change.toStringAsFixed(1)}%',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+      if (previousValue != null)
+        Text(
+          'Sebelumnya: $previousValue',
+          style: const TextStyle(fontSize: 9, color: AppTheme.textTertiary),
+        ),
+    ],
+  );
+}
+
+Widget _buildSimpleComparison(BuildContext context, SalesReport report) {
   final dailyData = report.dailyBreakdown;
   if (dailyData.length < 14) return const SizedBox.shrink();
 
@@ -482,4 +657,13 @@ Widget _buildComparisonCard(BuildContext context, SalesReport report) {
       ],
     ),
   );
+}
+
+String _compactCurrency(double value) {
+  if (value >= 1000000) {
+    return '${(value / 1000000).toStringAsFixed(1)}jt';
+  } else if (value >= 1000) {
+    return '${(value / 1000).toStringAsFixed(0)}rb';
+  }
+  return value.toStringAsFixed(0);
 }

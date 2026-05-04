@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:simple_pos/core/theme/app_theme.dart';
 import 'package:simple_pos/features/shifts/presentation/screens/shift_open_screen.dart';
+import 'package:simple_pos/l10n/app_localizations.dart';
 
 /// Dialog shown when a shift is required but none is active
 class ShiftRequiredDialog extends StatelessWidget {
@@ -41,19 +42,19 @@ class ShiftRequiredDialog extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 12),
-            const Expanded(child: Text('Shift Belum Dibuka')),
+            Expanded(
+              child: Text(AppLocalizations.of(context)!.shift_open_title),
+            ),
           ],
         ),
-        content: const Text(
-          'Anda perlu membuka shift kerja sebelum dapat melakukan transaksi.',
-        ),
+        content: Text(AppLocalizations.of(context)!.shift_no_active),
         actions: [
           TextButton(
             onPressed: () {
               Navigator.pop(context);
               Navigator.pop(context);
             },
-            child: const Text('Kembali'),
+            child: Text(AppLocalizations.of(context)!.common_back),
           ),
           ElevatedButton(
             onPressed: () {
@@ -72,7 +73,7 @@ class ShiftRequiredDialog extends StatelessWidget {
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.primaryColor,
             ),
-            child: const Text('Buka Shift'),
+            child: Text(AppLocalizations.of(context)!.shift_open),
           ),
         ],
       ),

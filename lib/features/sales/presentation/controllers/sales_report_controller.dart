@@ -5,6 +5,7 @@ import '../../domain/entities/chart_enums.dart';
 import '../../domain/usecases/get_sales_report_usecase.dart'
     show GetSalesReportUseCase, ReportPeriod;
 import '../../domain/usecases/export_sales_to_csv_usecase.dart';
+import '../../domain/usecases/export_sales_to_pdf_usecase.dart';
 import '../../../expenses/domain/usecases/get_profit_report_usecase.dart';
 import '../../../expenses/domain/entities/profit_report.dart';
 import '../../../../core/utils/logger.dart';
@@ -22,14 +23,17 @@ class ReportDateRange {
 class SalesReportController extends ChangeNotifier {
   final GetSalesReportUseCase _getSalesReportUseCase;
   final ExportSalesToCsvUseCase _exportSalesToCsvUseCase;
+  final ExportSalesToPdfUseCase _exportSalesToPdfUseCase;
   final GetProfitReportUseCase? _getProfitReportUseCase;
 
   SalesReportController({
     required GetSalesReportUseCase getSalesReportUseCase,
     required ExportSalesToCsvUseCase exportSalesToCsvUseCase,
+    required ExportSalesToPdfUseCase exportSalesToPdfUseCase,
     GetProfitReportUseCase? getProfitReportUseCase,
   }) : _getSalesReportUseCase = getSalesReportUseCase,
        _exportSalesToCsvUseCase = exportSalesToCsvUseCase,
+       _exportSalesToPdfUseCase = exportSalesToPdfUseCase,
        _getProfitReportUseCase = getProfitReportUseCase {
     loadReport();
   }
@@ -225,6 +229,41 @@ class SalesReportController extends ChangeNotifier {
       notifyListeners();
       AppLogger.error(
         'Failed to export sales report',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      return null;
+    }
+  }
+
+  /// Export sales report to PDF
+  Future<File?> exportSalesReportPdf() async {
+    if (_report == null) {
+      _exportErrorMessage = 'Tidak ada laporan untuk diekspor';
+      notifyListeners();
+      return null;
+    }
+
+    _isExporting = true;
+    _exportErrorMessage = null;
+    notifyListeners();
+
+    try {
+      AppLogger.info('Exporting sales report to PDF');
+
+      final file = await _exportSalesToPdfUseCase.execute(_report!);
+
+      _isExporting = false;
+      notifyListeners();
+
+      AppLogger.info('Sales report exported to PDF successfully');
+      return file;
+    } catch (e, stackTrace) {
+      _isExporting = false;
+      _exportErrorMessage = e.toString();
+      notifyListeners();
+      AppLogger.error(
+        'Failed to export sales report to PDF',
         error: e,
         stackTrace: stackTrace,
       );

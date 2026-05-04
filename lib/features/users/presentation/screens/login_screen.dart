@@ -76,12 +76,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: NeoBrutalTheme.background,
+      backgroundColor: NeoBrutalTheme.getBackgroundColor(context),
       body: SafeArea(
         child: Stack(
           children: [
             // Industrial background pattern
-            _buildIndustrialBackground(),
+            _buildIndustrialBackground(context),
 
             // Main content
             Center(
@@ -117,17 +117,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   }
 
   /// Industrial background with noise texture and geometric patterns
-  Widget _buildIndustrialBackground() {
+  Widget _buildIndustrialBackground(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Positioned.fill(
       child: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              NeoBrutalTheme.background.withValues(alpha: 0.95),
-              NeoBrutalTheme.background.withValues(alpha: 1.0),
-            ],
+            colors: isDark
+                ? [
+                    NeoBrutalTheme.darkBackground,
+                    NeoBrutalTheme.darkBackground.withValues(alpha: 1.0),
+                  ]
+                : [
+                    NeoBrutalTheme.background.withValues(alpha: 0.95),
+                    NeoBrutalTheme.background.withValues(alpha: 1.0),
+                  ],
           ),
         ),
         child: Opacity(
@@ -140,6 +146,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
   /// Dramatic brutalist header with asymmetric layout
   Widget _buildBrutalHeader(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final borderColor = NeoBrutalTheme.getBorderColor(context);
+    final textColor = NeoBrutalTheme.getTextColor(context);
     return Column(
           children: [
             Row(
@@ -153,10 +162,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                     borderRadius: BorderRadius.circular(
                       NeoBrutalTheme.radiusLarge,
                     ),
-                    border: Border.all(color: Colors.black, width: 5),
+                    border: Border.all(color: borderColor, width: 5),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.3),
+                        color: isDark
+                            ? Colors.black.withValues(alpha: 0.5)
+                            : Colors.black.withValues(alpha: 0.3),
                         offset: Offset(8, 8),
                         blurRadius: 0,
                       ),
@@ -196,7 +207,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                           fontSize: 48,
                           fontWeight: FontWeight.w900,
                           letterSpacing: 8,
-                          color: Colors.black,
+                          color: textColor,
                           height: 0.9,
                         ),
                       ),
@@ -217,7 +228,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
                           letterSpacing: 2,
-                          color: AppTheme.getTextSecondaryColor(context),
+                          color: NeoBrutalTheme.getSecondaryTextColor(context),
                         ),
                       ),
                     ],
@@ -234,15 +245,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
   /// Brutalist login form card with dramatic shadows
   Widget _buildLoginFormCard(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final borderColor = NeoBrutalTheme.getBorderColor(context);
+    final textColor = NeoBrutalTheme.getTextColor(context);
     return Container(
           padding: EdgeInsets.all(NeoBrutalTheme.spaceLG),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: NeoBrutalTheme.getCardColor(context),
             borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusLarge),
-            border: Border.all(color: Colors.black, width: 5),
+            border: Border.all(color: borderColor, width: 5),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.4),
+                color: isDark
+                    ? Colors.black.withValues(alpha: 0.6)
+                    : Colors.black.withValues(alpha: 0.4),
                 offset: Offset(12, 12),
                 blurRadius: 0,
               ),
@@ -263,7 +279,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                   fontSize: 24,
                   fontWeight: FontWeight.w900,
                   letterSpacing: 4,
-                  color: Colors.black,
+                  color: textColor,
                 ),
               ),
               SizedBox(height: NeoBrutalTheme.spaceMD),
@@ -339,6 +355,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     required String? Function(String?)? validator,
     required Function(String?)? onFieldSubmitted,
   }) {
+    final borderColor = NeoBrutalTheme.getBorderColor(context);
+    final textColor = NeoBrutalTheme.getTextColor(context);
     return TextFormField(
       controller: controller,
       textInputAction: textInputAction,
@@ -347,7 +365,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       style: TextStyle(
         fontSize: 16,
         fontWeight: FontWeight.w600,
-        color: Colors.black,
+        color: textColor,
       ),
       decoration: InputDecoration(
         labelText: labelText,
@@ -361,7 +379,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         hintStyle: TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w400,
-          color: AppTheme.textTertiary,
+          color: NeoBrutalTheme.getTertiaryTextColor(context),
           letterSpacing: 1,
         ),
         prefixIcon: Container(
@@ -370,22 +388,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           decoration: BoxDecoration(
             color: NeoBrutalTheme.primary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
-            border: Border.all(color: Colors.black, width: 2),
+            border: Border.all(color: borderColor, width: 2),
           ),
           child: Icon(icon, color: NeoBrutalTheme.primary, size: 22),
         ),
         filled: true,
-        fillColor: Colors.white,
+        fillColor: NeoBrutalTheme.getCardColor(context),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 20,
           vertical: 16,
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium),
-          borderSide: BorderSide(
-            color: AppTheme.getBorderColor(context),
-            width: 2,
-          ),
+          borderSide: BorderSide(color: borderColor, width: 2),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium),
@@ -416,6 +431,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     required String? Function(String?)? validator,
     required Function(String?)? onFieldSubmitted,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final borderColor = NeoBrutalTheme.getBorderColor(context);
+    final textColor = NeoBrutalTheme.getTextColor(context);
     return TextFormField(
       controller: controller,
       obscureText: _obscurePassword,
@@ -425,7 +443,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       style: TextStyle(
         fontSize: 16,
         fontWeight: FontWeight.w600,
-        color: Colors.black,
+        color: textColor,
       ),
       decoration: InputDecoration(
         labelText: labelText,
@@ -439,7 +457,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         hintStyle: TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w400,
-          color: AppTheme.textTertiary,
+          color: NeoBrutalTheme.getTertiaryTextColor(context),
           letterSpacing: 1,
         ),
         prefixIcon: Container(
@@ -448,7 +466,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           decoration: BoxDecoration(
             color: NeoBrutalTheme.primary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
-            border: Border.all(color: Colors.black, width: 2),
+            border: Border.all(color: borderColor, width: 2),
           ),
           child: Icon(
             Icons.lock_outline_rounded,
@@ -460,7 +478,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           width: 48,
           height: 48,
           decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: (isDark ? Colors.white : Colors.black).withValues(
+              alpha: 0.05,
+            ),
             borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
           ),
           child: IconButton(
@@ -479,17 +499,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           ),
         ),
         filled: true,
-        fillColor: Colors.white,
+        fillColor: NeoBrutalTheme.getCardColor(context),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 20,
           vertical: 16,
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium),
-          borderSide: BorderSide(
-            color: AppTheme.getBorderColor(context),
-            width: 2,
-          ),
+          borderSide: BorderSide(color: borderColor, width: 2),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium),
@@ -524,6 +541,8 @@ class BrutalLoginButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final borderColor = NeoBrutalTheme.getBorderColor(context);
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       curve: Curves.easeInOut,
@@ -534,17 +553,19 @@ class BrutalLoginButton extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: isLoading
-              ? [Colors.grey.shade400, Colors.grey.shade300]
+              ? [Colors.grey.shade600, Colors.grey.shade500]
               : [
                   NeoBrutalTheme.primary,
                   NeoBrutalTheme.primary.withValues(alpha: 0.8),
                 ],
         ),
         borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium),
-        border: Border.all(color: Colors.black, width: 4),
+        border: Border.all(color: borderColor, width: 4),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.4),
+            color: isDark
+                ? Colors.black.withValues(alpha: 0.6)
+                : Colors.black.withValues(alpha: 0.4),
             offset: Offset(6, 6),
             blurRadius: 0,
           ),

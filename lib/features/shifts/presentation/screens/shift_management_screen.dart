@@ -12,7 +12,8 @@ class ShiftManagementScreen extends ConsumerStatefulWidget {
   const ShiftManagementScreen({super.key});
 
   @override
-  ConsumerState<ShiftManagementScreen> createState() => _ShiftManagementScreenState();
+  ConsumerState<ShiftManagementScreen> createState() =>
+      _ShiftManagementScreenState();
 }
 
 class _ShiftManagementScreenState extends ConsumerState<ShiftManagementScreen> {
@@ -39,9 +40,7 @@ class _ShiftManagementScreenState extends ConsumerState<ShiftManagementScreen> {
   Future<void> _handleCloseShift() async {
     final result = await Navigator.push<bool>(
       context,
-      MaterialPageRoute(
-        builder: (_) => const ShiftCloseScreen(),
-      ),
+      MaterialPageRoute(builder: (_) => const ShiftCloseScreen()),
     );
     if (result == true && mounted) {
       ref.read(shiftControllerProvider).loadCurrentShift();
@@ -52,12 +51,11 @@ class _ShiftManagementScreenState extends ConsumerState<ShiftManagementScreen> {
   @override
   Widget build(BuildContext context) {
     final controller = ref.watch(shiftControllerProvider);
+    final backgroundColor = NeoBrutalTheme.getBackgroundColor(context);
 
     return Scaffold(
-      backgroundColor: NeoBrutalTheme.background, // ✅ Brutal white background
-      appBar: AppBar(
-        title: const Text('Manajemen Shift'),
-      ),
+      backgroundColor: backgroundColor,
+      appBar: AppBar(title: const Text('Manajemen Shift')),
       body: () {
         if (controller.isLoading && controller.shiftHistory.isEmpty) {
           return const Center(child: CircularProgressIndicator());
@@ -91,7 +89,10 @@ class _ShiftManagementScreenState extends ConsumerState<ShiftManagementScreen> {
   Widget _buildCurrentShiftSection(BuildContext context, dynamic controller) {
     final hasActiveShift = controller.hasActiveShift;
     final currentShift = controller.currentShift;
-    final statusColor = hasActiveShift ? AppTheme.successColor : AppTheme.warningColor;
+    final statusColor = hasActiveShift
+        ? AppTheme.successColor
+        : AppTheme.warningColor;
+    final borderColor = NeoBrutalTheme.getBorderColor(context);
 
     return BrutalCard(
       padding: EdgeInsets.all(NeoBrutalTheme.spaceLG),
@@ -105,9 +106,11 @@ class _ShiftManagementScreenState extends ConsumerState<ShiftManagementScreen> {
                 height: 56,
                 decoration: BoxDecoration(
                   color: statusColor, // ✅ Solid bold color
-                  borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium), // ✅ Brutal 8px
+                  borderRadius: BorderRadius.circular(
+                    NeoBrutalTheme.radiusMedium,
+                  ), // ✅ Brutal 8px
                   border: Border.all(
-                    color: Colors.black, // ✅ Bold black border
+                    color: borderColor, // ✅ Bold border
                     width: 4, // ✅ Bold 4px border
                   ),
                   boxShadow: NeoBrutalTheme.chunkyShadow,
@@ -149,9 +152,11 @@ class _ShiftManagementScreenState extends ConsumerState<ShiftManagementScreen> {
                   ),
                   decoration: BoxDecoration(
                     color: statusColor, // ✅ Solid bold color
-                    borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium), // ✅ Brutal 8px
+                    borderRadius: BorderRadius.circular(
+                      NeoBrutalTheme.radiusMedium,
+                    ), // ✅ Brutal 8px
                     border: Border.all(
-                      color: Colors.black, // ✅ Bold black border
+                      color: borderColor, // ✅ Bold border
                       width: 3, // ✅ Bold 3px border
                     ),
                     boxShadow: NeoBrutalTheme.chunkyShadow,
@@ -163,7 +168,7 @@ class _ShiftManagementScreenState extends ConsumerState<ShiftManagementScreen> {
                       fontWeight: FontWeight.w900,
                     ),
                   ),
-                )
+                ),
             ],
           ),
 
@@ -258,7 +263,9 @@ class _ShiftManagementScreenState extends ConsumerState<ShiftManagementScreen> {
               text: hasActiveShift ? 'Tutup Shift' : 'Buka Shift Baru',
               icon: hasActiveShift ? Icons.close : Icons.play_arrow,
               onPressed: hasActiveShift ? _handleCloseShift : _handleOpenShift,
-              backgroundColor: hasActiveShift ? AppTheme.errorColor : AppTheme.successColor,
+              backgroundColor: hasActiveShift
+                  ? AppTheme.errorColor
+                  : AppTheme.successColor,
               isLoading: controller.isLoading,
             ),
           ),
@@ -269,6 +276,7 @@ class _ShiftManagementScreenState extends ConsumerState<ShiftManagementScreen> {
 
   Widget _buildShiftHistorySection(BuildContext context, dynamic controller) {
     final history = controller.shiftHistory;
+    final borderColor = NeoBrutalTheme.getBorderColor(context);
 
     if (history.isEmpty) {
       return BrutalCard(
@@ -280,18 +288,16 @@ class _ShiftManagementScreenState extends ConsumerState<ShiftManagementScreen> {
               height: 100,
               decoration: BoxDecoration(
                 color: NeoBrutalTheme.blockCoral, // ✅ Bold coral background
-                borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusLarge), // ✅ Brutal radius
+                borderRadius: BorderRadius.circular(
+                  NeoBrutalTheme.radiusLarge,
+                ), // ✅ Brutal radius
                 border: Border.all(
-                  color: Colors.black,
+                  color: borderColor, // ✅ Bold border
                   width: 4, // ✅ Bold border
                 ),
                 boxShadow: NeoBrutalTheme.chunkyShadow,
               ),
-              child: Icon(
-                Icons.history,
-                size: 50,
-                color: Colors.white,
-              ),
+              child: Icon(Icons.history, size: 50, color: Colors.white),
             ),
             SizedBox(height: NeoBrutalTheme.spaceLG),
             Text(
@@ -306,7 +312,7 @@ class _ShiftManagementScreenState extends ConsumerState<ShiftManagementScreen> {
               'Shift yang sudah ditutup akan muncul di sini',
               style: TextStyle(
                 fontSize: 14,
-                color: AppTheme.textTertiary,
+                color: NeoBrutalTheme.getTertiaryTextColor(context),
               ),
               textAlign: TextAlign.center,
             ),
@@ -334,7 +340,8 @@ class _ShiftManagementScreenState extends ConsumerState<ShiftManagementScreen> {
 
   Widget _buildShiftHistoryCard(BuildContext context, shift) {
     final isClosed = shift.closedAt != null;
-    final totalSales = shift.cashSales + shift.cardSales + shift.qrSales + shift.transferSales;
+    final totalSales =
+        shift.cashSales + shift.cardSales + shift.qrSales + shift.transferSales;
 
     return BrutalCard(
       padding: EdgeInsets.all(NeoBrutalTheme.spaceMD),
@@ -351,11 +358,7 @@ class _ShiftManagementScreenState extends ConsumerState<ShiftManagementScreen> {
                   color: AppTheme.infoColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(
-                  Icons.history,
-                  color: AppTheme.infoColor,
-                  size: 20,
-                ),
+                child: Icon(Icons.history, color: AppTheme.infoColor, size: 20),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -381,7 +384,10 @@ class _ShiftManagementScreenState extends ConsumerState<ShiftManagementScreen> {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: isClosed
                       ? AppTheme.successColor.withValues(alpha: 0.15)
@@ -396,7 +402,9 @@ class _ShiftManagementScreenState extends ConsumerState<ShiftManagementScreen> {
                 child: Text(
                   isClosed ? 'DITUTUP' : 'AKTIF',
                   style: TextStyle(
-                    color: isClosed ? AppTheme.successColor : AppTheme.warningColor,
+                    color: isClosed
+                        ? AppTheme.successColor
+                        : AppTheme.warningColor,
                     fontWeight: FontWeight.bold,
                     fontSize: 11,
                   ),
@@ -492,9 +500,7 @@ class _ShiftManagementScreenState extends ConsumerState<ShiftManagementScreen> {
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: color.withValues(alpha: 0.2),
-        ),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Column(
         children: [
@@ -530,7 +536,11 @@ class _ShiftManagementScreenState extends ConsumerState<ShiftManagementScreen> {
   }) {
     return Column(
       children: [
-        Icon(icon, size: 18, color: color ?? AppTheme.getTextSecondaryColor(context)),
+        Icon(
+          icon,
+          size: 18,
+          color: color ?? AppTheme.getTextSecondaryColor(context),
+        ),
         const SizedBox(height: 6),
         Text(
           value,
@@ -552,10 +562,7 @@ class _ShiftManagementScreenState extends ConsumerState<ShiftManagementScreen> {
   }
 
   String _formatCurrency(double value) {
-    return 'Rp ${value.toStringAsFixed(0).replaceAllMapped(
-      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-      (Match m) => '${m[1]}.',
-    )}';
+    return 'Rp ${value.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}';
   }
 
   String _formatDateTime(DateTime? dateTime) {
@@ -565,10 +572,10 @@ class _ShiftManagementScreenState extends ConsumerState<ShiftManagementScreen> {
     return '${dateTime.day}/${dateTime.month}/${dateTime.year} $hour:$minute';
   }
 
-  String _calculateDuration(int openedAt, int closedAt) {
-    final difference = closedAt - openedAt;
-    final hours = difference ~/ 3600;
-    final minutes = (difference % 3600) ~/ 60;
+  String _calculateDuration(DateTime openedAt, DateTime closedAt) {
+    final difference = closedAt.difference(openedAt);
+    final hours = difference.inHours;
+    final minutes = difference.inMinutes.remainder(60);
 
     if (hours > 0) {
       return '$hours jam $minutes menit';

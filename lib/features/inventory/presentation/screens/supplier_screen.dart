@@ -5,6 +5,7 @@ import '../../domain/entities/supplier.dart';
 import '../../../shared/presentation/providers.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/constants/ui_constants.dart';
+import '../../../../l10n/app_localizations.dart';
 
 /// Screen for managing suppliers with search and contact actions
 class SupplierScreen extends ConsumerStatefulWidget {
@@ -38,29 +39,30 @@ class _SupplierScreenState extends ConsumerState<SupplierScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final supplierController = ref.watch(supplierControllerProvider);
     final inventoryController = ref.watch(inventoryControllerProvider);
     final filteredSuppliers = _filterSuppliers(supplierController.suppliers);
     final products = inventoryController.allProducts;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Pemasok'),
-      ),
+      appBar: AppBar(title: Text(l10n.supplier_title)),
       body: supplierController.isLoading
           ? const Center(child: CircularProgressIndicator())
           : supplierController.suppliers.isEmpty
-              ? _buildEmptyState(context)
-              : Column(
-                  children: [
-                    _buildSearchBar(),
-                    Expanded(child: _buildSupplierList(filteredSuppliers, products)),
-                  ],
+          ? _buildEmptyState(context)
+          : Column(
+              children: [
+                _buildSearchBar(),
+                Expanded(
+                  child: _buildSupplierList(filteredSuppliers, products),
                 ),
+              ],
+            ),
       floatingActionButton: FloatingActionButton(
         heroTag: 'supplier_fab', // ✅ Unique hero tag
         onPressed: () => _showAddEditDialog(context, supplierController),
-        tooltip: 'Tambah Pemasok',
+        tooltip: AppLocalizations.of(context)!.supplier_add,
         backgroundColor: AppTheme.primaryColor,
         child: const Icon(Icons.add),
       ),
@@ -83,10 +85,8 @@ class _SupplierScreenState extends ConsumerState<SupplierScreen> {
       child: TextField(
         controller: _searchController,
         decoration: InputDecoration(
-          hintText: 'Cari pemasok...',
-          hintStyle: TextStyle(
-            color: AppTheme.getTextSecondaryColor(context),
-          ),
+          hintText: AppLocalizations.of(context)!.common_search,
+          hintStyle: TextStyle(color: AppTheme.getTextSecondaryColor(context)),
           prefixIcon: Icon(
             Icons.search_rounded,
             color: AppTheme.getTextSecondaryColor(context),
@@ -125,14 +125,10 @@ class _SupplierScreenState extends ConsumerState<SupplierScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.local_shipping,
-            size: 64,
-            color: AppTheme.textTertiary,
-          ),
+          Icon(Icons.local_shipping, size: 64, color: AppTheme.textTertiary),
           const SizedBox(height: UIConstants.spacingMedium),
           Text(
-            'Tidak ada pemasok',
+            AppLocalizations.of(context)!.supplier_noSuppliers,
             style: TextStyle(
               fontSize: UIConstants.fontSizeLarge,
               color: AppTheme.textPrimary,
@@ -141,10 +137,8 @@ class _SupplierScreenState extends ConsumerState<SupplierScreen> {
           ),
           const SizedBox(height: UIConstants.spacingSmall),
           Text(
-            'Tekan + untuk menambah pemasok',
-            style: TextStyle(
-              color: AppTheme.textSecondary,
-            ),
+            AppLocalizations.of(context)!.supplier_noSuppliers,
+            style: TextStyle(color: AppTheme.textSecondary),
           ),
         ],
       ),
@@ -164,11 +158,10 @@ class _SupplierScreenState extends ConsumerState<SupplierScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              'Tidak ditemukan pemasok "$_searchQuery"',
-              style: TextStyle(
-                fontSize: 16,
-                color: AppTheme.textSecondary,
-              ),
+              AppLocalizations.of(
+                context,
+              )!.common_supplierNotFound(_searchQuery),
+              style: TextStyle(fontSize: 16, color: AppTheme.textSecondary),
             ),
           ],
         ),
@@ -181,13 +174,19 @@ class _SupplierScreenState extends ConsumerState<SupplierScreen> {
       itemBuilder: (context, index) {
         final supplier = suppliers[index];
         // Count products for this supplier
-        final productCount = products.where((p) => p.supplierId == supplier.id).length;
+        final productCount = products
+            .where((p) => p.supplierId == supplier.id)
+            .length;
         return _buildSupplierCard(context, supplier, productCount);
       },
     );
   }
 
-  Widget _buildSupplierCard(BuildContext context, Supplier supplier, int productCount) {
+  Widget _buildSupplierCard(
+    BuildContext context,
+    Supplier supplier,
+    int productCount,
+  ) {
     final controller = ref.read(supplierControllerProvider);
     return Card(
       margin: const EdgeInsets.only(bottom: UIConstants.spacingSmall),
@@ -259,11 +258,8 @@ class _SupplierScreenState extends ConsumerState<SupplierScreen> {
                   _buildEditButton(
                     icon: Icons.edit,
                     color: AppTheme.textSecondary,
-                    onTap: () => _showAddEditDialog(
-                      context,
-                      controller,
-                      supplier,
-                    ),
+                    onTap: () =>
+                        _showAddEditDialog(context, controller, supplier),
                   ),
                 ],
               ),
@@ -281,7 +277,7 @@ class _SupplierScreenState extends ConsumerState<SupplierScreen> {
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    'Produk: $productCount',
+                    '${AppLocalizations.of(context)!.product_stok}: $productCount',
                     style: TextStyle(
                       fontSize: 12,
                       color: AppTheme.textTertiary,
@@ -315,11 +311,7 @@ class _SupplierScreenState extends ConsumerState<SupplierScreen> {
             width: 36,
             height: 36,
             alignment: Alignment.center,
-            child: Icon(
-              icon,
-              size: 18,
-              color: color,
-            ),
+            child: Icon(icon, size: 18, color: color),
           ),
         ),
       ),
@@ -343,11 +335,7 @@ class _SupplierScreenState extends ConsumerState<SupplierScreen> {
             width: 36,
             height: 36,
             alignment: Alignment.center,
-            child: Icon(
-              icon,
-              size: 18,
-              color: color,
-            ),
+            child: Icon(icon, size: 18, color: color),
           ),
         ),
       ),
@@ -359,23 +347,11 @@ class _SupplierScreenState extends ConsumerState<SupplierScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (supplier.phone != null)
-          _buildInfoRow(
-            context,
-            Icons.phone_outlined,
-            supplier.phone!,
-          ),
+          _buildInfoRow(context, Icons.phone_outlined, supplier.phone!),
         if (supplier.email != null)
-          _buildInfoRow(
-            context,
-            Icons.email_outlined,
-            supplier.email!,
-          ),
+          _buildInfoRow(context, Icons.email_outlined, supplier.email!),
         if (supplier.address != null)
-          _buildInfoRow(
-            context,
-            Icons.location_on_outlined,
-            supplier.address!,
-          ),
+          _buildInfoRow(context, Icons.location_on_outlined, supplier.address!),
       ],
     );
   }
@@ -385,11 +361,7 @@ class _SupplierScreenState extends ConsumerState<SupplierScreen> {
       padding: const EdgeInsets.only(bottom: 4),
       child: Row(
         children: [
-          Icon(
-            icon,
-            size: 14,
-            color: AppTheme.textTertiary,
-          ),
+          Icon(icon, size: 14, color: AppTheme.textTertiary),
           const SizedBox(width: 6),
           Expanded(
             child: Text(
@@ -412,17 +384,10 @@ class _SupplierScreenState extends ConsumerState<SupplierScreen> {
   ) {
     return TextButton.icon(
       onPressed: () => _showDeleteDialog(context, supplier, controller),
-      icon: Icon(
-        Icons.delete_outline,
-        size: 16,
-        color: AppTheme.errorColor,
-      ),
+      icon: Icon(Icons.delete_outline, size: 16, color: AppTheme.errorColor),
       label: Text(
-        'Hapus',
-        style: TextStyle(
-          fontSize: 12,
-          color: AppTheme.errorColor,
-        ),
+        AppLocalizations.of(context)!.common_delete,
+        style: TextStyle(fontSize: 12, color: AppTheme.errorColor),
       ),
       style: TextButton.styleFrom(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -438,7 +403,9 @@ class _SupplierScreenState extends ConsumerState<SupplierScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Tidak dapat membuka dialer'),
+            content: Text(
+              AppLocalizations.of(context)!.common_cannotOpenDialer,
+            ),
             backgroundColor: AppTheme.errorColor,
           ),
         );
@@ -452,7 +419,7 @@ class _SupplierScreenState extends ConsumerState<SupplierScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Tidak dapat membuka aplikasi email'),
+            content: Text(AppLocalizations.of(context)!.common_cannotOpenEmail),
             backgroundColor: AppTheme.errorColor,
           ),
         );
@@ -466,10 +433,14 @@ class _SupplierScreenState extends ConsumerState<SupplierScreen> {
     Supplier? supplier,
   ]) async {
     final nameController = TextEditingController(text: supplier?.name ?? '');
-    final contactController = TextEditingController(text: supplier?.contactPerson ?? '');
+    final contactController = TextEditingController(
+      text: supplier?.contactPerson ?? '',
+    );
     final phoneController = TextEditingController(text: supplier?.phone ?? '');
     final emailController = TextEditingController(text: supplier?.email ?? '');
-    final addressController = TextEditingController(text: supplier?.address ?? '');
+    final addressController = TextEditingController(
+      text: supplier?.address ?? '',
+    );
     final formKey = GlobalKey<FormState>();
 
     final isEditing = supplier != null;
@@ -477,10 +448,12 @@ class _SupplierScreenState extends ConsumerState<SupplierScreen> {
     await showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          isEditing
+              ? AppLocalizations.of(context)!.supplier_edit
+              : AppLocalizations.of(context)!.supplier_add,
         ),
-        title: Text(isEditing ? 'Edit Pemasok' : 'Tambah Pemasok'),
         content: Form(
           key: formKey,
           child: SingleChildScrollView(
@@ -490,19 +463,24 @@ class _SupplierScreenState extends ConsumerState<SupplierScreen> {
                 TextFormField(
                   controller: nameController,
                   decoration: InputDecoration(
-                    labelText: 'Nama Pemasok',
+                    labelText: AppLocalizations.of(context)!.supplier_name,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                     filled: true,
                     fillColor: AppTheme.getCardColor(context),
                   ),
+                  textCapitalization: TextCapitalization.words,
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
-                      return 'Nama pemasok wajib diisi';
+                      return AppLocalizations.of(
+                        context,
+                      )!.supplier_nameRequired;
                     }
                     if (value.trim().length < 2) {
-                      return 'Nama pemasok minimal 2 karakter';
+                      return AppLocalizations.of(
+                        context,
+                      )!.supplier_nameTooShort;
                     }
                     return null;
                   },
@@ -511,7 +489,9 @@ class _SupplierScreenState extends ConsumerState<SupplierScreen> {
                 TextFormField(
                   controller: contactController,
                   decoration: InputDecoration(
-                    labelText: 'Nama Kontak (Opsional)',
+                    labelText: AppLocalizations.of(
+                      context,
+                    )!.common_contactPersonOptional,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -523,7 +503,9 @@ class _SupplierScreenState extends ConsumerState<SupplierScreen> {
                 TextFormField(
                   controller: phoneController,
                   decoration: InputDecoration(
-                    labelText: 'Telepon (Opsional)',
+                    labelText: AppLocalizations.of(
+                      context,
+                    )!.common_phoneOptional,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -536,7 +518,9 @@ class _SupplierScreenState extends ConsumerState<SupplierScreen> {
                 TextFormField(
                   controller: emailController,
                   decoration: InputDecoration(
-                    labelText: 'Email (Opsional)',
+                    labelText: AppLocalizations.of(
+                      context,
+                    )!.common_emailOptional,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -549,7 +533,9 @@ class _SupplierScreenState extends ConsumerState<SupplierScreen> {
                 TextFormField(
                   controller: addressController,
                   decoration: InputDecoration(
-                    labelText: 'Alamat (Opsional)',
+                    labelText: AppLocalizations.of(
+                      context,
+                    )!.common_addressOptional,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -565,7 +551,7 @@ class _SupplierScreenState extends ConsumerState<SupplierScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Batal'),
+            child: Text(AppLocalizations.of(context)!.common_cancel),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -597,10 +583,19 @@ class _SupplierScreenState extends ConsumerState<SupplierScreen> {
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text(success
-                          ? 'Pemasok berhasil disimpan'
-                          : controller.errorMessage ?? 'Gagal menyimpan pemasok'),
-                      backgroundColor: success ? AppTheme.successColor : AppTheme.errorColor,
+                      content: Text(
+                        success
+                            ? AppLocalizations.of(
+                                context,
+                              )!.common_supplierSaveSuccess
+                            : controller.errorMessage ??
+                                  AppLocalizations.of(
+                                    context,
+                                  )!.common_supplierSaveFailed,
+                      ),
+                      backgroundColor: success
+                          ? AppTheme.successColor
+                          : AppTheme.errorColor,
                       behavior: SnackBarBehavior.floating,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -613,7 +608,11 @@ class _SupplierScreenState extends ConsumerState<SupplierScreen> {
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.primaryColor,
             ),
-            child: Text(isEditing ? 'Simpan' : 'Tambah'),
+            child: Text(
+              isEditing
+                  ? AppLocalizations.of(context)!.common_save
+                  : AppLocalizations.of(context)!.common_add,
+            ),
           ),
         ],
       ),
@@ -628,9 +627,7 @@ class _SupplierScreenState extends ConsumerState<SupplierScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Row(
           children: [
             Container(
@@ -647,23 +644,21 @@ class _SupplierScreenState extends ConsumerState<SupplierScreen> {
               ),
             ),
             const SizedBox(width: 12),
-            const Text('Hapus Pemasok'),
+            Text(AppLocalizations.of(context)!.supplier_delete),
           ],
         ),
-        content: Text(
-          'Apakah Anda yakin ingin menghapus pemasok "${supplier.name}"?',
-        ),
+        content: Text(AppLocalizations.of(context)!.supplier_deleteConfirm),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Batal'),
+            child: Text(AppLocalizations.of(context)!.common_cancel),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.errorColor,
             ),
-            child: const Text('Hapus'),
+            child: Text(AppLocalizations.of(context)!.common_delete),
           ),
         ],
       ),
@@ -674,10 +669,17 @@ class _SupplierScreenState extends ConsumerState<SupplierScreen> {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(success
-                ? 'Pemasok berhasil dihapus'
-                : controller.errorMessage ?? 'Gagal menghapus pemasok'),
-            backgroundColor: success ? AppTheme.successColor : AppTheme.errorColor,
+            content: Text(
+              success
+                  ? AppLocalizations.of(context)!.common_supplierDeleteSuccess
+                  : controller.errorMessage ??
+                        AppLocalizations.of(
+                          context,
+                        )!.common_supplierDeleteFailed,
+            ),
+            backgroundColor: success
+                ? AppTheme.successColor
+                : AppTheme.errorColor,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),

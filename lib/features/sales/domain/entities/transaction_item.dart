@@ -5,23 +5,25 @@ class TransactionItem {
   final int? id;
   final int transactionId;
   final int productId;
-  final int variantId; // Add variantId to track specific product variants
+  final int variantId;
   final String productName;
   final int quantity;
   final double unitPrice;
   final double subtotal;
   final double costPrice;
+  final int categoryId;
 
   const TransactionItem({
     this.id,
     required this.transactionId,
     required this.productId,
-    this.variantId = 0, // Default to 0 for non-variant products
+    this.variantId = 0,
     required this.productName,
     required this.quantity,
     required this.unitPrice,
     required this.subtotal,
     this.costPrice = 0,
+    this.categoryId = 0,
   });
 
   /// Creates a copy of this transaction item with the given fields replaced
@@ -35,6 +37,7 @@ class TransactionItem {
     double? unitPrice,
     double? subtotal,
     double? costPrice,
+    int? categoryId,
   }) {
     return TransactionItem(
       id: id ?? this.id,
@@ -46,6 +49,7 @@ class TransactionItem {
       unitPrice: unitPrice ?? this.unitPrice,
       subtotal: subtotal ?? this.subtotal,
       costPrice: costPrice ?? this.costPrice,
+      categoryId: categoryId ?? this.categoryId,
     );
   }
 
@@ -63,6 +67,7 @@ class TransactionItem {
       unitPrice: product.price,
       subtotal: product.price * quantity,
       costPrice: product.costPrice,
+      categoryId: product.categoryId ?? 0,
     );
   }
 
@@ -81,6 +86,7 @@ class TransactionItem {
       'unit_price': unitPrice,
       'subtotal': subtotal,
       'cost_price': costPrice,
+      'category_id': categoryId,
     };
   }
 
@@ -88,7 +94,6 @@ class TransactionItem {
   factory TransactionItem.fromMap(Map<String, dynamic> map) {
     return TransactionItem(
       id: map['id'] as int?,
-      // The Fix: Cast as nullable first, then provide fallback
       transactionId: map['transaction_id'] as int? ?? 0,
       productId: map['product_id'] as int? ?? 0,
       variantId: map['variant_id'] as int? ?? 0,
@@ -97,6 +102,7 @@ class TransactionItem {
       unitPrice: (map['unit_price'] as num? ?? 0.0).toDouble(),
       subtotal: (map['subtotal'] as num? ?? 0.0).toDouble(),
       costPrice: (map['cost_price'] as num? ?? 0.0).toDouble(),
+      categoryId: map['category_id'] as int? ?? 0,
     );
   }
 

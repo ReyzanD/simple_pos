@@ -3,11 +3,10 @@ import '../../domain/entities/product.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/neo_brutal_theme.dart';
 import '../../../../core/utils/currency_formatter.dart';
+import '../../../../l10n/app_localizations.dart';
+
 /// Stock status enum
-enum StockStatus {
-  outOfStock,
-  lowStock,
-}
+enum StockStatus { outOfStock, lowStock }
 
 /// Card widget displaying a product with stock issues
 class LowStockDashboardCard extends StatelessWidget {
@@ -27,13 +26,17 @@ class LowStockDashboardCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isOutOfStock = stockStatus == StockStatus.outOfStock;
-    final statusColor = isOutOfStock ? AppTheme.errorColor : AppTheme.warningColor;
+    final statusColor = isOutOfStock
+        ? AppTheme.errorColor
+        : AppTheme.warningColor;
 
     return Container(
       margin: EdgeInsets.only(bottom: NeoBrutalTheme.spaceSM),
       decoration: BoxDecoration(
         color: AppTheme.getCardColor(context),
-        borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium), // ✅ Brutal 8px
+        borderRadius: BorderRadius.circular(
+          NeoBrutalTheme.radiusMedium,
+        ), // ✅ Brutal 8px
         border: Border.all(
           color: statusColor, // ✅ Bold colored border
           width: 4, // ✅ Bold 4px border
@@ -57,7 +60,9 @@ class LowStockDashboardCard extends StatelessWidget {
                     height: 52,
                     decoration: BoxDecoration(
                       color: statusColor, // ✅ Solid bold color
-                      borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium), // ✅ Brutal 8px
+                      borderRadius: BorderRadius.circular(
+                        NeoBrutalTheme.radiusMedium,
+                      ), // ✅ Brutal 8px
                       border: Border.all(
                         color: Colors.black, // ✅ Bold black border
                         width: 3, // ✅ Bold 3px border
@@ -79,9 +84,8 @@ class LowStockDashboardCard extends StatelessWidget {
                       children: [
                         Text(
                           product.name,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w600),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -96,9 +100,8 @@ class LowStockDashboardCard extends StatelessWidget {
                             const SizedBox(width: 4),
                             Text(
                               product.barcode ?? 'No Barcode',
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: AppTheme.textTertiary,
-                                  ),
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(color: AppTheme.textTertiary),
                             ),
                           ],
                         ),
@@ -114,7 +117,9 @@ class LowStockDashboardCard extends StatelessWidget {
                     ),
                     decoration: BoxDecoration(
                       color: statusColor, // ✅ Solid bold color
-                      borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall), // ✅ Brutal radius
+                      borderRadius: BorderRadius.circular(
+                        NeoBrutalTheme.radiusSmall,
+                      ), // ✅ Brutal radius
                       border: Border.all(
                         color: Colors.black, // ✅ Bold black border
                         width: 2, // ✅ Bold 2px border
@@ -128,7 +133,9 @@ class LowStockDashboardCard extends StatelessWidget {
                       ],
                     ),
                     child: Text(
-                      isOutOfStock ? 'Habis' : 'Rendah',
+                      isOutOfStock
+                          ? AppLocalizations.of(context)!.stock_out
+                          : AppLocalizations.of(context)!.stock_lowStock,
                       style: NeoBrutalTheme.labelSmall.copyWith(
                         color: Colors.white, // ✅ White text for contrast
                         fontWeight: FontWeight.w800,
@@ -152,7 +159,7 @@ class LowStockDashboardCard extends StatelessWidget {
                     child: _buildDetailItem(
                       context,
                       Icons.inventory,
-                      'Stok Saat Ini',
+                      AppLocalizations.of(context)!.stock_currentStock,
                       '${product.stock} unit',
                       statusColor,
                     ),
@@ -162,7 +169,7 @@ class LowStockDashboardCard extends StatelessWidget {
                     child: _buildDetailItem(
                       context,
                       Icons.sell_outlined,
-                      'Harga Jual',
+                      AppLocalizations.of(context)!.stock_sellingPrice,
                       CurrencyFormatter.format(product.price),
                       AppTheme.textSecondary,
                     ),
@@ -172,7 +179,7 @@ class LowStockDashboardCard extends StatelessWidget {
                     child: _buildDetailItem(
                       context,
                       Icons.shopping_cart_outlined,
-                      'Harga Modal',
+                      AppLocalizations.of(context)!.stock_costPriceLabel,
                       CurrencyFormatter.format(product.costPrice),
                       AppTheme.secondaryColor,
                     ),
@@ -199,10 +206,11 @@ class LowStockDashboardCard extends StatelessWidget {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          'Saran: Tambah ${10 - product.stock} unit untuk mencapai stok aman',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: AppTheme.infoColor,
-                              ),
+                          AppLocalizations.of(
+                            context,
+                          )!.stock_suggestionAdd(10 - product.stock),
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: AppTheme.infoColor),
                         ),
                       ),
                     ],
@@ -261,17 +269,17 @@ class LowStockDashboardCard extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Tingkat Stok',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppTheme.textSecondary,
-                  ),
+              AppLocalizations.of(context)!.stock_stockLevelLabel,
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: AppTheme.textSecondary),
             ),
             Text(
               '${(stockPercent * 100).toStringAsFixed(0)}%',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: statusColor,
-                    fontWeight: FontWeight.bold,
-                  ),
+                color: statusColor,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ],
         ),
@@ -301,17 +309,13 @@ class LowStockDashboardCard extends StatelessWidget {
       children: [
         Row(
           children: [
-            Icon(
-              icon,
-              size: 14,
-              color: AppTheme.textTertiary,
-            ),
+            Icon(icon, size: 14, color: AppTheme.textTertiary),
             const SizedBox(width: 4),
             Text(
               label,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppTheme.textTertiary,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: AppTheme.textTertiary),
             ),
           ],
         ),
@@ -319,9 +323,9 @@ class LowStockDashboardCard extends StatelessWidget {
         Text(
           value,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: valueColor,
-                fontWeight: FontWeight.w600,
-              ),
+            color: valueColor,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ],
     );

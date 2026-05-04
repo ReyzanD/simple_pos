@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/neo_brutal_theme.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../domain/entities/sales_report.dart';
+import '../../../../l10n/app_localizations.dart';
 import 'summary_stat_card.dart';
 
 class ReportSummarySection extends StatelessWidget {
@@ -13,15 +13,17 @@ class ReportSummarySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textColor = NeoBrutalTheme.getTextColor(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4),
           child: Text(
-            'Ringkasan',
+            AppLocalizations.of(context)!.report_generate,
             style: NeoBrutalTheme.headlineLarge.copyWith(
               fontWeight: FontWeight.w900,
+              color: textColor,
             ),
           ),
         ),
@@ -29,19 +31,19 @@ class ReportSummarySection extends StatelessWidget {
         _buildRow([
           _animate(
             SummaryStatCard(
-              title: 'Total Transaksi',
+              title: AppLocalizations.of(context)!.sales_total_transactions,
               value: '${report.totalTransactions}',
               icon: Icons.receipt_long,
-              color: AppTheme.infoColor,
+              color: NeoBrutalTheme.blockBlue,
             ),
             0,
           ),
           _animate(
             SummaryStatCard(
-              title: 'Pendapatan',
+              title: AppLocalizations.of(context)!.sales_total_revenue,
               value: CurrencyFormatter.format(report.totalRevenue),
               icon: Icons.payments,
-              color: AppTheme.successColor,
+              color: NeoBrutalTheme.success,
             ),
             100,
           ),
@@ -50,7 +52,7 @@ class ReportSummarySection extends StatelessWidget {
         _buildRow([
           _animate(
             SummaryStatCard(
-              title: 'Laba Kotor',
+              title: AppLocalizations.of(context)!.sales_total_profit,
               value: CurrencyFormatter.format(report.totalProfit),
               icon: Icons.trending_up,
               color: NeoBrutalTheme.blockPurple,
@@ -59,14 +61,24 @@ class ReportSummarySection extends StatelessWidget {
           ),
           _animate(
             SummaryStatCard(
-              title: 'Pengeluaran',
+              title: AppLocalizations.of(context)!.expenses_title,
               value: CurrencyFormatter.format(report.totalExpenses),
               icon: Icons.shopping_cart,
-              color: AppTheme.errorColor,
+              color: NeoBrutalTheme.error,
             ),
             300,
           ),
         ]),
+        const SizedBox(height: 16),
+        _animate(
+          SummaryStatCard(
+            title: AppLocalizations.of(context)!.receipt_tax,
+            value: CurrencyFormatter.format(report.totalTax),
+            icon: Icons.receipt_long_outlined,
+            color: NeoBrutalTheme.warning,
+          ),
+          400,
+        ),
       ],
     );
   }

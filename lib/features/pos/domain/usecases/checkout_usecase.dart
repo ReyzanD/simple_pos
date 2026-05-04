@@ -27,6 +27,8 @@ class CheckoutUseCase {
     String? notes,
     double tax = 0,
     double discount = 0,
+    int? cashierId,
+    String? cashierName,
   }) async {
     try {
       AppLogger.useCase('Checkout', details: '${cart.length} items');
@@ -40,11 +42,15 @@ class CheckoutUseCase {
         0,
         (sum, item) =>
             sum +
-              item.product.calculateCompoundTotalPrice(
-                categoryDiscount: item.product.calculateCategoryDiscountAmount(cart),
-                promotionDiscount: item.product.calculatePromotionDiscountAmount(cart),
+            item.product.calculateCompoundTotalPrice(
+              categoryDiscount: item.product.calculateCategoryDiscountAmount(
+                cart,
               ),
-        );
+              promotionDiscount: item.product.calculatePromotionDiscountAmount(
+                cart,
+              ),
+            ),
+      );
       final totalAmount = subtotal + tax - discount;
 
       // Create transaction with stock update
@@ -56,6 +62,8 @@ class CheckoutUseCase {
         notes: notes,
         tax: tax,
         discount: discount,
+        cashierId: cashierId,
+        cashierName: cashierName,
       );
 
       AppLogger.info('Checkout completed successfully');
@@ -91,12 +99,14 @@ class CheckoutUseCase {
     required List<CartItem> cart,
     double tax = 0,
     double discount = 0,
+    int? cashierId,
+    String? cashierName,
   }) async {
     // Calculate total
     final total =
         cart.fold<double>(0, (sum, item) => sum + item.totalPrice) +
         tax -
-            discount;
+        discount;
 
     // Use main execute method with cash payment
     return execute(
@@ -105,6 +115,8 @@ class CheckoutUseCase {
       cashReceived: total,
       tax: tax,
       discount: discount,
+      cashierId: cashierId,
+      cashierName: cashierName,
     );
   }
 
@@ -115,6 +127,8 @@ class CheckoutUseCase {
     String? notes,
     double tax = 0,
     double discount = 0,
+    int? cashierId,
+    String? cashierName,
   }) async {
     // Calculate total
     cart.fold<double>(0, (sum, item) => sum + item.totalPrice);
@@ -127,6 +141,8 @@ class CheckoutUseCase {
       notes: notes,
       tax: tax,
       discount: discount,
+      cashierId: cashierId,
+      cashierName: cashierName,
     );
   }
 }

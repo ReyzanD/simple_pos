@@ -16,6 +16,8 @@ class Transaction {
   final String? notes;
   final List<TransactionItem> items;
   final Payment? payment;
+  final int? cashierId;
+  final String? cashierName;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -31,6 +33,8 @@ class Transaction {
     this.notes,
     required this.items,
     this.payment,
+    this.cashierId,
+    this.cashierName,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -48,6 +52,8 @@ class Transaction {
     String? notes,
     List<TransactionItem>? items,
     Payment? payment,
+    int? cashierId,
+    String? cashierName,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -63,6 +69,8 @@ class Transaction {
       notes: notes ?? this.notes,
       items: items ?? this.items,
       payment: payment ?? this.payment,
+      cashierId: cashierId ?? this.cashierId,
+      cashierName: cashierName ?? this.cashierName,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -96,6 +104,8 @@ class Transaction {
       'payment_method': paymentMethod.name,
       'payment_status': paymentStatus.name,
       'notes': notes,
+      'cashier_id': cashierId,
+      'cashier_name': cashierName,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
     };
@@ -117,8 +127,10 @@ class Transaction {
       paymentMethod: PaymentMethod.fromString(map['payment_method'] as String),
       paymentStatus: PaymentStatus.fromString(map['payment_status'] as String),
       notes: map['notes'] as String?,
-      items: items ?? [], // Items loaded separately or provided
+      items: items ?? [],
       payment: payment,
+      cashierId: map['cashier_id'] as int?,
+      cashierName: map['cashier_name'] as String?,
       createdAt: DateTime.parse(map['created_at'] as String),
       updatedAt: DateTime.parse(map['updated_at'] as String),
     );
@@ -142,6 +154,8 @@ class Transaction {
       notes: map['notes'] as String?,
       items: items,
       payment: payment,
+      cashierId: map['cashier_id'] as int?,
+      cashierName: map['cashier_name'] as String?,
       createdAt: DateTime.parse(map['created_at'] as String),
       updatedAt: DateTime.parse(map['updated_at'] as String),
     );
@@ -149,7 +163,7 @@ class Transaction {
 
   @override
   String toString() =>
-      'Transaction(id: $id, transactionDate: $transactionDate, totalAmount: $totalAmount, paymentMethod: $paymentMethod, paymentStatus: $paymentStatus, items: ${items.length})';
+      'Transaction(id: $id, transactionDate: $transactionDate, totalAmount: $totalAmount, paymentMethod: $paymentMethod, paymentStatus: $paymentStatus, cashier: $cashierName, items: ${items.length})';
 
   @override
   bool operator ==(Object other) {
@@ -165,6 +179,8 @@ class Transaction {
         other.paymentMethod == paymentMethod &&
         other.paymentStatus == paymentStatus &&
         other.notes == notes &&
+        other.cashierId == cashierId &&
+        other.cashierName == cashierName &&
         other.createdAt == createdAt &&
         other.updatedAt == updatedAt;
   }
@@ -180,6 +196,8 @@ class Transaction {
       paymentMethod.hashCode ^
       paymentStatus.hashCode ^
       notes.hashCode ^
+      cashierId.hashCode ^
+      cashierName.hashCode ^
       createdAt.hashCode ^
       updatedAt.hashCode;
 }

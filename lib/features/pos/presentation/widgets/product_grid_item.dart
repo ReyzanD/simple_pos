@@ -202,6 +202,9 @@ class _ProductGridItemContentState extends State<_ProductGridItemContent>
     bool hasCompoundDiscount,
     double compoundPrice,
   ) {
+    final borderColor = NeoBrutalTheme.getBorderColor(context);
+    final cardColor = NeoBrutalTheme.getCardColor(context);
+
     return AnimatedBuilder(
       animation: _pressController,
       builder: (context, child) {
@@ -212,10 +215,10 @@ class _ProductGridItemContentState extends State<_ProductGridItemContent>
           offset: offset,
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: cardColor,
               borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium),
               border: Border.all(
-                color: hasQuantity ? NeoBrutalTheme.primary : Colors.black,
+                color: hasQuantity ? NeoBrutalTheme.primary : borderColor,
                 width: 3,
               ),
               boxShadow: [
@@ -228,7 +231,6 @@ class _ProductGridItemContentState extends State<_ProductGridItemContent>
             ),
             child: Column(
               children: [
-                // TOP: Image (60%)
                 Expanded(
                   flex: 60,
                   child: Container(
@@ -243,7 +245,6 @@ class _ProductGridItemContentState extends State<_ProductGridItemContent>
                     child: _buildImageContent(isOutOfStock, hasQuantity),
                   ),
                 ),
-                // BOTTOM: Info (40%)
                 Expanded(
                   flex: 40,
                   child: _buildInfoSection(
@@ -264,16 +265,14 @@ class _ProductGridItemContentState extends State<_ProductGridItemContent>
   /// Build image or placeholder
   Widget _buildImageContent(bool isOutOfStock, bool hasQuantity) {
     final imagePath = widget.product.imagePath;
+    final borderColor = NeoBrutalTheme.getBorderColor(context);
 
     return Stack(
       children: [
-        // Image or placeholder (full background)
         if (imagePath != null && imagePath.isNotEmpty)
           _buildImage(imagePath)
         else
           _buildPlaceholder(),
-
-        // Quantity badge (top-right corner)
         if (hasQuantity)
           Positioned(
             top: 8,
@@ -283,7 +282,7 @@ class _ProductGridItemContentState extends State<_ProductGridItemContent>
               decoration: BoxDecoration(
                 color: NeoBrutalTheme.primary,
                 borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: Colors.black, width: 2),
+                border: Border.all(color: borderColor, width: 2),
               ),
               child: Text(
                 '${widget.quantity}',
@@ -365,49 +364,52 @@ class _ProductGridItemContentState extends State<_ProductGridItemContent>
     bool hasCompoundDiscount,
     double compoundPrice,
   ) {
+    final textColor = NeoBrutalTheme.getTextColor(context);
+    final tertiaryColor = isOutOfStock
+        ? AppTheme.textTertiary
+        : (Theme.of(context).brightness == Brightness.dark
+              ? Colors.white38
+              : AppTheme.textTertiary);
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Product Name
           Expanded(
             child: Text(
               widget.product.name,
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
-                color: isOutOfStock ? AppTheme.textTertiary : Colors.black,
+                color: isOutOfStock ? tertiaryColor : textColor,
                 height: 1.2,
               ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
           ),
-          // Original Price (if discounted) - strikethrough
           if (hasCompoundDiscount)
             Text(
               CurrencyFormatter.format(widget.product.price),
               style: TextStyle(
                 fontSize: 10,
-                color: AppTheme.textTertiary,
+                color: tertiaryColor,
                 decoration: TextDecoration.lineThrough,
-                decorationColor: AppTheme.textTertiary,
+                decorationColor: tertiaryColor,
                 height: 1.0,
               ),
             ),
-
           Row(
             children: [
-              // "Rp" label - fixed width
               Text(
                 'Rp',
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
                   color: isOutOfStock
-                      ? AppTheme.textTertiary
+                      ? tertiaryColor
                       : (hasCompoundDiscount
                             ? AppTheme.successColor
                             : NeoBrutalTheme.primary),
@@ -415,7 +417,6 @@ class _ProductGridItemContentState extends State<_ProductGridItemContent>
                 ),
               ),
               const SizedBox(width: 2),
-              // Price amount (expands, no truncation)
               Expanded(
                 child: Text(
                   hasCompoundDiscount
@@ -429,7 +430,7 @@ class _ProductGridItemContentState extends State<_ProductGridItemContent>
                     fontSize: 13,
                     fontWeight: FontWeight.w900,
                     color: isOutOfStock
-                        ? AppTheme.textTertiary
+                        ? tertiaryColor
                         : (hasCompoundDiscount
                               ? AppTheme.successColor
                               : NeoBrutalTheme.primary),

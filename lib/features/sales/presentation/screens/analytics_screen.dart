@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../domain/entities/sales_analytics.dart';
 import '../../domain/entities/chart_enums.dart';
 import '../controllers/analytics_controller.dart';
 import '../../../shared/presentation/providers.dart';
@@ -8,6 +7,7 @@ import '../../../../core/theme/neo_brutal_theme.dart';
 import '../../../../core/utils/responsive_helper.dart';
 import '../../../shared/widgets/loading_indicator.dart';
 import '../../../shared/widgets/error_display.dart';
+import '../../../../l10n/app_localizations.dart';
 
 // Import extracted analytics widgets
 import '../widgets/analytics/analytics_empty_state.dart';
@@ -41,36 +41,29 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
   @override
   Widget build(BuildContext context) {
     final controller = ref.watch(analyticsControllerProvider);
+    final borderColor = NeoBrutalTheme.getBorderColor(context);
+    final backgroundColor = NeoBrutalTheme.getBackgroundColor(context);
 
     return Scaffold(
-      backgroundColor: NeoBrutalTheme.background,
+      backgroundColor: backgroundColor,
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text('Analitik Penjualan'),
+        title: Text(AppLocalizations.of(context)!.sales_analytics_title),
         actions: [
           Padding(
             padding: EdgeInsets.only(right: NeoBrutalTheme.spaceXS),
             child: Container(
               decoration: BoxDecoration(
                 color: NeoBrutalTheme.secondary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(
-                  NeoBrutalTheme.radiusSmall,
-                ),
-                border: Border.all(
-                  color: Colors.black,
-                  width: 4,
-                ),
+                borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
+                border: Border.all(color: borderColor, width: 4),
               ),
               child: PopupMenuButton<DateRangePreset>(
-                icon: Icon(
-                  Icons.date_range,
-                  color: NeoBrutalTheme.secondary,
-                ),
-                onSelected: (preset) =>
-                    controller.setPredefinedRange(preset),
+                icon: Icon(Icons.date_range, color: NeoBrutalTheme.secondary),
+                onSelected: (preset) => controller.setPredefinedRange(preset),
                 itemBuilder: (context) => DateRangePreset.values
                     .map(
                       (preset) => PopupMenuItem(
@@ -84,7 +77,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                   borderRadius: BorderRadius.circular(
                     NeoBrutalTheme.radiusSmall,
                   ),
-                  side: BorderSide(color: Colors.black, width: 2),
+                  side: BorderSide(color: borderColor, width: 2),
                 ),
               ),
             ),
@@ -92,14 +85,16 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
         ],
       ),
       body: controller.isLoading && !controller.hasReport
-          ? const LoadingIndicator(message: 'Memuat analitik...')
+          ? LoadingIndicator(
+              message: AppLocalizations.of(context)!.common_loading,
+            )
           : controller.hasError
           ? ErrorDisplay.fromException(
               controller.error!,
               onRetry: () => controller.loadAnalytics(),
             )
           : controller.hasReport
-          ? _buildAnalyticsContent(context, controller.report!)
+          ? _buildAnalyticsContent(context, controller)
           : _buildEmptyState(),
     );
   }
@@ -110,8 +105,9 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
 
   Widget _buildAnalyticsContent(
     BuildContext context,
-    SalesAnalyticsReport report,
+    AnalyticsController controller,
   ) {
+    final report = controller.report!;
     return RefreshIndicator(
       onRefresh: ref.read(analyticsControllerProvider).refresh,
       color: NeoBrutalTheme.primary,
@@ -135,7 +131,11 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
             const SizedBox(height: 24),
 
             if (report.trendAnalysis.historicalData.isNotEmpty) ...[
-              TrendChartWidget(trendAnalysis: report.trendAnalysis),
+              TrendChartWidget(
+                trendAnalysis: report.trendAnalysis,
+                selectedMetric: controller.selectedMetric,
+                onMetricChanged: (metric) => controller.setMetric(metric),
+              ),
               const SizedBox(height: 24),
             ],
 
@@ -150,9 +150,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
             ],
 
             if (report.categoryPerformance.isNotEmpty) ...[
-              CategoryPerformanceWidget(
-                categories: report.categoryPerformance,
-              ),
+              CategoryPerformanceWidget(categories: report.categoryPerformance),
               const SizedBox(height: 24),
             ],
 

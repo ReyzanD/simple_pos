@@ -43,8 +43,7 @@ class _ExpenseListTabState extends State<ExpenseListTab> {
       children: [
         ExpenseFilterBar(
           selectedCategory: controller.selectedCategory,
-          dateRange: controller.startDate != null &&
-                  controller.endDate != null
+          dateRange: controller.startDate != null && controller.endDate != null
               ? DateTimeRange(
                   start: controller.startDate!,
                   end: controller.endDate!,
@@ -62,9 +61,7 @@ class _ExpenseListTabState extends State<ExpenseListTab> {
           },
           onClearFilters: controller.clearFilters,
         ),
-        Expanded(
-          child: _buildContent(controller),
-        ),
+        Expanded(child: _buildContent(controller)),
       ],
     );
   }
@@ -87,6 +84,7 @@ class _ExpenseListTabState extends State<ExpenseListTab> {
 
     if (expenses.isEmpty) {
       return AnimatedEmptyState.noExpenses(
+        context: context,
         onAction: () => _showAddDialog(context),
       );
     }
@@ -100,11 +98,12 @@ class _ExpenseListTabState extends State<ExpenseListTab> {
           child: ExpenseCard(
             expense: expenses[index],
             onEdit: () => _showEditDialog(context, expenses[index]),
-            onDelete: () =>
-                controller.deleteExpense(expenses[index].id!),
+            onDelete: () => controller.deleteExpense(expenses[index].id!),
             onViewReceipt: expenses[index].receiptImagePath != null
                 ? () => _showReceiptImage(
-                    context, expenses[index].receiptImagePath!)
+                    context,
+                    expenses[index].receiptImagePath!,
+                  )
                 : null,
           ),
         );
@@ -172,7 +171,11 @@ class _ExpenseListTabState extends State<ExpenseListTab> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.broken_image, size: 64, color: Colors.grey[400]),
+                            Icon(
+                              Icons.broken_image,
+                              size: 64,
+                              color: Colors.grey[400],
+                            ),
                             const SizedBox(height: 16),
                             Text(
                               'Gagal memuat gambar',

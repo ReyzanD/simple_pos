@@ -16,15 +16,17 @@ class TransactionModel extends Transaction {
     required super.paymentMethod,
     required super.paymentStatus,
     super.notes,
-    required super.items, // This is List<TransactionItem>
+    required super.items,
     super.payment,
+    super.cashierId,
+    super.cashierName,
     required super.createdAt,
     required super.updatedAt,
   });
 
   factory TransactionModel.fromMap(
     Map<String, dynamic> map, {
-    List<TransactionItem>? items, // Use the base class TransactionItem here
+    List<TransactionItem>? items,
     Payment? payment,
   }) {
     return TransactionModel(
@@ -39,6 +41,8 @@ class TransactionModel extends Transaction {
       notes: map['notes'] as String?,
       items: items ?? [],
       payment: payment,
+      cashierId: map['cashier_id'] as int?,
+      cashierName: map['cashier_name'] as String?,
       createdAt: DateTime.parse(map['created_at'] as String),
       updatedAt: DateTime.parse(map['updated_at'] as String),
     );

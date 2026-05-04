@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:simple_pos/core/theme/neo_brutal_theme.dart';
+import 'package:simple_pos/l10n/app_localizations.dart';
 import '../../controllers/pos_controller.dart';
 
 /// Sort Dropdown - Product sorting options
@@ -13,18 +14,19 @@ class SortDropdown extends StatelessWidget {
     required this.onOptionChanged,
   });
 
-  String _getOptionLabel(SortOption option) {
+  String _getOptionLabel(SortOption option, BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     switch (option) {
       case SortOption.nameAsc:
-        return 'A-Z';
+        return l10n.sort_by_name;
       case SortOption.nameDesc:
-        return 'Z-A';
+        return l10n.sort_by_name; // Will need descending indicator
       case SortOption.priceAsc:
-        return 'Termurah';
+        return l10n.sort_by_price;
       case SortOption.priceDesc:
-        return 'Termahal';
+        return l10n.sort_by_price; // Will need descending indicator
       case SortOption.stockLevel:
-        return 'Stok';
+        return l10n.sort_by_stock;
     }
   }
 
@@ -43,30 +45,28 @@ class SortDropdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final borderColor = NeoBrutalTheme.getBorderColor(context);
+    final cardColor = NeoBrutalTheme.getCardColor(context);
+    final textColor = NeoBrutalTheme.getTextColor(context);
+
     return PopupMenuButton<SortOption>(
       initialValue: selectedOption,
       onSelected: onOptionChanged,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium),
-        side: BorderSide(
-          color: Colors.black,
-          width: 3, // ✅ Bold border
-        ),
+        side: BorderSide(color: borderColor, width: 3),
       ),
-      color: Colors.white,
+      color: cardColor,
       elevation: 8,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: cardColor,
           borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusSmall),
-          border: Border.all(
-            color: Colors.black,
-            width: 2, // ✅ Bold border
-          ),
+          border: Border.all(color: borderColor, width: 2),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
+              color: NeoBrutalTheme.getShadowColor(context),
               offset: const Offset(3, 3),
               blurRadius: 0,
             ),
@@ -75,27 +75,23 @@ class SortDropdown extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              _getOptionIcon(selectedOption),
-              size: 14,
-              color: Colors.black,
-            ),
+            Icon(_getOptionIcon(selectedOption), size: 14, color: textColor),
             const SizedBox(width: 4),
-            Text(
-              _getOptionLabel(selectedOption),
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: Colors.black,
-                letterSpacing: 0.5,
+            Flexible(
+              child: Text(
+                _getOptionLabel(selectedOption, context),
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: textColor,
+                  letterSpacing: 0.5,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
             const SizedBox(width: 2),
-            Icon(
-              Icons.keyboard_arrow_down,
-              size: 16,
-              color: Colors.black,
-            ),
+            Icon(Icons.keyboard_arrow_down, size: 16, color: textColor),
           ],
         ),
       ),
@@ -103,31 +99,31 @@ class SortDropdown extends StatelessWidget {
         _buildMenuItem(
           context,
           SortOption.nameAsc,
-          'A-Z',
+          AppLocalizations.of(context)!.sort_by_name,
           Icons.sort_by_alpha,
         ),
         _buildMenuItem(
           context,
           SortOption.nameDesc,
-          'Z-A',
+          AppLocalizations.of(context)!.sort_by_name,
           Icons.sort_by_alpha,
         ),
         _buildMenuItem(
           context,
           SortOption.priceAsc,
-          'Termurah',
+          AppLocalizations.of(context)!.sort_by_price,
           Icons.attach_money,
         ),
         _buildMenuItem(
           context,
           SortOption.priceDesc,
-          'Termahal',
+          AppLocalizations.of(context)!.sort_by_price,
           Icons.attach_money,
         ),
         _buildMenuItem(
           context,
           SortOption.stockLevel,
-          'Stok',
+          AppLocalizations.of(context)!.sort_by_stock,
           Icons.inventory,
         ),
       ],
@@ -140,6 +136,7 @@ class SortDropdown extends StatelessWidget {
     String label,
     IconData icon,
   ) {
+    final borderColor = NeoBrutalTheme.getBorderColor(context);
     final isSelected = selectedOption == option;
     return PopupMenuItem<SortOption>(
       value: option,
@@ -149,10 +146,7 @@ class SortDropdown extends StatelessWidget {
             ? BoxDecoration(
                 color: NeoBrutalTheme.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: NeoBrutalTheme.primary,
-                  width: 2,
-                ),
+                border: Border.all(color: NeoBrutalTheme.primary, width: 2),
               )
             : null,
         child: Row(
@@ -163,27 +157,39 @@ class SortDropdown extends StatelessWidget {
               decoration: BoxDecoration(
                 color: isSelected
                     ? NeoBrutalTheme.primary
-                    : Colors.black.withValues(alpha: 0.05),
+                    : NeoBrutalTheme.getSurfaceVariantColor(context),
                 borderRadius: BorderRadius.circular(6),
                 border: Border.all(
-                  color: isSelected ? NeoBrutalTheme.primary : Colors.black.withValues(alpha: 0.2),
+                  color: isSelected
+                      ? NeoBrutalTheme.primary
+                      : NeoBrutalTheme.getBorderColor(
+                          context,
+                        ).withValues(alpha: 0.3),
                   width: 2,
                 ),
               ),
               child: Icon(
                 icon,
                 size: 16,
-                color: isSelected ? Colors.white : Colors.black,
+                color: isSelected
+                    ? Colors.white
+                    : NeoBrutalTheme.getTextColor(context),
               ),
             ),
             const SizedBox(width: 10),
-            Text(
-              label,
-              style: TextStyle(
-                fontWeight: FontWeight.w800,
-                fontSize: 13,
-                color: isSelected ? NeoBrutalTheme.primary : Colors.black,
-                letterSpacing: 0.5,
+            Flexible(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 13,
+                  color: isSelected
+                      ? NeoBrutalTheme.primary
+                      : NeoBrutalTheme.getTextColor(context),
+                  letterSpacing: 0.5,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
             const Spacer(),
@@ -193,16 +199,9 @@ class SortDropdown extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: NeoBrutalTheme.primary,
                   borderRadius: BorderRadius.circular(4),
-                  border: Border.all(
-                    color: Colors.black,
-                    width: 2,
-                  ),
+                  border: Border.all(color: borderColor, width: 2),
                 ),
-                child: Icon(
-                  Icons.check,
-                  size: 14,
-                  color: Colors.white,
-                ),
+                child: Icon(Icons.check, size: 14, color: Colors.white),
               ),
           ],
         ),

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:simple_pos/core/theme/app_theme.dart';
+import 'package:simple_pos/l10n/app_localizations.dart';
 import 'package:simple_pos/core/theme/neo_brutal_theme.dart';
 import 'package:simple_pos/core/utils/currency_formatter.dart';
-import 'package:simple_pos/features/pos/domain/entities/cart_item.dart' as domain;
+import 'package:simple_pos/features/pos/domain/entities/cart_item.dart'
+    as domain;
 
 /// Cart Modal Footer - Shows totals and action buttons
 class CartModalFooter extends StatelessWidget {
@@ -29,6 +31,13 @@ class CartModalFooter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final borderColor = NeoBrutalTheme.getBorderColor(context);
+    final cardColor = NeoBrutalTheme.getCardColor(context);
+    final disabledColor = isDark
+        ? const Color(0xFF333333)
+        : Colors.grey.shade300;
+
     return Container(
       padding: EdgeInsets.all(NeoBrutalTheme.spaceLG),
       decoration: BoxDecoration(
@@ -36,16 +45,14 @@ class CartModalFooter extends StatelessWidget {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            NeoBrutalTheme.background,
-            NeoBrutalTheme.background.withValues(alpha: 0.95),
+            NeoBrutalTheme.getBackgroundColor(context),
+            NeoBrutalTheme.getBackgroundColor(context).withValues(alpha: 0.95),
           ],
         ),
-        border: Border(
-          top: BorderSide(color: Colors.black, width: 5), // ✅ Bold 5px border
-        ),
+        border: Border(top: BorderSide(color: borderColor, width: 5)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
+            color: NeoBrutalTheme.getShadowColor(context),
             offset: Offset(0, -6),
             blurRadius: 0,
           ),
@@ -55,19 +62,17 @@ class CartModalFooter extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Totals section
             Container(
               padding: EdgeInsets.all(NeoBrutalTheme.spaceMD),
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium),
-                border: Border.all(
-                  color: Colors.black,
-                  width: 3,
+                color: cardColor,
+                borderRadius: BorderRadius.circular(
+                  NeoBrutalTheme.radiusMedium,
                 ),
+                border: Border.all(color: borderColor, width: 3),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
+                    color: NeoBrutalTheme.getShadowColor(context),
                     offset: Offset(4, 4),
                     blurRadius: 0,
                   ),
@@ -75,71 +80,73 @@ class CartModalFooter extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  CartModalTotalRow(label: 'Subtotal', amount: subtotal),
+                  CartModalTotalRow(
+                    label: AppLocalizations.of(context)!.cart_subtotal,
+                    amount: subtotal,
+                    context: context,
+                  ),
                   SizedBox(height: NeoBrutalTheme.spaceSM),
-
-                  // Discount row
                   if (totalDiscount > 0) ...[
                     CartModalTotalRow(
-                      label: 'Diskon',
+                      label: AppLocalizations.of(context)!.cart_total_discount,
                       amount: -totalDiscount,
                       color: AppTheme.successColor,
+                      context: context,
                     ),
                     SizedBox(height: NeoBrutalTheme.spaceSM),
                   ],
-
-                  // Tax row
                   if (tax > 0) ...[
-                    CartModalTotalRow(label: 'Pajak (11%)', amount: tax),
+                    CartModalTotalRow(
+                      label: AppLocalizations.of(context)!.tax_label,
+                      amount: tax,
+                      context: context,
+                    ),
                     SizedBox(height: NeoBrutalTheme.spaceSM),
                   ],
-
-                  // Divider
                   Container(
                     height: 3,
-                    color: Colors.black.withValues(alpha: 0.1),
+                    color: NeoBrutalTheme.getTertiaryTextColor(
+                      context,
+                    ).withValues(alpha: 0.2),
                   ),
                   SizedBox(height: NeoBrutalTheme.spaceSM),
-
-                  // Total - Dramatic
                   CartModalTotalRow(
-                    label: 'TOTAL',
+                    label: AppLocalizations.of(context)!.cart_total,
                     amount: total,
                     isBold: true,
                     fontSize: 24,
                     color: NeoBrutalTheme.primary,
+                    context: context,
                   ),
                 ],
               ),
             ),
             SizedBox(height: NeoBrutalTheme.spaceLG),
-
-            // Action buttons
             Row(
               children: [
-                // Hold Order button
                 Expanded(
                   child: Container(
                     height: 60,
                     decoration: BoxDecoration(
                       color: cartItems.isEmpty || isProcessing
-                          ? Colors.grey.shade300
+                          ? disabledColor
                           : AppTheme.infoColor,
-                      borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium),
-                      border: Border.all(
-                        color: Colors.black,
-                        width: 4,
+                      borderRadius: BorderRadius.circular(
+                        NeoBrutalTheme.radiusMedium,
                       ),
+                      border: Border.all(color: borderColor, width: 4),
                       boxShadow: cartItems.isEmpty && !isProcessing
                           ? []
                           : [
                               BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.3),
+                                color: NeoBrutalTheme.getShadowColor(context),
                                 offset: Offset(6, 6),
                                 blurRadius: 0,
                               ),
                               BoxShadow(
-                                color: AppTheme.infoColor.withValues(alpha: 0.5),
+                                color: AppTheme.infoColor.withValues(
+                                  alpha: 0.5,
+                                ),
                                 offset: Offset(3, 3),
                                 blurRadius: 8,
                               ),
@@ -151,7 +158,9 @@ class CartModalFooter extends StatelessWidget {
                         onTap: cartItems.isEmpty || isProcessing
                             ? null
                             : onHoldOrder,
-                        borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium),
+                        borderRadius: BorderRadius.circular(
+                          NeoBrutalTheme.radiusMedium,
+                        ),
                         child: Center(
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -163,7 +172,7 @@ class CartModalFooter extends StatelessWidget {
                               ),
                               SizedBox(width: NeoBrutalTheme.spaceSM),
                               Text(
-                                'TAHAN',
+                                AppLocalizations.of(context)!.held_order_hold,
                                 style: NeoBrutalTheme.labelLarge.copyWith(
                                   fontWeight: FontWeight.w900,
                                   letterSpacing: 2,
@@ -178,8 +187,6 @@ class CartModalFooter extends StatelessWidget {
                   ),
                 ),
                 SizedBox(width: NeoBrutalTheme.spaceMD),
-
-                // Checkout button
                 Expanded(
                   child: Container(
                     height: 60,
@@ -195,13 +202,12 @@ class CartModalFooter extends StatelessWidget {
                               ],
                             ),
                       color: cartItems.isEmpty || isProcessing
-                          ? Colors.grey.shade300
+                          ? disabledColor
                           : null,
-                      borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium),
-                      border: Border.all(
-                        color: Colors.black,
-                        width: 4,
+                      borderRadius: BorderRadius.circular(
+                        NeoBrutalTheme.radiusMedium,
                       ),
+                      border: Border.all(color: borderColor, width: 4),
                       boxShadow: cartItems.isEmpty && !isProcessing
                           ? []
                           : NeoBrutalTheme.chunkyShadow,
@@ -212,7 +218,9 @@ class CartModalFooter extends StatelessWidget {
                         onTap: cartItems.isEmpty || isProcessing
                             ? null
                             : onCheckout,
-                        borderRadius: BorderRadius.circular(NeoBrutalTheme.radiusMedium),
+                        borderRadius: BorderRadius.circular(
+                          NeoBrutalTheme.radiusMedium,
+                        ),
                         child: Center(
                           child: isProcessing
                               ? SizedBox(
@@ -220,9 +228,10 @@ class CartModalFooter extends StatelessWidget {
                                   height: 24,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 3,
-                                    valueColor: const AlwaysStoppedAnimation<Color>(
-                                      Colors.white,
-                                    ),
+                                    valueColor:
+                                        const AlwaysStoppedAnimation<Color>(
+                                          Colors.white,
+                                        ),
                                   ),
                                 )
                               : Row(
@@ -237,11 +246,12 @@ class CartModalFooter extends StatelessWidget {
                                     Flexible(
                                       child: Text(
                                         'BAYAR ${CurrencyFormatter.format(total)}',
-                                        style: NeoBrutalTheme.labelLarge.copyWith(
-                                          fontWeight: FontWeight.w900,
-                                          letterSpacing: 2,
-                                          color: Colors.white,
-                                        ),
+                                        style: NeoBrutalTheme.labelLarge
+                                            .copyWith(
+                                              fontWeight: FontWeight.w900,
+                                              letterSpacing: 2,
+                                              color: Colors.white,
+                                            ),
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                     ),
@@ -268,6 +278,7 @@ class CartModalTotalRow extends StatelessWidget {
   final bool isBold;
   final double? fontSize;
   final Color? color;
+  final BuildContext context;
 
   const CartModalTotalRow({
     super.key,
@@ -276,6 +287,7 @@ class CartModalTotalRow extends StatelessWidget {
     this.isBold = false,
     this.fontSize,
     this.color,
+    required this.context,
   });
 
   @override
@@ -288,7 +300,7 @@ class CartModalTotalRow extends StatelessWidget {
           style: TextStyle(
             fontSize: fontSize ?? 16,
             fontWeight: isBold ? FontWeight.w900 : FontWeight.w700,
-            color: color ?? Colors.black.withValues(alpha: 0.7),
+            color: color ?? NeoBrutalTheme.getSecondaryTextColor(this.context),
             letterSpacing: isBold ? 2 : 1,
           ),
         ),
@@ -297,7 +309,7 @@ class CartModalTotalRow extends StatelessWidget {
           style: TextStyle(
             fontSize: fontSize ?? 16,
             fontWeight: isBold ? FontWeight.w900 : FontWeight.w700,
-            color: color ?? Colors.black,
+            color: color ?? NeoBrutalTheme.getTextColor(this.context),
             letterSpacing: 0.5,
           ),
         ),

@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../domain/entities/user.dart';
 import '../../domain/entities/permission.dart';
 import '../../domain/usecases/login_usecase.dart';
@@ -6,6 +7,7 @@ import '../../domain/usecases/get_users_usecase.dart';
 import '../../domain/usecases/create_user_usecase.dart';
 import '../../domain/usecases/update_user_usecase.dart';
 import '../../domain/usecases/delete_user_usecase.dart';
+import '../../domain/usecases/get_current_user_usecase.dart';
 import '../../../../core/services/audit_logger.dart';
 
 /// AuthController manages authentication state and user operations
@@ -15,11 +17,15 @@ class AuthController extends ChangeNotifier {
   final CreateUserUseCase _createUserUseCase;
   final UpdateUserUseCase _updateUserUseCase;
   final DeleteUserUseCase _deleteUserUseCase;
+  final GetCurrentUserUseCase _getCurrentUserUseCase;
+
+  static const String _userIdKey = 'auth_user_id';
 
   User? _currentUser;
   bool _isLoading = false;
   String? _errorMessage;
   List<User> _users = [];
+  bool _isRestoringSession = false;
 
   AuthController({
     required LoginUseCase loginUseCase,
@@ -27,11 +33,13 @@ class AuthController extends ChangeNotifier {
     required CreateUserUseCase createUserUseCase,
     required UpdateUserUseCase updateUserUseCase,
     required DeleteUserUseCase deleteUserUseCase,
+    required GetCurrentUserUseCase getCurrentUserUseCase,
   }) : _loginUseCase = loginUseCase,
        _getUsersUseCase = getUsersUseCase,
        _createUserUseCase = createUserUseCase,
        _updateUserUseCase = updateUserUseCase,
-       _deleteUserUseCase = deleteUserUseCase;
+       _deleteUserUseCase = deleteUserUseCase,
+       _getCurrentUserUseCase = getCurrentUserUseCase;
 
   // Getters
   User? get currentUser => _currentUser;
@@ -39,6 +47,7 @@ class AuthController extends ChangeNotifier {
   bool get hasError => _errorMessage != null;
   String? get errorMessage => _errorMessage;
   bool get isAuthenticated => _currentUser != null;
+  bool get isRestoringSession => _isRestoringSession;
   List<User> get users => _users;
 
   /// Login with username and password
@@ -50,6 +59,9 @@ class AuthController extends ChangeNotifier {
       final user = await _loginUseCase.execute(username, password);
       if (user != null) {
         _currentUser = user;
+
+        // Persist session
+        await _saveSession(user.id!);
 
         // Log successful login
         await AuditLogger.instance.logLogin(
@@ -77,12 +89,60 @@ class AuthController extends ChangeNotifier {
     _currentUser = null;
     notifyListeners();
 
+    // Clear persistent session
+    _clearSession();
+
     // Log logout
     if (user != null) {
       AuditLogger.instance.logLogout(
         username: user.username,
         userId: user.id.toString(),
       );
+    }
+  }
+
+  /// Restore session from persistent storage
+  Future<void> restoreSession() async {
+    try {
+      _isRestoringSession = true;
+      notifyListeners();
+
+      final prefs = await SharedPreferences.getInstance();
+      final userId = prefs.getInt(_userIdKey);
+
+      if (userId != null) {
+        final user = await _getCurrentUserUseCase.execute(userId);
+        if (user != null && user.isActive) {
+          _currentUser = user;
+          notifyListeners();
+        } else {
+          // User no longer exists or is inactive, clear session
+          await _clearSession();
+        }
+      }
+    } catch (e) {
+      // If restoration fails, just continue without session
+    } finally {
+      _isRestoringSession = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> _saveSession(int userId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt(_userIdKey, userId);
+    } catch (e) {
+      // Ignore session save errors
+    }
+  }
+
+  Future<void> _clearSession() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_userIdKey);
+    } catch (e) {
+      // Ignore session clear errors
     }
   }
 

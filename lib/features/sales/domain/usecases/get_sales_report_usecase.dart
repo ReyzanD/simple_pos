@@ -10,12 +10,7 @@ import '../../../inventory/domain/entities/category.dart';
 import '../../../../core/utils/logger.dart';
 
 /// Reporting period enumeration
-enum ReportPeriod {
-  daily,
-  weekly,
-  monthly,
-  yearly,
-}
+enum ReportPeriod { daily, weekly, monthly, yearly }
 
 /// Use case for generating sales reports
 class GetSalesReportUseCase {
@@ -35,8 +30,11 @@ class GetSalesReportUseCase {
     required ReportPeriod period,
   }) async {
     try {
-      AppLogger.useCase('GetSalesReport',
-        details: '${startDate.toIso8601String()} to ${endDate.toIso8601String()}');
+      AppLogger.useCase(
+        'GetSalesReport',
+        details:
+            '${startDate.toIso8601String()} to ${endDate.toIso8601String()}',
+      );
 
       // Get transactions for the date range
       final transactions = await transactionRepository.getTransactions();
@@ -53,7 +51,14 @@ class GetSalesReportUseCase {
       final filtered = transactions.where((t) {
         final date = t.transactionDate;
         final start = DateTime(startDate.year, startDate.month, startDate.day);
-        final end = DateTime(endDate.year, endDate.month, endDate.day, 23, 59, 59);
+        final end = DateTime(
+          endDate.year,
+          endDate.month,
+          endDate.day,
+          23,
+          59,
+          59,
+        );
         return t.paymentStatus == PaymentStatus.completed &&
             date.isAfter(start) &&
             date.isBefore(end);
@@ -62,10 +67,12 @@ class GetSalesReportUseCase {
       // Calculate totals and actual profit
       double totalRevenue = 0;
       double totalProfit = 0;
+      double totalTax = 0;
       int totalItemsSold = 0;
 
       for (final transaction in filtered) {
         totalRevenue += transaction.totalAmount;
+        totalTax += transaction.tax;
 
         // Calculate profit for each item
         for (final item in transaction.items) {
@@ -88,10 +95,17 @@ class GetSalesReportUseCase {
       final topProducts = _generateTopProducts(filtered, productMap);
 
       // Generate payment method breakdown
-      final paymentBreakdown = _generatePaymentBreakdown(filtered, totalRevenue);
+      final paymentBreakdown = _generatePaymentBreakdown(
+        filtered,
+        totalRevenue,
+      );
 
       // Generate category breakdown
-      final categoryBreakdown = _generateCategoryBreakdown(filtered, productMap, categoryMap);
+      final categoryBreakdown = _generateCategoryBreakdown(
+        filtered,
+        productMap,
+        categoryMap,
+      );
 
       // Generate period comparisons
       final allTransactions = await transactionRepository.getTransactions();
@@ -119,24 +133,39 @@ class GetSalesReportUseCase {
       // Generate peak hours
       final peakHours = _generatePeakHours(filtered);
 
+      // Generate cashier breakdown
+      final cashierBreakdown = _generateCashierBreakdown(filtered, productMap);
+
+      // Generate discount summary
+      final discountSummary = _generateDiscountSummary(filtered);
+
       return SalesReport(
         startDate: startDate,
         endDate: endDate,
         totalTransactions: filtered.length,
         totalRevenue: totalRevenue,
         totalProfit: totalProfit,
-        averageTransactionValue: filtered.isEmpty ? 0 : totalRevenue / filtered.length,
+        totalTax: totalTax,
+        averageTransactionValue: filtered.isEmpty
+            ? 0
+            : totalRevenue / filtered.length,
         totalItemsSold: totalItemsSold,
         dailyBreakdown: dailyBreakdown,
         topProducts: topProducts,
         paymentBreakdown: paymentBreakdown,
         categoryBreakdown: categoryBreakdown,
+        cashierBreakdown: cashierBreakdown,
+        discountSummary: discountSummary,
         monthOverMonth: monthOverMonth,
         yearOverYear: yearOverYear,
         peakHours: peakHours,
       );
     } catch (e, stackTrace) {
-      AppLogger.error('GetSalesReport failed', error: e, stackTrace: stackTrace);
+      AppLogger.error(
+        'GetSalesReport failed',
+        error: e,
+        stackTrace: stackTrace,
+      );
       rethrow;
     }
   }
@@ -150,7 +179,8 @@ class GetSalesReportUseCase {
     final Map<String, List<Transaction>> groupedByDate = {};
 
     for (final transaction in transactions) {
-      final dateKey = '${transaction.transactionDate.year}-${transaction.transactionDate.month}-${transaction.transactionDate.day}';
+      final dateKey =
+          '${transaction.transactionDate.year}-${transaction.transactionDate.month}-${transaction.transactionDate.day}';
       if (!groupedByDate.containsKey(dateKey)) {
         groupedByDate[dateKey] = [];
       }
@@ -170,9 +200,11 @@ class GetSalesReportUseCase {
       final dayTransactions = entry.value;
       double dayRevenue = 0;
       double dayProfit = 0;
+      double dayTax = 0;
 
       for (final transaction in dayTransactions) {
         dayRevenue += transaction.totalAmount;
+        dayTax += transaction.tax;
 
         // Calculate profit for each item
         for (final item in transaction.items) {
@@ -185,12 +217,15 @@ class GetSalesReportUseCase {
         }
       }
 
-      dailySales.add(DailySales(
-        date: date,
-        transactionCount: dayTransactions.length,
-        revenue: dayRevenue,
-        profit: dayProfit,
-      ));
+      dailySales.add(
+        DailySales(
+          date: date,
+          transactionCount: dayTransactions.length,
+          revenue: dayRevenue,
+          profit: dayProfit,
+          tax: dayTax,
+        ),
+      );
     }
 
     // Sort by date (newest first for the report)
@@ -232,13 +267,15 @@ class GetSalesReportUseCase {
 
     // Convert to ProductSales and sort by quantity sold
     final productSalesList = productSalesMap.values
-        .map((data) => ProductSales(
-              productId: data.productId,
-              productName: data.productName,
-              quantitySold: data.quantitySold,
-              revenue: data.revenue,
-              profit: data.profit,
-            ))
+        .map(
+          (data) => ProductSales(
+            productId: data.productId,
+            productName: data.productName,
+            quantitySold: data.quantitySold,
+            revenue: data.revenue,
+            profit: data.profit,
+          ),
+        )
         .toList();
 
     // Sort by quantity sold (descending) and take top 10
@@ -323,21 +360,106 @@ class GetSalesReportUseCase {
 
     // Convert to CategorySales and sort by revenue
     final categorySalesList = categorySalesMap.values
-        .map((data) => CategorySales(
-              categoryId: data.categoryId,
-              categoryName: data.categoryName,
-              quantitySold: data.quantitySold,
-              revenue: data.revenue,
-              profit: data.profit,
-              profitMargin: data.revenue > 0
-                  ? (data.profit / data.revenue * 100)
-                  : 0.0,
-            ))
+        .map(
+          (data) => CategorySales(
+            categoryId: data.categoryId,
+            categoryName: data.categoryName,
+            quantitySold: data.quantitySold,
+            revenue: data.revenue,
+            profit: data.profit,
+            profitMargin: data.revenue > 0
+                ? (data.profit / data.revenue * 100)
+                : 0.0,
+          ),
+        )
         .toList();
 
     // Sort by revenue (descending)
     categorySalesList.sort((a, b) => b.revenue.compareTo(a.revenue));
     return categorySalesList;
+  }
+
+  /// Generate cashier breakdown from transactions
+  List<CashierSales> _generateCashierBreakdown(
+    List<Transaction> transactions,
+    Map<int, Product> productMap,
+  ) {
+    final Map<int?, CashierSalesData> cashierSalesMap = {};
+
+    for (final transaction in transactions) {
+      final cashierId = transaction.cashierId;
+      final cashierName = transaction.cashierName ?? 'Tidak Diketahui';
+
+      if (!cashierSalesMap.containsKey(cashierId)) {
+        cashierSalesMap[cashierId] = CashierSalesData(
+          cashierId: cashierId,
+          cashierName: cashierName,
+          transactionCount: 0,
+          revenue: 0,
+          profit: 0,
+        );
+      }
+
+      final data = cashierSalesMap[cashierId]!;
+      data.transactionCount++;
+      data.revenue += transaction.totalAmount;
+
+      // Calculate profit for this transaction
+      for (final item in transaction.items) {
+        final product = productMap[item.productId];
+        if (product != null) {
+          final itemCost = product.costPrice * item.quantity;
+          data.profit += (item.subtotal - itemCost);
+        }
+      }
+    }
+
+    // Convert to CashierSales and sort by revenue
+    final cashierSalesList = cashierSalesMap.values
+        .map(
+          (data) => CashierSales(
+            cashierId: data.cashierId,
+            cashierName: data.cashierName,
+            transactionCount: data.transactionCount,
+            revenue: data.revenue,
+            profit: data.profit,
+            profitMargin: data.revenue > 0
+                ? (data.profit / data.revenue * 100)
+                : 0.0,
+          ),
+        )
+        .toList();
+
+    // Sort by revenue (descending)
+    cashierSalesList.sort((a, b) => b.revenue.compareTo(a.revenue));
+    return cashierSalesList;
+  }
+
+  /// Generate discount summary from transactions
+  DiscountSummary? _generateDiscountSummary(List<Transaction> transactions) {
+    if (transactions.isEmpty) return null;
+
+    double totalDiscount = 0;
+    int discountedCount = 0;
+
+    for (final transaction in transactions) {
+      if (transaction.discount > 0) {
+        totalDiscount += transaction.discount;
+        discountedCount++;
+      }
+    }
+
+    return DiscountSummary(
+      totalDiscount: totalDiscount,
+      discountedTransactionCount: discountedCount,
+      totalTransactionCount: transactions.length,
+      averageDiscountPerTransaction: discountedCount > 0
+          ? totalDiscount / discountedCount
+          : 0,
+      discountRate: transactions.length > 0
+          ? (discountedCount / transactions.length * 100)
+          : 0,
+    );
   }
 
   /// Generate period comparison (Month-over-Month or Year-over-Year)
@@ -376,15 +498,28 @@ class GetSalesReportUseCase {
         currentStart.year - 1,
         currentEnd.month,
         currentEnd.day,
-        23, 59, 59,
+        23,
+        59,
+        59,
       );
     }
 
     // Filter transactions for previous period (completed only)
     final previousTransactions = allTransactions.where((t) {
       final date = t.transactionDate;
-      final start = DateTime(previousStart.year, previousStart.month, previousStart.day);
-      final end = DateTime(previousEnd.year, previousEnd.month, previousEnd.day, 23, 59, 59);
+      final start = DateTime(
+        previousStart.year,
+        previousStart.month,
+        previousStart.day,
+      );
+      final end = DateTime(
+        previousEnd.year,
+        previousEnd.month,
+        previousEnd.day,
+        23,
+        59,
+        59,
+      );
       return t.paymentStatus == PaymentStatus.completed &&
           date.isAfter(start) &&
           date.isBefore(end);
@@ -417,7 +552,9 @@ class GetSalesReportUseCase {
         : (currentRevenue > 0 ? 100.0 : 0.0);
 
     final transactionChange = previousTransactionCount > 0
-        ? ((currentTransactionCount - previousTransactionCount) / previousTransactionCount * 100)
+        ? ((currentTransactionCount - previousTransactionCount) /
+              previousTransactionCount *
+              100)
         : (currentTransactionCount > 0 ? 100.0 : 0.0);
 
     final profitChange = previousProfit > 0
@@ -502,11 +639,7 @@ class PaymentData {
   int count;
   double amount;
 
-  PaymentData({
-    required this.paymentMethod,
-    this.count = 0,
-    this.amount = 0,
-  });
+  PaymentData({required this.paymentMethod, this.count = 0, this.amount = 0});
 }
 
 /// Internal data class for category sales aggregation
@@ -521,6 +654,23 @@ class CategorySalesData {
     required this.categoryId,
     required this.categoryName,
     this.quantitySold = 0,
+    this.revenue = 0,
+    this.profit = 0,
+  });
+}
+
+/// Internal data class for cashier sales aggregation
+class CashierSalesData {
+  final int? cashierId;
+  final String cashierName;
+  int transactionCount;
+  double revenue;
+  double profit;
+
+  CashierSalesData({
+    required this.cashierId,
+    required this.cashierName,
+    this.transactionCount = 0,
     this.revenue = 0,
     this.profit = 0,
   });

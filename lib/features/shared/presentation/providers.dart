@@ -60,6 +60,7 @@ import '../../users/domain/usecases/get_users_usecase.dart';
 import '../../users/domain/usecases/create_user_usecase.dart';
 import '../../users/domain/usecases/update_user_usecase.dart';
 import '../../users/domain/usecases/delete_user_usecase.dart';
+import '../../users/domain/usecases/get_current_user_usecase.dart';
 import '../../users/presentation/controllers/auth_controller.dart';
 
 // --- Inventory ---
@@ -95,6 +96,7 @@ import '../../sales/domain/usecases/create_transaction_usecase.dart';
 import '../../sales/domain/usecases/get_transactions_usecase.dart';
 import '../../sales/domain/usecases/get_sales_report_usecase.dart';
 import '../../sales/domain/usecases/export_sales_to_csv_usecase.dart';
+import '../../sales/domain/usecases/export_sales_to_pdf_usecase.dart';
 import '../../sales/presentation/controllers/sales_history_controller.dart';
 import '../../sales/presentation/controllers/sales_report_controller.dart';
 import '../../sales/presentation/controllers/refund_controller.dart';
@@ -177,6 +179,9 @@ final _updateUserUseCaseProvider = Provider(
 final _deleteUserUseCaseProvider = Provider(
   (ref) => DeleteUserUseCase(ref.watch(_userRepositoryProvider)),
 );
+final _getCurrentUserUseCaseProvider = Provider(
+  (ref) => GetCurrentUserUseCase(ref.watch(_userRepositoryProvider)),
+);
 
 final authControllerProvider = ChangeNotifierProvider<AuthController>(
   (ref) => AuthController(
@@ -185,6 +190,7 @@ final authControllerProvider = ChangeNotifierProvider<AuthController>(
     createUserUseCase: ref.watch(_createUserUseCaseProvider),
     updateUserUseCase: ref.watch(_updateUserUseCaseProvider),
     deleteUserUseCase: ref.watch(_deleteUserUseCaseProvider),
+    getCurrentUserUseCase: ref.watch(_getCurrentUserUseCaseProvider),
   ),
 );
 
@@ -313,11 +319,16 @@ final _getSalesReportUseCaseProvider = Provider(
 final _exportSalesToCsvUseCaseProvider = Provider(
   (ref) => ExportSalesToCsvUseCase(),
 );
+final _exportSalesToPdfUseCaseProvider = Provider(
+  (ref) => ExportSalesToPdfUseCase(),
+);
 
 final salesHistoryControllerProvider =
     ChangeNotifierProvider<SalesHistoryController>(
       (ref) => SalesHistoryController(
         getTransactionsUseCase: ref.watch(_getTransactionsUseCaseProvider),
+        getCategoriesUseCase: ref.watch(_getCategoriesUseCaseProvider),
+        getUsersUseCase: ref.watch(_getUsersUseCaseProvider),
       ),
     );
 
@@ -326,6 +337,7 @@ final salesReportControllerProvider =
       (ref) => SalesReportController(
         getSalesReportUseCase: ref.watch(_getSalesReportUseCaseProvider),
         exportSalesToCsvUseCase: ref.watch(_exportSalesToCsvUseCaseProvider),
+        exportSalesToPdfUseCase: ref.watch(_exportSalesToPdfUseCaseProvider),
         // getProfitReportUseCase is optional — add it when you migrate expenses
       ),
     );

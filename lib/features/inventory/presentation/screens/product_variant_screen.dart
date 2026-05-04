@@ -7,6 +7,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/modern_button.dart';
 import '../../../../core/widgets/modern_card.dart';
 import 'add_edit_variant_dialog.dart';
+import '../../../../l10n/app_localizations.dart';
 
 /// Screen for managing product variants
 class ProductVariantScreen extends ConsumerStatefulWidget {
@@ -15,7 +16,8 @@ class ProductVariantScreen extends ConsumerStatefulWidget {
   const ProductVariantScreen({super.key, required this.product});
 
   @override
-  ConsumerState<ProductVariantScreen> createState() => _ProductVariantScreenState();
+  ConsumerState<ProductVariantScreen> createState() =>
+      _ProductVariantScreenState();
 }
 
 class _ProductVariantScreenState extends ConsumerState<ProductVariantScreen> {
@@ -23,7 +25,9 @@ class _ProductVariantScreenState extends ConsumerState<ProductVariantScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(productVariantControllerProvider).loadVariants(widget.product.id!);
+      ref
+          .read(productVariantControllerProvider)
+          .loadVariants(widget.product.id!);
     });
   }
 
@@ -86,28 +90,28 @@ class _ProductVariantScreenState extends ConsumerState<ProductVariantScreen> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Hapus Varian'),
-        content: Text(
-          'Apakah Anda yakin ingin menghapus varian "${variant.displayName}"?',
-        ),
+        title: Text(AppLocalizations.of(context)!.common_deleteVariant),
+        content: Text(AppLocalizations.of(context)!.common_delete_confirm),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Batal'),
+            child: Text(AppLocalizations.of(context)!.common_cancel),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.errorColor,
             ),
-            child: const Text('Hapus'),
+            child: Text(AppLocalizations.of(context)!.common_delete),
           ),
         ],
       ),
     );
 
     if (confirmed == true && mounted) {
-      await ref.read(productVariantControllerProvider).deleteVariant(variant.id!);
+      await ref
+          .read(productVariantControllerProvider)
+          .deleteVariant(variant.id!);
     }
   }
 
@@ -122,7 +126,9 @@ class _ProductVariantScreenState extends ConsumerState<ProductVariantScreen> {
     return Scaffold(
       backgroundColor: AppTheme.getBackgroundColor(context),
       appBar: AppBar(
-        title: Text('Varian: ${widget.product.name}'),
+        title: Text(
+          '${AppLocalizations.of(context)!.variant_title}: ${widget.product.name}',
+        ),
         backgroundColor: AppTheme.primaryColor,
         foregroundColor: Colors.white,
         elevation: 0,
@@ -130,7 +136,7 @@ class _ProductVariantScreenState extends ConsumerState<ProductVariantScreen> {
           IconButton(
             icon: const Icon(Icons.add),
             onPressed: () => _addVariant(),
-            tooltip: 'Tambah Varian',
+            tooltip: AppLocalizations.of(context)!.variant_add,
           ),
         ],
       ),
@@ -144,24 +150,16 @@ class _ProductVariantScreenState extends ConsumerState<ProductVariantScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  Icons.error_outline,
-                  size: 64,
-                  color: AppTheme.errorColor,
-                ),
+                Icon(Icons.error_outline, size: 64, color: AppTheme.errorColor),
                 const SizedBox(height: 16),
                 Text(
                   controller.error?.userMessage ?? 'Terjadi kesalahan',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: AppTheme.textSecondary,
-                  ),
+                  style: TextStyle(fontSize: 16, color: AppTheme.textSecondary),
                 ),
                 const SizedBox(height: 16),
                 ElevatedButton(
-                  onPressed: () =>
-                      controller.loadVariants(widget.product.id!),
-                  child: const Text('Coba Lagi'),
+                  onPressed: () => controller.loadVariants(widget.product.id!),
+                  child: Text(AppLocalizations.of(context).common_retry),
                 ),
               ],
             ),
@@ -180,7 +178,7 @@ class _ProductVariantScreenState extends ConsumerState<ProductVariantScreen> {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Belum Ada Varian',
+                  AppLocalizations.of(context).common_no_data,
                   style: TextStyle(
                     fontSize: 18,
                     color: AppTheme.textPrimary,
@@ -189,11 +187,13 @@ class _ProductVariantScreenState extends ConsumerState<ProductVariantScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
+                  AppLocalizations.of(context).empty_state_get_started,
+                  style: TextStyle(fontSize: 14, color: AppTheme.textSecondary),
+                ),
+                const SizedBox(height: 8),
+                Text(
                   'Tambahkan varian untuk produk ini',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: AppTheme.textSecondary,
-                  ),
+                  style: TextStyle(fontSize: 14, color: AppTheme.textSecondary),
                 ),
                 const SizedBox(height: 24),
                 ModernButton(
@@ -228,7 +228,7 @@ class _ProductVariantScreenState extends ConsumerState<ProductVariantScreen> {
                         ),
                       ),
                       Text(
-                        'Varian',
+                        AppLocalizations.of(context)!.common_variant,
                         style: TextStyle(
                           fontSize: 12,
                           color: AppTheme.textSecondary,
@@ -236,11 +236,7 @@ class _ProductVariantScreenState extends ConsumerState<ProductVariantScreen> {
                       ),
                     ],
                   ),
-                  Container(
-                    width: 1,
-                    height: 40,
-                    color: AppTheme.borderColor,
-                  ),
+                  Container(width: 1, height: 40, color: AppTheme.borderColor),
                   Column(
                     children: [
                       Text(
@@ -252,7 +248,7 @@ class _ProductVariantScreenState extends ConsumerState<ProductVariantScreen> {
                         ),
                       ),
                       Text(
-                        'Total Stok',
+                        '${AppLocalizations.of(context)!.stock_products}: ${controller.totalStock}',
                         style: TextStyle(
                           fontSize: 12,
                           color: AppTheme.textSecondary,
@@ -282,10 +278,7 @@ class _ProductVariantScreenState extends ConsumerState<ProductVariantScreen> {
     );
   }
 
-  Widget _buildVariantCard(
-    ProductVariant variant,
-    dynamic controller,
-  ) {
+  Widget _buildVariantCard(ProductVariant variant, dynamic controller) {
     final isOutOfStock = variant.isOutOfStock;
     final isLowStock = variant.isLowStock;
 
@@ -388,9 +381,9 @@ class _ProductVariantScreenState extends ConsumerState<ProductVariantScreen> {
                   ),
                   if (variant.costPrice > 0)
                     Text(
-                      'Modal: ${_formatCurrency(variant.costPrice)}',
+                      AppLocalizations.of(context)!.common_error,
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: 16,
                         color: AppTheme.textSecondary,
                       ),
                     ),
@@ -401,14 +394,14 @@ class _ProductVariantScreenState extends ConsumerState<ProductVariantScreen> {
                   IconButton(
                     icon: const Icon(Icons.edit_outlined),
                     onPressed: () => _editVariant(variant),
-                    tooltip: 'Edit',
+                    tooltip: AppLocalizations.of(context)!.common_edit,
                     color: AppTheme.infoColor,
                   ),
                   const SizedBox(width: 8),
                   IconButton(
                     icon: const Icon(Icons.delete_outline),
                     onPressed: () => _deleteVariant(variant),
-                    tooltip: 'Hapus',
+                    tooltip: AppLocalizations.of(context)!.common_delete,
                     color: AppTheme.errorColor,
                   ),
                 ],
